@@ -1,6 +1,7 @@
 // src/components/ProductDetail/ProductInfo/ProductMakerInfo.tsx
-import React from "react";
+import React, { useState } from "react";
 import { Card, CardContent, Box, Avatar, Typography, Button } from "@mui/material";
+import ChatModal from "@/components/common/chat/ChatModal";
 import { Product } from "../Product";
 
 interface ProductMakerInfoProps {
@@ -8,57 +9,76 @@ interface ProductMakerInfoProps {
 }
 
 const ProductMakerInfo: React.FC<ProductMakerInfoProps> = ({ product }) => {
+    const [chatModalOpen, setChatModalOpen] = useState(false);
+
     if (!product.brand) return null;
 
+    const handleChatClick = () => {
+        setChatModalOpen(true);
+    };
+
+    const handleChatModalClose = () => {
+        setChatModalOpen(false);
+    };
+
     return (
-        <Card sx={{
-            backgroundColor: "grey.100",
-            boxShadow: "none"
-        }}>
-            <CardContent sx={{ p: 3 }}>
-                <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
-                    <Avatar sx={{
-                        width: 64,
-                        height: 64,
-                        backgroundColor: "primary.main"
-                    }}>
-                        {product.brand.charAt(0)}
-                    </Avatar>
-                    <Box sx={{ flex: 1 }}>
-                        <Typography
-                            variant="body1"
+        <>
+            <Card sx={{
+                backgroundColor: "grey.100",
+                boxShadow: "none"
+            }}>
+                <CardContent sx={{ p: 3 }}>
+                    <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
+                        <Avatar sx={{
+                            width: 64,
+                            height: 64,
+                            backgroundColor: "primary.main"
+                        }}>
+                            {product.brand.charAt(0)}
+                        </Avatar>
+                        <Box sx={{ flex: 1 }}>
+                            <Typography
+                                variant="body1"
+                                sx={{
+                                    fontWeight: 600,
+                                    color: "text.primary",
+                                    mb: 0.5
+                                }}
+                            >
+                                {product.brand}
+                            </Typography>
+                            <Typography
+                                variant="body2"
+                                sx={{ color: "text.secondary" }}
+                            >
+                                정성을 담아 만드는 수제 간식 전문 브랜드입니다.
+                            </Typography>
+                        </Box>
+                        <Button
+                            variant="outlined"
+                            size="small"
+                            onClick={handleChatClick}
                             sx={{
-                                fontWeight: 600,
-                                color: "text.primary",
-                                mb: 0.5
+                                color: "primary.main",
+                                borderColor: "primary.main",
+                                "&:hover": {
+                                    backgroundColor: "primary.main",
+                                    color: "primary.contrastText",
+                                },
                             }}
                         >
-                            {product.brand}
-                        </Typography>
-                        <Typography
-                            variant="body2"
-                            sx={{ color: "text.secondary" }}
-                        >
-                            정성을 담아 만드는 수제 간식 전문 브랜드입니다.
-                        </Typography>
+                            1:1 채팅
+                        </Button>
                     </Box>
-                    <Button
-                        variant="outlined"
-                        size="small"
-                        sx={{
-                            color: "primary.main",
-                            borderColor: "primary.main",
-                            "&:hover": {
-                                backgroundColor: "primary.main",
-                                color: "primary.contrastText",
-                            },
-                        }}
-                    >
-                        1:1 채팅
-                    </Button>
-                </Box>
-            </CardContent>
-        </Card>
+                </CardContent>
+            </Card>
+
+            {/* 채팅 모달 */}
+            <ChatModal
+                open={chatModalOpen}
+                onClose={handleChatModalClose}
+            />
+        </>
     );
 };
 

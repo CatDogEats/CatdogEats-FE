@@ -19,6 +19,7 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import NotificationMenu, { Notification } from '../../common/NotificationMenu';
 import ProfileMenu, { UserInfo } from '../../common/ProfileMenu';
+import ChatModal from '../../common/chat/ChatModal'; // ChatModal 임포트 추가
 
 const BuyerHeader = () => {
     const navigate = useNavigate();
@@ -29,6 +30,7 @@ const BuyerHeader = () => {
     const [menuOpen, setMenuOpen] = useState(false);
     const [hoveredCategory, setHoveredCategory] = useState<string | null>(null);
     const [hoveredSubCategory, setHoveredSubCategory] = useState<string | null>(null);
+    const [chatModalOpen, setChatModalOpen] = useState(false); // ChatModal 상태 추가
 
     // 임시 사용자 정보 (실제로는 상태 관리나 API에서 가져와야 함)
     const [isLoggedIn, setIsLoggedIn] = useState(true); // 로그인 상태 true로 전환시, 로그인 페이지
@@ -65,6 +67,17 @@ const BuyerHeader = () => {
         }
     ]);
 
+    // ChatModal 핸들러 추가
+    const handleChatModalOpen = () => {
+        setChatModalOpen(true);
+        setMenuOpen(false); // 드롭다운 메뉴 닫기
+        setMobileOpen(false); // 모바일 드로어 닫기
+    };
+
+    const handleChatModalClose = () => {
+        setChatModalOpen(false);
+    };
+
     const navigationItems = [
         { label: '베스트 상품', path: '/best' },
         { label: '특가 상품', path: '/sale' },
@@ -91,7 +104,7 @@ const BuyerHeader = () => {
                 }
             ]
         },
-        { label: '판매자와 1:1채팅', path: '/talk' },
+        { label: '판매자와 1:1채팅', action: handleChatModalOpen }, // path 대신 action 사용
         { label: '고객센터', path: '/support' },
     ];
 
@@ -135,6 +148,18 @@ const BuyerHeader = () => {
         console.log('로그아웃');
     };
 
+    // 네비게이션 아이템 클릭 핸들러 수정
+    const handleNavigationClick = (item: any) => {
+        if (item.action) {
+            // action이 있으면 함수 실행
+            item.action();
+        } else if (item.path) {
+            // path가 있으면 페이지 이동
+            navigate(item.path);
+            setMobileOpen(false);
+        }
+    };
+
     const drawer = (
         <Box sx={{ width: 250, pt: 2 }}>
             <Box sx={{ px: 2, mb: 2 }}>
@@ -147,12 +172,7 @@ const BuyerHeader = () => {
                 {navigationItems.map((item) => (
                     <ListItem
                         key={item.label}
-                        onClick={() => {
-                            if (item.path) {
-                                navigate(item.path);
-                                setMobileOpen(false);
-                            }
-                        }}
+                        onClick={() => handleNavigationClick(item)}
                         sx={{ cursor: 'pointer', '&:hover': { bgcolor: 'grey.100' } }}
                     >
                         <ListItemText primary={item.label} />
@@ -290,8 +310,8 @@ const BuyerHeader = () => {
                                     <Box key={item.label} sx={{ position: 'relative' }}>
                                         <ListItem
                                             onClick={() => {
-                                                if (!item.subItems && item.path) {
-                                                    navigate(item.path);
+                                                if (!item.subItems) {
+                                                    handleNavigationClick(item);
                                                     setMenuOpen(false);
                                                 }
                                             }}
@@ -645,6 +665,12 @@ const BuyerHeader = () => {
             >
                 {drawer}
             </Drawer>
+
+            {/* ChatModal 추가 */}
+            <ChatModal
+                open={chatModalOpen}
+                onClose={handleChatModalClose}
+            />
         </>
     );
 };

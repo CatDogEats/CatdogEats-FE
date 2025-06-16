@@ -19,7 +19,7 @@ const CustomerInquiryList: React.FC<CustomerInquiryListProps> = ({
     return (
         <Box>
             <Typography variant="h4" gutterBottom fontWeight="bold">
-                고객 문의
+                채팅방
             </Typography>
 
             {/* 검색창 */}
