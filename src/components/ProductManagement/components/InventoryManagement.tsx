@@ -3,6 +3,11 @@
 import React, { useState } from "react";
 import {
   Box,
+  Card,
+  CardContent,
+  Typography,
+  Tabs,
+  Tab,
   Paper,
   Table,
   TableBody,
@@ -11,124 +16,31 @@ import {
   TableHead,
   TableRow,
   TablePagination,
+  TextField,
+  InputAdornment,
   Button,
   Dialog,
   DialogTitle,
   DialogContent,
   DialogActions,
-  Typography,
-  TextField,
   FormControl,
   InputLabel,
   Select,
   MenuItem,
   Chip,
-  Grid,
-  Card,
-  CardContent,
   Alert,
   Snackbar,
-  InputAdornment,
-  Tabs,
-  Tab,
+  Grid,
 } from "@mui/material";
 import {
   Search as SearchIcon,
   TrendingUp as TrendingUpIcon,
   TrendingDown as TrendingDownIcon,
-  Warning as WarningIcon,
   Inventory as InventoryIcon,
+  Warning as WarningIcon,
+  Add as AddIcon,
+  Remove as RemoveIcon,
 } from "@mui/icons-material";
-import {
-  StockItem,
-  StockMovement,
-  StockMovementType,
-  STOCK_MOVEMENT_TYPES,
-} from "../types/product.types.ts";
-
-// 목업 데이터
-const mockStockItems: StockItem[] = [
-  {
-    id: "1",
-    productId: "1",
-    productName: "유기농 치킨 & 블루베리 강아지 훈련 간식",
-    category: "dog_snacks",
-    currentStock: 150,
-    minStock: 20,
-    maxStock: 500,
-    reservedStock: 15,
-    availableStock: 135,
-    lastUpdated: "2024-06-09",
-    supplier: "펫푸드 컴퍼니",
-    costPrice: 7000,
-    sellPrice: 9990,
-    status: "충분",
-  },
-  {
-    id: "2",
-    productId: "2",
-    productName: "야생 연어 & 고구마 껌",
-    category: "chews",
-    currentStock: 8,
-    minStock: 10,
-    maxStock: 200,
-    reservedStock: 3,
-    availableStock: 5,
-    lastUpdated: "2024-06-08",
-    supplier: "헬시펫",
-    costPrice: 10000,
-    sellPrice: 14500,
-    status: "부족",
-  },
-  {
-    id: "3",
-    productId: "3",
-    productName: "고양이 참치 크림 간식",
-    category: "cat_snacks",
-    currentStock: 0,
-    minStock: 15,
-    maxStock: 300,
-    reservedStock: 0,
-    availableStock: 0,
-    lastUpdated: "2024-06-07",
-    supplier: "캣푸드 전문",
-    costPrice: 5000,
-    sellPrice: 7500,
-    status: "품절",
-  },
-];
-
-const mockStockMovements: StockMovement[] = [
-  {
-    id: "1",
-    productId: "1",
-    type: "입고",
-    quantity: 100,
-    reason: "정기 입고",
-    date: "2024-06-09",
-    userId: "admin",
-    notes: "신규 입고분",
-  },
-  {
-    id: "2",
-    productId: "2",
-    type: "출고",
-    quantity: -5,
-    reason: "주문 출고",
-    date: "2024-06-08",
-    userId: "system",
-  },
-  {
-    id: "3",
-    productId: "1",
-    type: "조정",
-    quantity: -2,
-    reason: "재고 조정",
-    date: "2024-06-07",
-    userId: "admin",
-    notes: "파손품 제외",
-  },
-];
 
 interface TabPanelProps {
   children?: React.ReactNode;
@@ -146,15 +58,43 @@ function TabPanel(props: TabPanelProps) {
       aria-labelledby={`tab-${index}`}
       {...other}
     >
-      {value === index && <Box sx={{ p: 0 }}>{children}</Box>}
+      {value === index && <Box>{children}</Box>}
     </div>
   );
 }
 
+interface StockItem {
+  id: string;
+  productId: string;
+  productName: string;
+  supplier: string;
+  currentStock: number;
+  availableStock: number; // 예약 재고 제거로 인해 이 필드만 사용
+  minStock: number;
+  unitPrice: number;
+  status: "충분" | "부족" | "품절";
+  lastUpdated: string;
+}
+
+interface StockMovement {
+  id: string;
+  productId: string;
+  type: "입고" | "출고" | "조정" | "반품";
+  quantity: number;
+  reason: string;
+  date: string;
+  orderNumber?: string; // 주문 번호 필드 추가
+  notes?: string;
+}
+
+interface AdjustForm {
+  type: "입고" | "출고" | "조정";
+  quantity: number;
+  orderNumber: string; // 주문 번호 필드 추가
+  notes: string;
+}
+
 const InventoryManagement: React.FC = () => {
-  const [stockItems, setStockItems] = useState<StockItem[]>(mockStockItems);
-  const [stockMovements, setStockMovements] =
-    useState<StockMovement[]>(mockStockMovements);
   const [tabValue, setTabValue] = useState(0);
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(10);
@@ -163,51 +103,112 @@ const InventoryManagement: React.FC = () => {
   const [selectedItem, setSelectedItem] = useState<StockItem | null>(null);
   const [showAlert, setShowAlert] = useState(false);
   const [alertMessage, setAlertMessage] = useState("");
-
-  // 재고 조정 폼 상태 (reason 필드 제거)
-  const [adjustForm, setAdjustForm] = useState({
-    type: "입고" as StockMovementType,
+  const [adjustForm, setAdjustForm] = useState<AdjustForm>({
+    type: "입고",
     quantity: 0,
+    orderNumber: "", // 주문 번호 초기화
     notes: "",
   });
 
-  const filteredItems = stockItems.filter((item) =>
+  // 목업 데이터 - 예약 재고 필드 제거
+  const [stockItems, setStockItems] = useState<StockItem[]>([
+    {
+      id: "1",
+      productId: "P001",
+      productName: "유기농 치킨 & 블루베리 강아지 간식",
+      supplier: "자연식품",
+      currentStock: 150,
+      availableStock: 150, // 예약 재고 제거로 인해 현재 재고와 동일
+      minStock: 50,
+      unitPrice: 9990,
+      status: "충분",
+      lastUpdated: "2024-12-16",
+    },
+    {
+      id: "2",
+      productId: "P002",
+      productName: "야생 연어 & 고구마 껌",
+      supplier: "바다식품",
+      currentStock: 25,
+      availableStock: 25,
+      minStock: 30,
+      unitPrice: 14500,
+      status: "부족",
+      lastUpdated: "2024-12-15",
+    },
+    {
+      id: "3",
+      productId: "P003",
+      productName: "고양이 참치 크림 간식",
+      supplier: "고양이마을",
+      currentStock: 0,
+      availableStock: 0,
+      minStock: 20,
+      unitPrice: 7500,
+      status: "품절",
+      lastUpdated: "2024-12-14",
+    },
+  ]);
+
+  // 재고 이동 기록 - 처리자 필드 제거
+  const [stockMovements, setStockMovements] = useState<StockMovement[]>([
+    {
+      id: "1",
+      productId: "P001",
+      type: "입고",
+      quantity: 100,
+      reason: "정기 입고",
+      date: "2024-12-16",
+      orderNumber: "ORD-001",
+      notes: "월간 정기 주문",
+    },
+    {
+      id: "2",
+      productId: "P002",
+      type: "출고",
+      quantity: -50,
+      reason: "고객 주문",
+      date: "2024-12-15",
+      orderNumber: "ORD-002",
+    },
+    {
+      id: "3",
+      productId: "P001",
+      type: "조정",
+      quantity: 5,
+      reason: "재고 점검 조정",
+      date: "2024-12-15",
+      notes: "실사 후 차이 조정",
+    },
+  ]);
+
+  const handleTabChange = (_: React.SyntheticEvent, newValue: number) => {
+    setTabValue(newValue);
+  };
+
+  const filteredStockItems = stockItems.filter((item) =>
     item.productName.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case "충분":
-        return "success";
-      case "부족":
-        return "warning";
-      case "품절":
-        return "error";
-      case "재주문필요":
-        return "info";
-      default:
-        return "default";
-    }
-  };
-
   const getTotalInventoryValue = () => {
     return stockItems.reduce(
-      (total, item) => total + item.currentStock * item.costPrice,
+      (total, item) => total + item.currentStock * item.unitPrice,
       0
     );
   };
 
   const getLowStockCount = () => {
-    return stockItems.filter((item) => item.currentStock <= item.minStock)
-      .length;
+    return stockItems.filter(
+      (item) => item.status === "부족" || item.status === "품절"
+    ).length;
   };
 
   const getOutOfStockCount = () => {
-    return stockItems.filter((item) => item.currentStock === 0).length;
+    return stockItems.filter((item) => item.status === "품절").length;
   };
 
-  const handleTabChange = (_: React.SyntheticEvent, newValue: number) => {
-    setTabValue(newValue);
+  const getTotalProducts = () => {
+    return stockItems.length;
   };
 
   const handleAdjustStock = (item: StockItem) => {
@@ -215,12 +216,17 @@ const InventoryManagement: React.FC = () => {
     setAdjustDialogOpen(true);
   };
 
-  const handleSubmitAdjustment = () => {
-    if (!selectedItem) return;
+  const handleAdjustSubmit = () => {
+    if (!selectedItem || adjustForm.quantity === 0) return;
 
-    const adjustment =
-      adjustForm.quantity *
-      (adjustForm.type === "출고" || adjustForm.type === "폐기" ? -1 : 1);
+    // 수량 변화 계산 (입고: +, 출고/조정: 입력값에 따라)
+    let adjustment = adjustForm.quantity;
+    if (adjustForm.type === "출고") {
+      adjustment = -Math.abs(adjustment);
+    } else if (adjustForm.type === "조정") {
+      // 조정의 경우 입력값이 음수면 감소, 양수면 증가
+      adjustment = adjustment;
+    }
 
     const newStock = Math.max(0, selectedItem.currentStock + adjustment);
 
@@ -231,7 +237,7 @@ const InventoryManagement: React.FC = () => {
           ? {
               ...item,
               currentStock: newStock,
-              availableStock: Math.max(0, newStock - item.reservedStock),
+              availableStock: newStock, // 예약 재고 제거로 현재 재고와 동일
               status:
                 newStock === 0
                   ? "품절"
@@ -244,18 +250,19 @@ const InventoryManagement: React.FC = () => {
       )
     );
 
-    // 재고 이동 기록 추가 (reason은 자동으로 조정 타입 기반으로 생성)
+    // 개별 재고 이동 기록 추가 (TO-BE: 매번 독립적인 기록 생성)
     const newMovement: StockMovement = {
-      id: Date.now().toString(),
+      id: `${Date.now()}-${Math.random()}`, // 고유 ID 생성
       productId: selectedItem.productId,
       type: adjustForm.type,
       quantity: adjustment,
-      reason: `${adjustForm.type} 처리`, // 자동 생성된 사유
+      reason: `${adjustForm.type} 처리`,
       date: new Date().toISOString().split("T")[0],
-      userId: "admin",
+      orderNumber: adjustForm.orderNumber || undefined,
       notes: adjustForm.notes,
     };
 
+    // 기존 기록에 추가 (합산하지 않고 개별 기록으로 유지)
     setStockMovements((prev) => [newMovement, ...prev]);
 
     setAlertMessage("재고가 성공적으로 조정되었습니다.");
@@ -265,6 +272,7 @@ const InventoryManagement: React.FC = () => {
     setAdjustForm({
       type: "입고",
       quantity: 0,
+      orderNumber: "",
       notes: "",
     });
   };
@@ -373,7 +381,7 @@ const InventoryManagement: React.FC = () => {
                     총 상품 수
                   </Typography>
                   <Typography variant="h6" fontWeight={600}>
-                    {stockItems.length}개
+                    {getTotalProducts()}개
                   </Typography>
                 </Box>
               </Box>
@@ -434,15 +442,16 @@ const InventoryManagement: React.FC = () => {
                     >
                       현재 재고
                     </TableCell>
+                    {/* 예약 재고 컬럼 삭제 */}
                     <TableCell
                       sx={{ backgroundColor: "#f9fafb", fontWeight: 600 }}
                     >
-                      예약 재고
+                      최소 재고
                     </TableCell>
                     <TableCell
                       sx={{ backgroundColor: "#f9fafb", fontWeight: 600 }}
                     >
-                      판매가능 재고
+                      단가
                     </TableCell>
                     <TableCell
                       sx={{ backgroundColor: "#f9fafb", fontWeight: 600 }}
@@ -452,17 +461,17 @@ const InventoryManagement: React.FC = () => {
                     <TableCell
                       sx={{ backgroundColor: "#f9fafb", fontWeight: 600 }}
                     >
-                      최근 업데이트
+                      최종 업데이트
                     </TableCell>
                     <TableCell
                       sx={{ backgroundColor: "#f9fafb", fontWeight: 600 }}
                     >
-                      관리
+                      작업
                     </TableCell>
                   </TableRow>
                 </TableHead>
                 <TableBody>
-                  {filteredItems
+                  {filteredStockItems
                     .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
                     .map((item) => (
                       <TableRow key={item.id} hover>
@@ -470,47 +479,40 @@ const InventoryManagement: React.FC = () => {
                           <Typography variant="body2" fontWeight={500}>
                             {item.productName}
                           </Typography>
+                          <Typography variant="caption" color="text.secondary">
+                            ID: {item.productId}
+                          </Typography>
                         </TableCell>
                         <TableCell>
-                          <Typography variant="body2" color="text.secondary">
+                          <Typography variant="body2">
                             {item.supplier}
                           </Typography>
                         </TableCell>
                         <TableCell>
-                          <Typography
-                            variant="body2"
-                            color={
-                              item.currentStock <= item.minStock
-                                ? "warning.main"
-                                : "text.primary"
-                            }
-                            fontWeight={500}
-                          >
+                          <Typography variant="body2" fontWeight={600}>
                             {item.currentStock}개
                           </Typography>
                         </TableCell>
                         <TableCell>
-                          <Typography variant="body2" color="text.secondary">
-                            {item.reservedStock}개
+                          <Typography variant="body2">
+                            {item.minStock}개
                           </Typography>
                         </TableCell>
                         <TableCell>
-                          <Typography
-                            variant="body2"
-                            color={
-                              item.availableStock > 0 ? "text.primary" : "error"
-                            }
-                          >
-                            {item.availableStock}개
+                          <Typography variant="body2">
+                            ₩{item.unitPrice.toLocaleString()}
                           </Typography>
                         </TableCell>
                         <TableCell>
                           <Chip
                             label={item.status}
                             size="small"
-                            color={getStatusColor(item.status)}
-                            variant={
-                              item.status === "충분" ? "filled" : "outlined"
+                            color={
+                              item.status === "충분"
+                                ? "success"
+                                : item.status === "부족"
+                                  ? "warning"
+                                  : "error"
                             }
                           />
                         </TableCell>
@@ -521,17 +523,10 @@ const InventoryManagement: React.FC = () => {
                         </TableCell>
                         <TableCell>
                           <Button
-                            size="small"
                             variant="outlined"
+                            size="small"
                             onClick={() => handleAdjustStock(item)}
-                            sx={{
-                              borderColor: "#ef9942",
-                              color: "#ef9942",
-                              "&:hover": {
-                                backgroundColor: "#fdecdb",
-                                borderColor: "#e08830",
-                              },
-                            }}
+                            sx={{ borderRadius: 2 }}
                           >
                             재고 조정
                           </Button>
@@ -543,12 +538,11 @@ const InventoryManagement: React.FC = () => {
             </TableContainer>
 
             <TablePagination
-              rowsPerPageOptions={[5, 10, 25]}
               component="div"
-              count={filteredItems.length}
-              rowsPerPage={rowsPerPage}
+              count={filteredStockItems.length}
               page={page}
               onPageChange={(_, newPage) => setPage(newPage)}
+              rowsPerPage={rowsPerPage}
               onRowsPerPageChange={(event) => {
                 setRowsPerPage(parseInt(event.target.value, 10));
                 setPage(0);
@@ -596,8 +590,9 @@ const InventoryManagement: React.FC = () => {
                     <TableCell
                       sx={{ backgroundColor: "#f9fafb", fontWeight: 600 }}
                     >
-                      처리자
+                      주문번호
                     </TableCell>
+                    {/* 처리자 컬럼 삭제 */}
                   </TableRow>
                 </TableHead>
                 <TableBody>
@@ -625,29 +620,63 @@ const InventoryManagement: React.FC = () => {
                               movement.type === "입고"
                                 ? "success"
                                 : movement.type === "출고"
-                                  ? "info"
-                                  : movement.type === "반품"
+                                  ? "error"
+                                  : movement.type === "조정"
                                     ? "warning"
                                     : "default"
                             }
                           />
                         </TableCell>
                         <TableCell>
-                          <Typography
-                            variant="body2"
-                            color={
-                              movement.quantity > 0
-                                ? "success.main"
-                                : "error.main"
-                            }
-                            fontWeight={500}
+                          <Box
+                            sx={{
+                              display: "flex",
+                              alignItems: "center",
+                              gap: 1,
+                            }}
                           >
-                            {movement.quantity > 0 ? "+" : ""}
-                            {movement.quantity}개
+                            {movement.quantity > 0 ? (
+                              <AddIcon
+                                sx={{ color: "success.main", fontSize: 16 }}
+                              />
+                            ) : (
+                              <RemoveIcon
+                                sx={{ color: "error.main", fontSize: 16 }}
+                              />
+                            )}
+                            <Typography
+                              variant="body2"
+                              color={
+                                movement.quantity > 0
+                                  ? "success.main"
+                                  : "error.main"
+                              }
+                              fontWeight={600}
+                            >
+                              {movement.quantity > 0 ? "+" : ""}
+                              {movement.quantity}
+                            </Typography>
+                          </Box>
+                        </TableCell>
+                        <TableCell>
+                          <Typography variant="body2">
+                            {movement.reason}
+                          </Typography>
+                          {movement.notes && (
+                            <Typography
+                              variant="caption"
+                              color="text.secondary"
+                              display="block"
+                            >
+                              {movement.notes}
+                            </Typography>
+                          )}
+                        </TableCell>
+                        <TableCell>
+                          <Typography variant="body2">
+                            {movement.orderNumber || "-"}
                           </Typography>
                         </TableCell>
-                        <TableCell>{movement.reason}</TableCell>
-                        <TableCell>{movement.userId}</TableCell>
                       </TableRow>
                     );
                   })}
@@ -658,7 +687,7 @@ const InventoryManagement: React.FC = () => {
         </TabPanel>
       </Paper>
 
-      {/* 재고 조정 다이얼로그 (사유 입력 필드 제거) */}
+      {/* 재고 조정 다이얼로그 - 주문 번호 필드 추가 */}
       <Dialog
         open={adjustDialogOpen}
         onClose={() => setAdjustDialogOpen(false)}
@@ -668,33 +697,27 @@ const InventoryManagement: React.FC = () => {
           sx: { borderRadius: 3 },
         }}
       >
-        <DialogTitle>재고 조정</DialogTitle>
-        <DialogContent>
-          <Box sx={{ pt: 2, display: "flex", flexDirection: "column", gap: 3 }}>
-            <Typography variant="body2" color="text.secondary">
-              상품: {selectedItem?.productName}
-            </Typography>
-            <Typography variant="body2">
-              현재 재고: {selectedItem?.currentStock}개
-            </Typography>
+        <DialogTitle>재고 조정 - {selectedItem?.productName}</DialogTitle>
+        <DialogContent sx={{ pt: 2 }}>
+          <Box sx={{ display: "flex", flexDirection: "column", gap: 3 }}>
+            <Box>
+              <Typography variant="body2" color="text.secondary" gutterBottom>
+                현재 재고: {selectedItem?.currentStock}개
+              </Typography>
+            </Box>
 
             <FormControl fullWidth>
               <InputLabel>조정 유형</InputLabel>
               <Select
                 value={adjustForm.type}
-                onChange={(e) =>
-                  setAdjustForm((prev) => ({
-                    ...prev,
-                    type: e.target.value as StockMovementType,
-                  }))
-                }
                 label="조정 유형"
+                onChange={(e) =>
+                  setAdjustForm({ ...adjustForm, type: e.target.value as any })
+                }
               >
-                {STOCK_MOVEMENT_TYPES.map((type) => (
-                  <MenuItem key={type.value} value={type.value}>
-                    {type.label}
-                  </MenuItem>
-                ))}
+                <MenuItem value="입고">입고</MenuItem>
+                <MenuItem value="출고">출고</MenuItem>
+                <MenuItem value="조정">조정</MenuItem>
               </Select>
             </FormControl>
 
@@ -704,40 +727,77 @@ const InventoryManagement: React.FC = () => {
               type="number"
               value={adjustForm.quantity}
               onChange={(e) =>
-                setAdjustForm((prev) => ({
-                  ...prev,
-                  quantity: Number(e.target.value),
-                }))
+                setAdjustForm({
+                  ...adjustForm,
+                  quantity: parseInt(e.target.value) || 0,
+                })
               }
-              InputProps={{
-                endAdornment: (
-                  <InputAdornment position="end">개</InputAdornment>
-                ),
-              }}
+              helperText={
+                adjustForm.type === "조정"
+                  ? "증가는 양수(+), 감소는 음수(-)로 입력하세요"
+                  : adjustForm.type === "입고"
+                    ? "입고할 수량을 입력하세요"
+                    : "출고할 수량을 입력하세요"
+              }
+            />
+
+            {/* 주문 번호 필드 추가 */}
+            <TextField
+              fullWidth
+              label="주문 번호 (선택사항)"
+              value={adjustForm.orderNumber}
+              onChange={(e) =>
+                setAdjustForm({ ...adjustForm, orderNumber: e.target.value })
+              }
+              placeholder="예: ORD-001"
+              helperText="관련 주문이 있는 경우 주문 번호를 입력하세요"
             />
 
             <TextField
               fullWidth
-              label="메모 (선택사항)"
+              label="비고 (선택사항)"
               multiline
-              rows={2}
+              rows={3}
               value={adjustForm.notes}
               onChange={(e) =>
-                setAdjustForm((prev) => ({ ...prev, notes: e.target.value }))
+                setAdjustForm({ ...adjustForm, notes: e.target.value })
               }
-              placeholder="추가 메모사항이 있으면 입력하세요"
+              placeholder="조정 사유나 특이사항을 입력하세요"
             />
+
+            {adjustForm.quantity !== 0 && selectedItem && (
+              <Box
+                sx={{
+                  p: 2,
+                  backgroundColor: "#f5f5f5",
+                  borderRadius: 2,
+                  border: "1px solid #e0e0e0",
+                }}
+              >
+                <Typography variant="body2" color="text.secondary">
+                  조정 후 예상 재고:
+                </Typography>
+                <Typography variant="h6" color="primary.main">
+                  {Math.max(
+                    0,
+                    selectedItem.currentStock +
+                      (adjustForm.type === "출고"
+                        ? -Math.abs(adjustForm.quantity)
+                        : adjustForm.quantity)
+                  )}
+                  개
+                </Typography>
+              </Box>
+            )}
           </Box>
         </DialogContent>
-        <DialogActions>
+        <DialogActions sx={{ p: 3 }}>
           <Button onClick={() => setAdjustDialogOpen(false)}>취소</Button>
           <Button
-            onClick={handleSubmitAdjustment}
+            onClick={handleAdjustSubmit}
             variant="contained"
-            sx={{
-              backgroundColor: "#ef9942",
-              "&:hover": { backgroundColor: "#e08830" },
-            }}
+            disabled={adjustForm.quantity === 0}
+            sx={{ borderRadius: 2 }}
           >
             조정 완료
           </Button>
