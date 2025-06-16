@@ -59,7 +59,6 @@ interface SellerProfileCardProps {
     onContactSeller: () => void;
     onToggleLike: () => void;
     onShare: () => void;
-    onReport: () => void;
     isLiked: boolean;
 }
 
@@ -68,7 +67,6 @@ const SellerProfileCard: React.FC<SellerProfileCardProps> = ({
                                                                  onContactSeller,
                                                                  onToggleLike,
                                                                  onShare,
-                                                                 onReport,
                                                                  isLiked,
                                                              }) => {
     const [couponModalOpen, setCouponModalOpen] = useState(false);
@@ -118,7 +116,7 @@ const SellerProfileCard: React.FC<SellerProfileCardProps> = ({
 
     return (
         <>
-            <Card sx={{ p: { xs: 2, sm: 3 }, boxShadow: 1 }}>
+            <Card sx={{ p: { xs: 2, sm: 3 }, boxShadow: 1, position: 'relative' }}>
                 <CardContent sx={{ p: 0 }}>
                     <Grid container spacing={{ xs: 2, sm: 3 }} sx={{ alignItems: 'center' }}>
                         {/* 프로필 이미지 */}
@@ -229,38 +227,6 @@ const SellerProfileCard: React.FC<SellerProfileCardProps> = ({
                                         <Share />
                                     </IconButton>
                                 </Stack>
-
-                                {/* 쿠폰 발급 버튼 추가 */}
-                                <Button
-                                    variant="outlined"
-                                    startIcon={<LocalOffer />}
-                                    onClick={() => setCouponModalOpen(true)}
-                                    sx={{
-                                        width: { xs: '100%', sm: 'auto' },
-                                        minWidth: { sm: 160 },
-                                        borderColor: '#e37d11',
-                                        color: '#e37d11',
-                                        '&:hover': {
-                                            borderColor: '#d16d01',
-                                            bgcolor: 'rgba(227, 125, 17, 0.04)',
-                                        },
-                                    }}
-                                >
-                                    쿠폰 발급받기
-                                </Button>
-
-                                <Button
-                                    variant="text"
-                                    size="small"
-                                    onClick={onReport}
-                                    sx={{
-                                        color: 'grey.500',
-                                        '&:hover': { color: 'error.main' },
-                                        fontSize: '0.75rem',
-                                    }}
-                                >
-                                    신고하기
-                                </Button>
                             </Box>
                         </Grid>
                     </Grid>
@@ -276,16 +242,40 @@ const SellerProfileCard: React.FC<SellerProfileCardProps> = ({
                         </Grid>
                         <Grid size={{ xs: 12, sm: 6 }}>
                             <Typography variant="body2" color="text.secondary">
-                                <strong>배송 정보:</strong> {seller.shippingInfo}
+                                <strong>위치:</strong> {seller.location}
                             </Typography>
                         </Grid>
                         <Grid size={{ xs: 12, sm: 6 }}>
                             <Typography variant="body2" color="text.secondary">
-                                <strong>위치:</strong> {seller.location}
+                                <strong>배송 정보:</strong> {seller.shippingInfo}
                             </Typography>
                         </Grid>
                     </Grid>
                 </CardContent>
+
+                {/* 쿠폰 발급 버튼 - 우측하단으로 이동 */}
+                <Button
+                    variant="outlined"
+                    startIcon={<LocalOffer />}
+                    onClick={() => setCouponModalOpen(true)}
+                    sx={{
+                        position: 'absolute',
+                        bottom: { xs: 16, sm: 24 },
+                        right: { xs: 16, sm: 24 },
+                        minWidth: { xs: 140, sm: 160 },
+                        borderColor: '#e37d11',
+                        color: '#e37d11',
+                        bgcolor: 'white',
+                        boxShadow: 1,
+                        '&:hover': {
+                            borderColor: '#d16d01',
+                            bgcolor: 'rgba(227, 125, 17, 0.04)',
+                            boxShadow: 2,
+                        },
+                    }}
+                >
+                    쿠폰 발급받기
+                </Button>
             </Card>
 
             {/* 쿠폰 발급 모달 */}
