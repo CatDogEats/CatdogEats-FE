@@ -34,7 +34,6 @@ const BuyerHeader = () => {
     const [isLoggedIn, setIsLoggedIn] = useState(true); // 로그인 상태 true로 전환시, 로그인 페이지
     const [userInfo] = useState<UserInfo>({
         name: '김구매',
-        email: 'buyer@example.com',
         profileImage: '' // 프로필 이미지가 없으면 이니셜 표시
     });
 
@@ -128,10 +127,6 @@ const BuyerHeader = () => {
     // 프로필 메뉴 핸들러들
     const handleProfileEdit = () => {
         navigate('/mypage');
-    };
-
-    const handleSettings = () => {
-        navigate('/account/settings');
     };
 
     const handleLogout = () => {
@@ -531,7 +526,6 @@ const BuyerHeader = () => {
                                 <ProfileMenu
                                     userInfo={userInfo}
                                     onProfileEdit={handleProfileEdit}
-                                    onSettings={handleSettings}
                                     onLogout={handleLogout}
                                 />
                             </>

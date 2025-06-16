@@ -6,6 +6,7 @@ import {
     Button,
     useTheme
 } from '@mui/material';
+import { useNavigate } from 'react-router-dom';
 import { SellerHeaderProps } from '@/components/layout/sellerLayout/types/seller.types.ts';
 import { NotificationMenu, ProfileMenu } from '@/components/common';
 
@@ -17,11 +18,19 @@ const SellerHeader = ({
                           onFaqClick,
                           onInquiryClick,
                           onProfileEdit,
-                          onSellerInfo,
-                          onSettings,
                           onLogout
                       }: SellerHeaderProps) => {
     const theme = useTheme();
+    const navigate = useNavigate();
+
+    // 마이페이지로 이동하는 함수
+    const handleProfileEdit = () => {
+        navigate('/seller/info');
+        // 기존 onProfileEdit 콜백이 있다면 함께 실행
+        if (onProfileEdit) {
+            onProfileEdit();
+        }
+    };
 
     return (
         <AppBar
@@ -158,9 +167,7 @@ const SellerHeader = ({
                     {/* 프로필 메뉴 */}
                     <ProfileMenu
                         userInfo={sellerInfo}
-                        onProfileEdit={onProfileEdit}
-                        onSellerInfo={onSellerInfo}
-                        onSettings={onSettings}
+                        onProfileEdit={handleProfileEdit}
                         onLogout={onLogout}
                     />
                 </Box>
