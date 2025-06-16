@@ -1,11 +1,24 @@
 //components/sections/HeroSection.tsx
 import { Container, Box, Typography, Button } from '@mui/material';
+import { useNavigate } from 'react-router-dom';
 
 interface HeroSectionProps {
     onShopNowClick?: () => void;
 }
 
 export const HeroSection = ({ onShopNowClick }: HeroSectionProps) => {
+    const navigate = useNavigate();
+
+    const handleShopNowClick = () => {
+        // 상위 컴포넌트에서 전달된 콜백이 있으면 실행
+        if (onShopNowClick) {
+            onShopNowClick();
+        }
+
+        // 상품 목록 페이지로 이동
+        navigate('/productsList');
+    };
+
     return (
         <Box
             sx={{
@@ -57,7 +70,7 @@ export const HeroSection = ({ onShopNowClick }: HeroSectionProps) => {
                     variant="contained"
                     size="large"
                     endIcon={<span className="material-icons">arrow_forward</span>}
-                    onClick={onShopNowClick}
+                    onClick={handleShopNowClick}
                     sx={{
                         backgroundColor: 'primary.main',
                         color: 'white',
