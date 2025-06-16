@@ -1,15 +1,53 @@
-// 상품 데이터
+// src/data/index.ts
+
+// Product 관련 데이터 (통합됨)
 export {
-    popularProducts,
+    mockProducts,
     newProducts,
     bestSellerProducts,
+    discountProducts,
     allergicFreeProducts,
     dentalCareProducts,
-    discountProducts
-} from './products.data.ts';
+    popularProducts,
+    getProductsByCategory,
+    getProductsByPetType,
+    getTotalProductCount
+} from './products';
 
-// 공방 데이터
-export { popularWorkshops } from './workshops.data.ts';
+// Category 관련 데이터 (통합됨)
+export {
+    productCategories,
+    contentCategories
+} from './categories';
 
-// 카테고리 데이터
-export { productCategories, contentCategories } from './categories.data.ts';
+// Workshop 관련 데이터 (통합됨)
+export {
+    popularWorkshops
+} from './workshops';
+
+// Account 관련 데이터 (기존 유지)
+export {
+    savedPets,
+    savedAddresses,
+    mockCoupons,
+    mockOrders,
+    mockReturnOrders,
+    extendedMockOrders,
+    orderItems,
+    mockWrittenReviews
+} from './mock-data';
+
+// 판매자 관련 데이터 (기존 유지)
+export {
+    customerInquiries,
+    customerChat,
+    productReviews
+} from './customerData';
+
+export {
+    sellerProductsData
+} from './seller-products.data';
+
+export {
+    sellersData
+} from './sellers.data';
