@@ -150,11 +150,6 @@ const SellerStorePage: React.FC = () => {
         }
     };
 
-    const handleReportSeller = () => {
-        setSnackbarMessage('신고 기능은 준비 중입니다.');
-        setSnackbarOpen(true);
-    };
-
     const handleProductClick = (productId: string) => {
         // 상품 상세 페이지로 이동
         navigate(`/product/${productId}`);
@@ -226,7 +221,6 @@ const SellerStorePage: React.FC = () => {
                         onContactSeller={handleContactSeller}
                         onToggleLike={handleToggleSellerLike}
                         onShare={handleShareSeller}
-                        onReport={handleReportSeller}
                         isLiked={isSellerLiked}
                     />
                 </Box>

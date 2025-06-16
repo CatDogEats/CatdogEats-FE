@@ -11,23 +11,18 @@ import {
 
 export interface UserInfo {
     name: string;
-    email: string;
     profileImage?: string;
 }
 
 interface ProfileMenuProps {
     userInfo: UserInfo;
     onProfileEdit?: () => void;
-    onSellerInfo?: () => void;
-    onSettings?: () => void;
     onLogout?: () => void;
 }
 
 const ProfileMenu: React.FC<ProfileMenuProps> = ({
                                                      userInfo,
                                                      onProfileEdit,
-                                                     onSellerInfo,
-                                                     onSettings,
                                                      onLogout
                                                  }) => {
     const theme = useTheme();
@@ -100,7 +95,6 @@ const ProfileMenu: React.FC<ProfileMenuProps> = ({
                             color: theme.palette.text.secondary
                         }}
                     >
-                        {userInfo.email}
                     </Typography>
                 </Box>
 
@@ -119,38 +113,6 @@ const ProfileMenu: React.FC<ProfileMenuProps> = ({
                     마이페이지
                 </MenuItem>
 
-                {/* onSellerInfo prop이 있을 때만 판매자 정보 메뉴 표시 */}
-                {onSellerInfo && (
-                    <MenuItem
-                        onClick={() => handleMenuItemClick(onSellerInfo)}
-                        sx={{
-                            color: theme.palette.text.primary,
-                            '&:hover': {
-                                backgroundColor: theme.palette.grey[100]
-                            }
-                        }}
-                    >
-                        <span className="material-icons" style={{ marginRight: '8px', fontSize: '18px' }}>
-                            store
-                        </span>
-                        판매자 정보
-                    </MenuItem>
-                )}
-
-                <MenuItem
-                    onClick={() => handleMenuItemClick(onSettings)}
-                    sx={{
-                        color: theme.palette.text.primary,
-                        '&:hover': {
-                            backgroundColor: theme.palette.grey[100]
-                        }
-                    }}
-                >
-                    <span className="material-icons" style={{ marginRight: '8px', fontSize: '18px' }}>
-                        settings
-                    </span>
-                    설정
-                </MenuItem>
 
                 <Divider />
 
