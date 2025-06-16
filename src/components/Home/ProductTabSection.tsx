@@ -1,9 +1,9 @@
-// 📁 components/sections/ProductTabSection.tsx
+// src/components/Home/components/ProductTabSection.tsx
 import { Container, Box, Typography, Tab, Tabs } from '@mui/material';
 import { useState } from 'react';
 import { ProductGrid } from '@/components/Home/index.ts';
 import { Product } from '@/components/Home/index.ts';
-import { Category } from '@/components/Home/types';
+import { ContentCategory } from '@/components/Home/types';
 
 interface TabPanelProps {
     children?: React.ReactNode;
@@ -27,7 +27,7 @@ function TabPanel(props: TabPanelProps) {
 }
 
 interface ProductTabSectionProps {
-    categories: Category[];
+    categories: ContentCategory[]; // Category에서 ContentCategory로 변경
     productSets: Product[][]; // 각 탭별 상품 배열
     onProductClick: (product: Product) => void;
 }
@@ -52,6 +52,7 @@ export const ProductTabSection = ({
                         color: 'text.primary',
                     }}
                 >
+                    인기 상품
                 </Typography>
 
                 <Box sx={{ borderBottom: '1px solid', borderBottomColor: 'grey.200', mb: { xs: 4, sm: 6 } }}>
@@ -78,7 +79,7 @@ export const ProductTabSection = ({
                         }}
                     >
                         {categories.map((category) => (
-                            <Tab key={category.id} label={category.label} />
+                            <Tab key={category.id} label={category.name} />
                         ))}
                     </Tabs>
                 </Box>

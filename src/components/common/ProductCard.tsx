@@ -1,6 +1,7 @@
-// src/components/common/ProductCard.tsx
+// src/components/common/ProductCard.tsx (수정된 버전)
 
 import React, { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import {
     Card,
     CardMedia,
@@ -24,15 +25,18 @@ import { Product } from "@/types/Product";
 interface ProductCardProps {
     product: Product;
     onFavoriteToggle?: (productId: string) => void;
-    onClick?: (product: Product) => void;
+    onClick?: (product: Product) => void; // 선택적: 커스텀 클릭 핸들러
+    disableNavigation?: boolean; // 선택적: 네비게이션 비활성화
 }
 
 const ProductCard: React.FC<ProductCardProps> = ({
                                                      product,
                                                      onFavoriteToggle,
                                                      onClick,
+                                                     disableNavigation = false,
                                                  }) => {
     const theme = useTheme();
+    const navigate = useNavigate();
     const [isFavorite, setIsFavorite] = useState(product.isFavorite || false);
     const [isHovered, setIsHovered] = useState(false);
 
@@ -44,7 +48,15 @@ const ProductCard: React.FC<ProductCardProps> = ({
     };
 
     const handleCardClick = () => {
-        onClick?.(product);
+        // 네비게이션이 비활성화되지 않았다면 상품 상세 페이지로 이동
+        if (!disableNavigation) {
+            navigate(`/product-detail?id=${product.id}`);
+        }
+
+        // 커스텀 클릭 핸들러가 있으면 추가로 실행 (네비게이션 후)
+        if (onClick) {
+            onClick(product);
+        }
     };
 
     const formatPrice = (price: number): string => {

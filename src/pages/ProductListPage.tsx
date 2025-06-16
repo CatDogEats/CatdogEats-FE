@@ -26,7 +26,7 @@ import {
 } from "@/components/ProductList";
 import ProductFilters from "@/components/ProductList/components/ProductFilters";
 import type { ProductFilters as ProductFiltersType } from "@/types/Product";
-import { mockProducts } from "../data/mockProducts";
+import { mockProducts } from "@/data";
 
 const PRODUCTS_PER_PAGE = 8;
 
