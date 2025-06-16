@@ -1,6 +1,13 @@
+// src/components/Home/components/ProductGrid.tsx
+
 import { Grid } from '@mui/material';
-import ProductCard from './ProductCard.tsx';
-import { ProductGridProps } from '@/components/Home/index.ts';
+import ProductCard from '@/components/common/ProductCard';
+import { Product } from '@/types/Product';
+
+interface ProductGridProps {
+    products: Product[];
+    onProductClick?: (product: Product) => void;
+}
 
 const ProductGrid = ({ products, onProductClick }: ProductGridProps) => {
     return (
@@ -14,7 +21,10 @@ const ProductGrid = ({ products, onProductClick }: ProductGridProps) => {
                         md: 4,
                         lg: 3
                     }}>
-                    <ProductCard product={product} onClick={onProductClick} />
+                    <ProductCard
+                        product={product}
+                        onClick={onProductClick}
+                    />
                 </Grid>
             ))}
         </Grid>
