@@ -15,7 +15,7 @@ import {
     DialogActions
 } from "@mui/material"
 import { ArrowBack, Send, Close } from "@mui/icons-material"
-import type { CustomerInquiry } from "../../types/customer"
+import type { CustomerInquiry } from "@/types/customer.ts"
 
 interface ChatWindowProps {
     selectedCustomer: CustomerInquiry

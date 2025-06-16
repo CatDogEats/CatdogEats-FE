@@ -14,8 +14,8 @@ import {
 } from "@mui/material"
 import { ArrowBack } from "@mui/icons-material"
 import type { CustomerInquiry } from "../../types/customer"
-import CustomerInquiryList from "../../components/customer/CustomerInquiryList"
-import ChatWindow from "../../components/customer/ChatWindow"
+import CustomerInquiryList from "@/components/common/chat/CustomerInquiryList.tsx"
+import ChatWindow from "@/components/common/chat/ChatWindow.tsx"
 import ProductReviewList from "../../components/customer/ProductReviewList"
 import { customerInquiries as initialCustomerInquiries, productReviews } from "../../data/customerData"
 
