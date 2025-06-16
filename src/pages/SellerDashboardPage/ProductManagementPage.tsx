@@ -12,7 +12,7 @@ import {
 } from "@mui/material";
 import {
   AddCircleOutline as AddIcon,
-  EditNote as EditIcon,
+  List as ListIcon,
   Inventory as InventoryIcon,
   LocalOffer as CouponIcon,
 } from "@mui/icons-material";
@@ -59,16 +59,17 @@ const ProductManagementPage: React.FC = () => {
     // 실제 구현에서는 API 호출
   };
 
+  // 탭 순서 변경: 상품 목록 → 상품 등록 → 재고 관리 → 쿠폰 등록/관리
   const tabsData = [
+    {
+      label: "상품 목록", // 기존 "상품 수정/삭제"에서 변경
+      icon: <ListIcon />, // EditIcon에서 ListIcon으로 변경
+      component: <ProductEditDelete />,
+    },
     {
       label: "상품 등록",
       icon: <AddIcon />,
       component: <ProductRegistrationForm onSubmit={handleProductSubmit} />,
-    },
-    {
-      label: "상품 수정/삭제",
-      icon: <EditIcon />,
-      component: <ProductEditDelete />,
     },
     {
       label: "재고 관리",
@@ -124,25 +125,19 @@ const ProductManagementPage: React.FC = () => {
             variant={isMobile ? "scrollable" : "standard"}
             scrollButtons={isMobile ? "auto" : false}
             sx={{
-              px: 2,
               "& .MuiTab-root": {
                 textTransform: "none",
+                fontSize: "1rem",
                 fontWeight: 600,
-                fontSize: "0.875rem",
-                color: "#8d837a",
-                minHeight: 72,
-                gap: 1,
+                color: "#5c5752",
+                py: 2,
                 "&.Mui-selected": {
-                  color: "#ef9942",
-                },
-                "&:hover": {
-                  color: "#ef9942",
+                  color: "#d2691e",
                 },
               },
               "& .MuiTabs-indicator": {
-                backgroundColor: "#ef9942",
+                backgroundColor: "#d2691e",
                 height: 3,
-                borderRadius: 1.5,
               },
             }}
           >
@@ -153,19 +148,18 @@ const ProductManagementPage: React.FC = () => {
                 icon={tab.icon}
                 iconPosition="start"
                 sx={{
-                  "& .MuiTab-iconWrapper": {
-                    color: "inherit",
-                  },
+                  gap: 1,
+                  minHeight: 60,
                 }}
               />
             ))}
           </Tabs>
         </Box>
 
-        {/* 탭 컨텐츠 */}
+        {/* 탭 패널 내용 */}
         {tabsData.map((tab, index) => (
           <TabPanel key={index} value={tabValue} index={index}>
-            <Box sx={{ backgroundColor: "white" }}>{tab.component}</Box>
+            {tab.component}
           </TabPanel>
         ))}
       </Paper>
