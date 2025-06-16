@@ -70,7 +70,7 @@ interface StockItem {
   supplier: string;
   currentStock: number;
   availableStock: number; // 예약 재고 제거로 인해 이 필드만 사용
-  minStock: number;
+  safetyStock: number; // 안전 재고 (초기 등록 수량의 50%로 자동 설정)
   unitPrice: number;
   status: "충분" | "부족" | "품절";
   lastUpdated: string;
@@ -89,8 +89,9 @@ interface StockMovement {
 
 interface AdjustForm {
   type: "입고" | "출고" | "조정";
-  quantity: number;
+  quantity: string; // 빈 값 허용을 위해 string 타입으로 변경
   orderNumber: string; // 주문 번호 필드 추가
+  safetyStock: string; // 안전 재고 조정 필드 추가
   notes: string;
 }
 
@@ -105,12 +106,13 @@ const InventoryManagement: React.FC = () => {
   const [alertMessage, setAlertMessage] = useState("");
   const [adjustForm, setAdjustForm] = useState<AdjustForm>({
     type: "입고",
-    quantity: 0,
+    quantity: "", // 빈 값으로 초기화 (0 대신)
     orderNumber: "", // 주문 번호 초기화
+    safetyStock: "", // 안전 재고 빈 값으로 초기화
     notes: "",
   });
 
-  // 목업 데이터 - 예약 재고 필드 제거
+  // 목업 데이터 - 안전 재고는 초기 등록 수량의 50%로 자동 설정
   const [stockItems, setStockItems] = useState<StockItem[]>([
     {
       id: "1",
@@ -119,7 +121,7 @@ const InventoryManagement: React.FC = () => {
       supplier: "자연식품",
       currentStock: 150,
       availableStock: 150, // 예약 재고 제거로 인해 현재 재고와 동일
-      minStock: 50,
+      safetyStock: 75, // 초기 등록 수량(150)의 50%
       unitPrice: 9990,
       status: "충분",
       lastUpdated: "2024-12-16",
@@ -131,9 +133,9 @@ const InventoryManagement: React.FC = () => {
       supplier: "바다식품",
       currentStock: 25,
       availableStock: 25,
-      minStock: 30,
+      safetyStock: 25, // 초기 등록 수량(50)의 50% (현재는 25개로 안전재고 기준)
       unitPrice: 14500,
-      status: "부족",
+      status: "부족", // 현재 재고가 안전재고와 같아서 부족
       lastUpdated: "2024-12-15",
     },
     {
@@ -143,7 +145,7 @@ const InventoryManagement: React.FC = () => {
       supplier: "고양이마을",
       currentStock: 0,
       availableStock: 0,
-      minStock: 20,
+      safetyStock: 20, // 초기 등록 수량(40)의 50%
       unitPrice: 7500,
       status: "품절",
       lastUpdated: "2024-12-14",
@@ -198,9 +200,8 @@ const InventoryManagement: React.FC = () => {
   };
 
   const getLowStockCount = () => {
-    return stockItems.filter(
-      (item) => item.status === "부족" || item.status === "품절"
-    ).length;
+    return stockItems.filter((item) => item.currentStock <= item.safetyStock)
+      .length;
   };
 
   const getOutOfStockCount = () => {
@@ -213,14 +214,21 @@ const InventoryManagement: React.FC = () => {
 
   const handleAdjustStock = (item: StockItem) => {
     setSelectedItem(item);
+    setAdjustForm({
+      type: "입고",
+      quantity: "",
+      orderNumber: "",
+      safetyStock: item.safetyStock.toString(), // 현재 안전재고 값으로 초기화
+      notes: "",
+    });
     setAdjustDialogOpen(true);
   };
 
   const handleAdjustSubmit = () => {
-    if (!selectedItem || adjustForm.quantity === 0) return;
+    if (!selectedItem || !adjustForm.quantity) return;
 
     // 수량 변화 계산 (입고: +, 출고/조정: 입력값에 따라)
-    let adjustment = adjustForm.quantity;
+    let adjustment = parseInt(adjustForm.quantity) || 0;
     if (adjustForm.type === "출고") {
       adjustment = -Math.abs(adjustment);
     } else if (adjustForm.type === "조정") {
@@ -229,6 +237,9 @@ const InventoryManagement: React.FC = () => {
     }
 
     const newStock = Math.max(0, selectedItem.currentStock + adjustment);
+    const newSafetyStock = adjustForm.safetyStock
+      ? parseInt(adjustForm.safetyStock)
+      : selectedItem.safetyStock;
 
     // 재고 아이템 업데이트
     setStockItems((prev) =>
@@ -238,10 +249,11 @@ const InventoryManagement: React.FC = () => {
               ...item,
               currentStock: newStock,
               availableStock: newStock, // 예약 재고 제거로 현재 재고와 동일
+              safetyStock: newSafetyStock, // 안전 재고 업데이트
               status:
                 newStock === 0
                   ? "품절"
-                  : newStock <= item.minStock
+                  : newStock <= newSafetyStock
                     ? "부족"
                     : "충분",
               lastUpdated: new Date().toISOString().split("T")[0],
@@ -271,8 +283,9 @@ const InventoryManagement: React.FC = () => {
     setSelectedItem(null);
     setAdjustForm({
       type: "입고",
-      quantity: 0,
+      quantity: "",
       orderNumber: "",
+      safetyStock: "",
       notes: "",
     });
   };
@@ -442,12 +455,7 @@ const InventoryManagement: React.FC = () => {
                     >
                       현재 재고
                     </TableCell>
-                    {/* 예약 재고 컬럼 삭제 */}
-                    <TableCell
-                      sx={{ backgroundColor: "#f9fafb", fontWeight: 600 }}
-                    >
-                      최소 재고
-                    </TableCell>
+                    {/* 예약 재고, 최소 재고 컬럼 삭제 */}
                     <TableCell
                       sx={{ backgroundColor: "#f9fafb", fontWeight: 600 }}
                     >
@@ -491,11 +499,6 @@ const InventoryManagement: React.FC = () => {
                         <TableCell>
                           <Typography variant="body2" fontWeight={600}>
                             {item.currentStock}개
-                          </Typography>
-                        </TableCell>
-                        <TableCell>
-                          <Typography variant="body2">
-                            {item.minStock}개
                           </Typography>
                         </TableCell>
                         <TableCell>
@@ -687,7 +690,7 @@ const InventoryManagement: React.FC = () => {
         </TabPanel>
       </Paper>
 
-      {/* 재고 조정 다이얼로그 - 주문 번호 필드 추가 */}
+      {/* 재고 조정 다이얼로그 - 안전 재고 조정 및 UI 개선 */}
       <Dialog
         open={adjustDialogOpen}
         onClose={() => setAdjustDialogOpen(false)}
@@ -702,7 +705,8 @@ const InventoryManagement: React.FC = () => {
           <Box sx={{ display: "flex", flexDirection: "column", gap: 3 }}>
             <Box>
               <Typography variant="body2" color="text.secondary" gutterBottom>
-                현재 재고: {selectedItem?.currentStock}개
+                현재 재고: {selectedItem?.currentStock}개 | 안전 재고:{" "}
+                {selectedItem?.safetyStock}개
               </Typography>
             </Box>
 
@@ -727,11 +731,9 @@ const InventoryManagement: React.FC = () => {
               type="number"
               value={adjustForm.quantity}
               onChange={(e) =>
-                setAdjustForm({
-                  ...adjustForm,
-                  quantity: parseInt(e.target.value) || 0,
-                })
+                setAdjustForm({ ...adjustForm, quantity: e.target.value })
               }
+              placeholder="수량을 입력하세요"
               helperText={
                 adjustForm.type === "조정"
                   ? "증가는 양수(+), 감소는 음수(-)로 입력하세요"
@@ -741,7 +743,20 @@ const InventoryManagement: React.FC = () => {
               }
             />
 
-            {/* 주문 번호 필드 추가 */}
+            {/* 안전 재고 조정 필드 추가 */}
+            <TextField
+              fullWidth
+              label="안전 재고"
+              type="number"
+              value={adjustForm.safetyStock}
+              onChange={(e) =>
+                setAdjustForm({ ...adjustForm, safetyStock: e.target.value })
+              }
+              placeholder="안전 재고 수량"
+              helperText="안전 재고는 상품 상태 판단 기준이 됩니다 (기본값: 초기 등록 수량의 50%)"
+            />
+
+            {/* 주문 번호 필드 */}
             <TextField
               fullWidth
               label="주문 번호 (선택사항)"
@@ -765,7 +780,8 @@ const InventoryManagement: React.FC = () => {
               placeholder="조정 사유나 특이사항을 입력하세요"
             />
 
-            {adjustForm.quantity !== 0 && selectedItem && (
+            {/* 조정 후 예상 재고 - 항상 표시 */}
+            {selectedItem && (
               <Box
                 sx={{
                   p: 2,
@@ -774,29 +790,86 @@ const InventoryManagement: React.FC = () => {
                   border: "1px solid #e0e0e0",
                 }}
               >
-                <Typography variant="body2" color="text.secondary">
+                <Typography variant="body2" color="text.secondary" gutterBottom>
                   조정 후 예상 재고:
                 </Typography>
                 <Typography variant="h6" color="primary.main">
-                  {Math.max(
-                    0,
-                    selectedItem.currentStock +
-                      (adjustForm.type === "출고"
-                        ? -Math.abs(adjustForm.quantity)
-                        : adjustForm.quantity)
-                  )}
-                  개
+                  {(() => {
+                    const quantityValue = parseInt(adjustForm.quantity) || 0;
+                    let adjustment = quantityValue;
+                    if (adjustForm.type === "출고") {
+                      adjustment = -Math.abs(quantityValue);
+                    }
+                    const expectedStock = Math.max(
+                      0,
+                      selectedItem.currentStock + adjustment
+                    );
+                    const safetyStockValue =
+                      parseInt(adjustForm.safetyStock) ||
+                      selectedItem.safetyStock;
+
+                    let status = "충분";
+                    let statusColor = "success.main";
+
+                    if (expectedStock === 0) {
+                      status = "품절";
+                      statusColor = "error.main";
+                    } else if (expectedStock <= safetyStockValue) {
+                      status = "부족";
+                      statusColor = "warning.main";
+                    }
+
+                    return (
+                      <Box
+                        sx={{ display: "flex", alignItems: "center", gap: 1 }}
+                      >
+                        <span>{expectedStock}개</span>
+                        <Chip
+                          label={status}
+                          size="small"
+                          sx={{
+                            backgroundColor:
+                              statusColor === "success.main"
+                                ? "#e8f5e8"
+                                : statusColor === "warning.main"
+                                  ? "#fff3e0"
+                                  : "#ffebee",
+                            color:
+                              statusColor === "success.main"
+                                ? "#2e7d32"
+                                : statusColor === "warning.main"
+                                  ? "#f57c00"
+                                  : "#d32f2f",
+                          }}
+                        />
+                      </Box>
+                    );
+                  })()}
                 </Typography>
               </Box>
             )}
           </Box>
         </DialogContent>
         <DialogActions sx={{ p: 3 }}>
-          <Button onClick={() => setAdjustDialogOpen(false)}>취소</Button>
+          <Button
+            onClick={() => {
+              setAdjustDialogOpen(false);
+              setSelectedItem(null);
+              setAdjustForm({
+                type: "입고",
+                quantity: "",
+                orderNumber: "",
+                safetyStock: "",
+                notes: "",
+              });
+            }}
+          >
+            취소
+          </Button>
           <Button
             onClick={handleAdjustSubmit}
             variant="contained"
-            disabled={adjustForm.quantity === 0}
+            disabled={!adjustForm.quantity}
             sx={{ borderRadius: 2 }}
           >
             조정 완료

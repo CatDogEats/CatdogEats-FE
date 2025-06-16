@@ -226,7 +226,7 @@ const ProductEditDelete: React.FC = () => {
         }}
       >
         <Typography variant="h6" sx={{ color: "#2d2a27", fontWeight: 600 }}>
-          등록된 상품 목록
+          상품 수정/삭제
         </Typography>
         <TextField
           size="small"
