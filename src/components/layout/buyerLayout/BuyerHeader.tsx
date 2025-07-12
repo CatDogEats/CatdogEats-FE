@@ -20,6 +20,8 @@ import { useNavigate } from 'react-router-dom';
 import NotificationMenu, { Notification } from '../../common/NotificationMenu';
 import ProfileMenu, { UserInfo } from '../../common/ProfileMenu';
 import ChatModal from '../../common/chat/ChatModal'; // ChatModal 임포트 추가
+import { authApi } from '@/service/auth/AuthAPI.ts';
+
 
 const BuyerHeader = () => {
     const navigate = useNavigate();
@@ -142,7 +144,8 @@ const BuyerHeader = () => {
         navigate('/mypage');
     };
 
-    const handleLogout = () => {
+    const handleLogout = async () => {
+        await authApi.logout();             // ✅ 먼저 요청
         setIsLoggedIn(false);
         // 로그아웃 로직 추가
         console.log('로그아웃');
