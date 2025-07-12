@@ -4,9 +4,9 @@ export const SOCIAL_PROVIDERS = {
     NAVER: 'naver',
 } as const;
 
-export const USER_ROLES = {
-    BUYER: 'buyer',
-    SELLER: 'seller',
+export const ROLE = {
+    BUYER: 'ROLE_BUYER',
+    SELLER: 'ROLE_SELLER',
 } as const;
 
 export const ROUTES = {
@@ -53,7 +53,7 @@ export const SOCIAL_LOGIN_CONFIG = {
 
 // 역할 정보
 export const ROLE_INFO = {
-    [USER_ROLES.BUYER]: {
+    [ROLE.BUYER]: {
         title: '구매자로 이용하기',
         description: '다양한 브랜드의 수제간식을 둘러보고 구매할 수 있습니다.',
         icon: 'shopping_bag',
@@ -64,7 +64,7 @@ export const ROLE_INFO = {
         ],
         redirectPath: ROUTES.HOME,
     },
-    [USER_ROLES.SELLER]: {
+    [ROLE.SELLER]: {
         title: '판매자로 이용하기',
         description: '수제간식을 만들어 판매하고 고객들과 소통할 수 있습니다.',
         icon: 'store',
