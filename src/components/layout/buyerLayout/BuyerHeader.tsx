@@ -14,16 +14,23 @@ import {
     ListItem,
     ListItemText,
     Divider,
+    CircularProgress,
 } from '@mui/material';
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import NotificationMenu, { Notification } from '../../common/NotificationMenu';
 import ProfileMenu, { UserInfo } from '../../common/ProfileMenu';
-import ChatModal from '../../common/chat/ChatModal'; // ChatModal 임포트 추가
-import { authApi } from '@/service/auth/AuthAPI.ts';
+import ChatModal from '../../common/chat/ChatModal';
+import type { User } from '@/service/auth/AuthAPI';
 
+interface BuyerHeaderProps {
+    user: User | null;
+    isAuthenticated: boolean;
+    loading: boolean;
+    logout: () => Promise<void>;
+}
 
-const BuyerHeader = () => {
+const BuyerHeader = ({ user, isAuthenticated, loading, logout }: BuyerHeaderProps) => {
     const navigate = useNavigate();
     const theme = useTheme();
     const isMobile = useMediaQuery(theme.breakpoints.down('lg'));
@@ -32,14 +39,13 @@ const BuyerHeader = () => {
     const [menuOpen, setMenuOpen] = useState(false);
     const [hoveredCategory, setHoveredCategory] = useState<string | null>(null);
     const [hoveredSubCategory, setHoveredSubCategory] = useState<string | null>(null);
-    const [chatModalOpen, setChatModalOpen] = useState(false); // ChatModal 상태 추가
+    const [chatModalOpen, setChatModalOpen] = useState(false);
 
-    // 임시 사용자 정보 (실제로는 상태 관리나 API에서 가져와야 함)
-    const [isLoggedIn, setIsLoggedIn] = useState(true); // 로그인 상태 true로 전환시, 로그인 페이지
-    const [userInfo] = useState<UserInfo>({
-        name: '김구매',
+    // 사용자 정보를 user 데이터에서 가져오기
+    const userInfo: UserInfo = {
+        name: user?.email?.split('@')[0] || '사용자', // 이메일 앞부분을 이름으로 사용
         profileImage: '' // 프로필 이미지가 없으면 이니셜 표시
-    });
+    };
 
     // 임시 알림 데이터
     const [notifications] = useState<Notification[]>([
@@ -69,11 +75,11 @@ const BuyerHeader = () => {
         }
     ]);
 
-    // ChatModal 핸들러 추가
+    // ChatModal 핸들러
     const handleChatModalOpen = () => {
         setChatModalOpen(true);
-        setMenuOpen(false); // 드롭다운 메뉴 닫기
-        setMobileOpen(false); // 모바일 드로어 닫기
+        setMenuOpen(false);
+        setMobileOpen(false);
     };
 
     const handleChatModalClose = () => {
@@ -106,7 +112,7 @@ const BuyerHeader = () => {
                 }
             ]
         },
-        { label: '판매자와 1:1채팅', action: handleChatModalOpen }, // path 대신 action 사용
+        { label: '판매자와 1:1채팅', action: handleChatModalOpen },
         { label: '고객센터', path: '/support' },
     ];
 
@@ -123,7 +129,6 @@ const BuyerHeader = () => {
     // 알림 클릭 핸들러
     const handleNotificationClick = (notification: Notification) => {
         console.log('알림 클릭:', notification);
-        // 알림 타입에 따라 다른 페이지로 이동
         switch (notification.type) {
             case 'order':
                 navigate('/account/orders');
@@ -145,19 +150,19 @@ const BuyerHeader = () => {
     };
 
     const handleLogout = async () => {
-        await authApi.logout();             // ✅ 먼저 요청
-        setIsLoggedIn(false);
-        // 로그아웃 로직 추가
-        console.log('로그아웃');
+        try {
+            await logout();
+            navigate('/'); // 로그아웃 후 홈으로 이동
+        } catch (error) {
+            console.error('로그아웃 실패:', error);
+        }
     };
 
-    // 네비게이션 아이템 클릭 핸들러 수정
+    // 네비게이션 아이템 클릭 핸들러
     const handleNavigationClick = (item: any) => {
         if (item.action) {
-            // action이 있으면 함수 실행
             item.action();
         } else if (item.path) {
-            // path가 있으면 페이지 이동
             navigate(item.path);
             setMobileOpen(false);
         }
@@ -184,7 +189,7 @@ const BuyerHeader = () => {
             </List>
             <Divider />
             <Box sx={{ p: 2 }}>
-                {!isLoggedIn ? (
+                {!isAuthenticated ? (
                     <>
                         <Button
                             fullWidth
@@ -216,8 +221,9 @@ const BuyerHeader = () => {
                             handleLogout();
                             setMobileOpen(false);
                         }}
+                        disabled={loading}
                     >
-                        로그아웃
+                        {loading ? <CircularProgress size={20} /> : '로그아웃'}
                     </Button>
                 )}
             </Box>
@@ -239,7 +245,6 @@ const BuyerHeader = () => {
                 <Toolbar sx={{ justifyContent: 'space-between', py: { xs: 1, sm: 1.5 }, minHeight: '64px !important', position: 'relative' }}>
                     {/* 왼쪽 영역: 햄버거 메뉴 + 로고 */}
                     <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                        {/* 햄버거 메뉴 버튼 */}
                         <IconButton
                             onClick={handleMenuToggle}
                             size="small"
@@ -257,7 +262,6 @@ const BuyerHeader = () => {
                             </span>
                         </IconButton>
 
-                        {/* 로고 */}
                         <Box sx={{ display: 'flex', alignItems: 'center' }}>
                             <Box
                                 sx={{
@@ -359,7 +363,7 @@ const BuyerHeader = () => {
                                             )}
                                         </ListItem>
 
-                                        {/* 1차 서브메뉴 */}
+                                        {/* 서브메뉴 코드는 기존과 동일하므로 생략 */}
                                         {item.subItems && hoveredCategory === item.label && (
                                             <Box
                                                 sx={{
@@ -539,7 +543,7 @@ const BuyerHeader = () => {
                         )}
 
                         {/* 로그인 상태에 따른 우측 버튼 영역 */}
-                        {isLoggedIn ? (
+                        {isAuthenticated ? (
                             <>
                                 {/* 로그인된 경우: 알림 + 프로필 */}
                                 <NotificationMenu
@@ -669,7 +673,7 @@ const BuyerHeader = () => {
                 {drawer}
             </Drawer>
 
-            {/* ChatModal 추가 */}
+            {/* ChatModal */}
             <ChatModal
                 open={chatModalOpen}
                 onClose={handleChatModalClose}

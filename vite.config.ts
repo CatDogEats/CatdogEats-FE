@@ -27,7 +27,8 @@ export default defineConfig(({ mode }) => {
           }
         });
       }
-    }
+    },
+    '/auth': { target: env.VITE_EXPRESS_URL, changeOrigin: true }
   };
 
   return {

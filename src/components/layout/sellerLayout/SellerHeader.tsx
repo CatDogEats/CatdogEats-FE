@@ -10,9 +10,8 @@ import { useNavigate } from 'react-router-dom';
 import { SellerHeaderProps } from '@/components/layout/sellerLayout/types/seller.types.ts';
 import { NotificationMenu, ProfileMenu } from '@/components/common';
 
-// SellerHeaderProps 인터페이스를 확장하여 isLoggedIn 추가
 interface ExtendedSellerHeaderProps extends SellerHeaderProps {
-    isLoggedIn?: boolean;
+      isAuthenticated: boolean;
 }
 
 const SellerHeader = ({
@@ -22,9 +21,9 @@ const SellerHeader = ({
                           onAnnouncementClick,
                           onFaqClick,
                           onInquiryClick,
-                          onProfileEdit,
                           onLogout,
-                          isLoggedIn = true
+                          onProfileEdit,
+                          isAuthenticated,
                       }: ExtendedSellerHeaderProps) => {
     const theme = useTheme();
     const navigate = useNavigate();
@@ -103,7 +102,7 @@ const SellerHeader = ({
 
                 {/* 우측 메뉴 */}
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                    {isLoggedIn ? (
+                    {isAuthenticated ? (
                         <>
                             {/* 로그인된 상태: 네비게이션 메뉴 + 알림 + 프로필 */}
                             <Box sx={{

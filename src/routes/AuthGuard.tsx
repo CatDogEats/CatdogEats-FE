@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Navigate, Outlet } from "react-router-dom";
-import { apiClient } from "@/service/auth/AuthAPI";
+import axios from "axios";
 
 const AuthGuard = () => {
     const [auth, setAuth] = useState<null | boolean>(null);
@@ -8,7 +8,7 @@ const AuthGuard = () => {
     useEffect(() => {
         const checkAuth = async () => {
             try {
-                const { data } = await apiClient.get("/auth/check");
+                const { data } = await axios.get("/auth/check");
                 setAuth(data.authenticated);
             } catch {
                 setAuth(false);

@@ -1,4 +1,3 @@
-// src/components/layout/SellerLayout.tsx
 import { useState } from 'react';
 import { Outlet, useLocation, useNavigate } from 'react-router-dom';
 import {
@@ -15,7 +14,7 @@ import {
 } from '@mui/material';
 import SellerHeader from './SellerHeader.tsx';
 import { SellerInfo, Notification } from '@/components/layout/sellerLayout/types/seller.types.ts';
-import {authApi} from "@/service/auth/AuthAPI.ts";
+import { useAuth } from '@/service/auth/AuthAPI';
 
 // 더미 데이터 (추후 전역 상태 관리로 이동)
 const mockSellerInfo: SellerInfo = {
@@ -60,13 +59,22 @@ const SellerLayout = () => {
     const theme = useTheme();
     const isMobile = useMediaQuery(theme.breakpoints.down('md'));
     const [mobileOpen, setMobileOpen] = useState(false);
-    const [isLoggedIn, setIsLoggedIn] = useState(true); // 로그인 상태 관리 추가
     const location = useLocation(); // 현재 위치 감지
     const navigate = useNavigate(); // 네비게이션 함수
+    const { loading, isAuthenticated, logout } = useAuth();
 
     const handleDrawerToggle = () => {
         setMobileOpen(!mobileOpen);
     };
+
+
+    if (loading) {
+            return (
+                  <Box sx={{ display:'flex', alignItems:'center', justifyContent:'center', minHeight:'100vh' }}>
+                        <Typography>Loading...</Typography>
+            </Box>
+             );
+        }
 
     const handleNotificationClick = (notification: Notification) => {
         console.log('알림 클릭:', notification);
@@ -86,11 +94,10 @@ const SellerLayout = () => {
 
     const handleLogout = async () => {
         try {
-            await authApi.logout();
-            setIsLoggedIn(false);
+            await logout();
             console.log('로그아웃 완료');
             // 로그아웃 후 로그인 페이지로 이동할 수도 있음
-            // navigate('/login');
+            navigate('/login');
         } catch (error) {
             console.error('로그아웃 중 오류 발생:', error);
         }
@@ -164,7 +171,7 @@ const SellerLayout = () => {
     };
 
     // 로그인되지 않은 상태에서는 로그인 페이지로 리다이렉트하거나 로그인 폼 표시
-    if (!isLoggedIn) {
+    if (!isAuthenticated) {
         return (
             <Box sx={{
                 display: 'flex',
@@ -311,7 +318,7 @@ const SellerLayout = () => {
                     onFaqClick={handleFaqClick}
                     onInquiryClick={handleInquiryClick}
                     onLogout={handleLogout}
-                    isLoggedIn={isLoggedIn} // 로그인 상태 전달
+                    isAuthenticated={isAuthenticated}
                 />
             </Box>
 

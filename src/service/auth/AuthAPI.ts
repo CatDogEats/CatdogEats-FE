@@ -70,7 +70,7 @@ export const authApi = {
     },
 };
 
-interface User {
+export interface User {
     id: string;
     email: string;
     role?: string;
@@ -90,7 +90,9 @@ export const useAuth = () => {
     const checkAuthStatus = async () => {
         try {
             setLoading(true);
-            const { data } = await apiClient.get('/auth/check');
+            const { data } = await axios.get('/auth/check', {
+                withCredentials: true,
+            });
             setUser(data);
             useAuthStore.getState().setAuth(true);
             setError(null);
