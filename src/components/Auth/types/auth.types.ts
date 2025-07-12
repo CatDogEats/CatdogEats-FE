@@ -1,5 +1,5 @@
 export type SocialProvider = 'google' | 'kakao' | 'naver';
-export type UserRole = 'buyer' | 'seller';
+export type UserRole = 'ROLE_BUYER' | 'ROLE_SELLER';
 
 export interface User {
     id: string;

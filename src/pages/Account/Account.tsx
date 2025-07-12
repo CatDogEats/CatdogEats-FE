@@ -31,6 +31,7 @@ import { mockOrders } from "@/data/mock-data"
 import { theme } from "@/theme"
 
 export default function MyPage() {
+
     const [activeMenu, setActiveMenu] = useState("orders")
     const [searchQuery, setSearchQuery] = useState("")
     const [selectedPeriod, setSelectedPeriod] = useState("최근 6개월")

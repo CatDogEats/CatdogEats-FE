@@ -1,24 +1,19 @@
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
 import {
     LoginForm,
     LoginContainer
 } from '@/components/Auth';
 import { SocialProvider } from '@/components/Auth/types';
-import { ROUTES } from '@/components/Auth/constants';
+import { authApi } from '@/service/auth/AuthAPI.ts';
 
 const LoginPage = () => {
-    const navigate = useNavigate();
     const [isLoading, setIsLoading] = useState(false);
 
-    const handleSocialLogin = (provider: SocialProvider) => {
+    const handleSocialLogin =  async (provider: SocialProvider) => {
         setIsLoading(true);
         console.log(`${provider} 로그인 시도`);
 
-        setTimeout(() => {
-            setIsLoading(false);
-            navigate(ROUTES.ROLE_SELECTION);
-        }, 1500);
+        await authApi.socialLogin(provider);
     };
 
     return (

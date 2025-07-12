@@ -5,6 +5,37 @@ export interface UserInfo {
     profileImage?: string;
 }
 
+// // types/seller.types.ts
+//
+// export interface SellerInfo {
+//     id: string;
+//     name: string;
+//     email: string;
+//     shopName: string;
+//     joinDate: string;
+// }
+//
+// export interface Notification {
+//     id: string;
+//     title: string;
+//     message: string;
+//     timestamp: string;
+//     isRead: boolean;
+//     type: 'order' | 'delivery' | 'inquiry' | 'system';
+// }
+//
+// export interface SellerHeaderProps {
+//     sellerInfo: SellerInfo;
+//     notifications: Notification[];
+//     onNotificationClick: (notification: Notification) => void;
+//     onAnnouncementClick: () => void;
+//     onFaqClick: () => void;
+//     onInquiryClick: () => void;
+//     onProfileEdit?: () => void;
+//     onLogout: () => void;
+//     isLoggedIn?: boolean; // 로그인 상태 추가
+// }
+
 export interface Notification {
     id: string;
     type: 'order' | 'delivery' | 'inquiry' | 'system';

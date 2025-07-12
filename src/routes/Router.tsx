@@ -20,6 +20,7 @@ import OrdersManagementPage from "@/pages/SellerDashboardPage/OrderManagementPag
 import ShoppingCartPage from "@/pages/ShoppingCartPage";
 import CustomerServiceCenterPageServicePage from "@/pages/CusServiceCenterPage/CustomerServiceCenterPage.tsx";
 import WithdrawalSuccessPage from "@/pages/Account/WidrawSuccess.tsx";
+import AuthGuard from "@/routes/AuthGuard.tsx";
 
 
 
@@ -38,16 +39,29 @@ const router = createBrowserRouter([
             { path: "productsList", element: <ProductListPage /> }, // 상품 목록 페이지
 
             // 상품 상세 페이지
-            { path: 'product-detail', element: <ProductDetailPage /> },
+            {
+                path: 'product-detail',
+                element: <ProductDetailPage />,
+            },
 
-            //주문 결제 페이지
-            { path: 'checkout', element: <OrderPayPage /> },
 
             // 마이페이지
-            { path: 'account', element: <MyPage /> },
+            {
+                path: 'account',
+                element: <AuthGuard />,
+                children: [
+                    { index: true, element: <MyPage /> }
+                ]
+            },
 
             // 장바구니
-            { path: "cart", element: <ShoppingCartPage /> },
+            {
+                path: "cart",
+                element: <AuthGuard/>,
+                children: [
+                    {index: true, element: <ShoppingCartPage/>}
+                ]
+            },
 
             {path: "support", element: <CustomerServiceCenterPageServicePage />},
 
@@ -56,11 +70,20 @@ const router = createBrowserRouter([
 
             // 로그인 & 역할선택
             { path: 'login', element: <LoginPage /> },
-            { path: 'role-selection', element: <RoleSelectionPage /> },
+            {
+                path: 'role-selection', element: <AuthGuard/>,
+                children: [
+                    {index: true, element: <RoleSelectionPage/>}
+                ]
+            },
 
             // 결제 및 계정 관련 페이지
-            { path: "orderpayment", element: <OrderPayPage /> },
-            { path: "mypage", element: <MyPage /> },
+            {   path: "orderpayment",
+                element: <AuthGuard/>,
+                children: [
+                    {index: true, element: <OrderPayPage/>}
+                ]
+            },
 
             // 404 페이지
             { path: "*", element: <NotFoundPage /> },
@@ -72,27 +95,63 @@ const router = createBrowserRouter([
         children: [
             {
                 path: "/seller",
-                element: <SellerDashboardDashboardPage /> //todo 대시보드페이지 탭
+                element: <AuthGuard/>,
+                children: [
+                        {
+                            index:true,
+                            element: <SellerDashboardDashboardPage />
+                        }
+                    ]
             },
             {
                 path: "products",
-                element: <ProductManagementPage /> // todo 상품관리 탭
+                element: <AuthGuard/>,
+                children:   [
+                        {
+                            index: true,
+                            element:<ProductManagementPage />
+                        }
+                    ]// todo 상품관리 탭
             },
             {
                 path: "orders",
-                element: <OrdersManagementPage />  //todo 주문배송 페이지 탭
+                element: <AuthGuard/> , //todo 주문배송 페이지 탭
+                children: [
+                    {
+                        index: true,
+                        element: <OrdersManagementPage />
+                    }
+                ]
             },
             {
                 path: "settlement",
-                element: <SettlementPage /> // 정산탭
+                element: <AuthGuard/>, // 정산탭
+                children: [
+                    {
+                        index: true,
+                        element: <SettlementPage />
+                    }
+                ]
             },
             {
                 path: "customers",
-                element: <CustomerManagementPage />  //todo 고객관리 페이지 탭
+                element: <AuthGuard/>,
+                children: [
+                    {
+                        index: true,
+                        element: <CustomerManagementPage />
+                    }
+                ]
             },
             {
                 path: "info",
-                element: <SellerInfoPage /> //todo 판매자 정보 페이지 탭
+                element: <AuthGuard/>,
+                children: [
+                    {
+                        index: true,
+                        element: <SellerInfoPage />
+                    }
+                ]
             },
         ],
     },
