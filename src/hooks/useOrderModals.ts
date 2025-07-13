@@ -1,99 +1,109 @@
-// src/components/OrderManagement/hooks/useOrderModals.ts
+// src/hooks/useOrderModals.ts
 
 import { useState, useCallback } from "react";
 import type { OrderStatus } from "@/types/sellerOrder.types";
 
-interface ModalState {
+interface DetailModalState {
+  open: boolean;
   orderNumber: string;
-  currentStatus?: OrderStatus;
+}
+
+interface StatusUpdateModalState {
+  open: boolean;
+  orderNumber: string;
+  currentStatus: OrderStatus;
+}
+
+interface ModalsState {
+  detail: DetailModalState;
+  statusUpdate: StatusUpdateModalState;
 }
 
 /**
  * 주문 관리 모달들의 상태를 관리하는 훅
- * UI 전용 상태 관리로 비즈니스 로직과 분리
+ * 각 모달의 열기/닫기 상태와 필요한 데이터를 중앙에서 관리
  */
 export const useOrderModals = () => {
-  // 각 모달의 열림/닫힘 상태
-  const [detailModalOpen, setDetailModalOpen] = useState(false);
-  const [statusUpdateModalOpen, setStatusUpdateModalOpen] = useState(false);
-  const [trackingRegisterModalOpen, setTrackingRegisterModalOpen] =
-    useState(false);
-
-  // 각 모달에 전달할 데이터
-  const [modalState, setModalState] = useState<ModalState>({
-    orderNumber: "",
-    currentStatus: undefined,
+  const [modals, setModals] = useState<ModalsState>({
+    detail: {
+      open: false,
+      orderNumber: "",
+    },
+    statusUpdate: {
+      open: false,
+      orderNumber: "",
+      currentStatus: "PAYMENT_COMPLETED",
+    },
   });
 
-  // 상세보기 모달 열기
+  // ===== 상세보기 모달 =====
   const openDetailModal = useCallback((orderNumber: string) => {
-    setModalState({ orderNumber });
-    setDetailModalOpen(true);
+    setModals((prev) => ({
+      ...prev,
+      detail: {
+        open: true,
+        orderNumber,
+      },
+    }));
   }, []);
 
-  // 상태변경 모달 열기
+  const closeDetailModal = useCallback(() => {
+    setModals((prev) => ({
+      ...prev,
+      detail: {
+        open: false,
+        orderNumber: "",
+      },
+    }));
+  }, []);
+
+  // ===== 상태 변경 모달 =====
   const openStatusUpdateModal = useCallback(
     (orderNumber: string, currentStatus: OrderStatus) => {
-      setModalState({ orderNumber, currentStatus });
-      setStatusUpdateModalOpen(true);
+      setModals((prev) => ({
+        ...prev,
+        statusUpdate: {
+          open: true,
+          orderNumber,
+          currentStatus,
+        },
+      }));
     },
     []
   );
 
-  // 운송장등록 모달 열기
-  const openTrackingRegisterModal = useCallback((orderNumber: string) => {
-    setModalState({ orderNumber });
-    setTrackingRegisterModalOpen(true);
-  }, []);
-
-  // 모든 모달 닫기
-  const closeAllModals = useCallback(() => {
-    setDetailModalOpen(false);
-    setStatusUpdateModalOpen(false);
-    setTrackingRegisterModalOpen(false);
-    setModalState({ orderNumber: "", currentStatus: undefined });
-  }, []);
-
-  // 개별 모달 닫기 함수들
-  const closeDetailModal = useCallback(() => {
-    setDetailModalOpen(false);
-  }, []);
-
   const closeStatusUpdateModal = useCallback(() => {
-    setStatusUpdateModalOpen(false);
+    setModals((prev) => ({
+      ...prev,
+      statusUpdate: {
+        open: false,
+        orderNumber: "",
+        currentStatus: "PAYMENT_COMPLETED",
+      },
+    }));
   }, []);
 
-  const closeTrackingRegisterModal = useCallback(() => {
-    setTrackingRegisterModalOpen(false);
+  // ===== 모든 모달 닫기 =====
+  const closeAllModals = useCallback(() => {
+    setModals({
+      detail: {
+        open: false,
+        orderNumber: "",
+      },
+      statusUpdate: {
+        open: false,
+        orderNumber: "",
+        currentStatus: "PAYMENT_COMPLETED",
+      },
+    });
   }, []);
 
   return {
-    // 모달 상태
-    modals: {
-      detail: {
-        open: detailModalOpen,
-        orderNumber: modalState.orderNumber,
-      },
-      statusUpdate: {
-        open: statusUpdateModalOpen,
-        orderNumber: modalState.orderNumber,
-        currentStatus: modalState.currentStatus!,
-      },
-      trackingRegister: {
-        open: trackingRegisterModalOpen,
-        orderNumber: modalState.orderNumber,
-      },
-    },
-
-    // 모달 열기 함수들
+    modals,
     openDetailModal,
-    openStatusUpdateModal,
-    openTrackingRegisterModal,
-
-    // 모달 닫기 함수들
     closeDetailModal,
+    openStatusUpdateModal,
     closeStatusUpdateModal,
-    closeTrackingRegisterModal,
     closeAllModals,
   };
 };

@@ -19,14 +19,18 @@ import {
 import {
   Visibility as VisibilityIcon,
   Edit as EditIcon,
-  LocalShipping as ShippingIcon,
+  Delete as DeleteIcon,
 } from "@mui/icons-material";
+import {
+  BRAND_COLORS,
+  PrimaryButton,
+  SecondaryButton,
+} from "@/components/SellerDashboard/SellerInfo";
 import type {
   SellerOrderListResponse,
   SellerOrderSummary,
   OrderStatus,
 } from "@/types/sellerOrder.types";
-import { ORDER_STATUS_LABELS } from "@/types/sellerOrder.types";
 
 interface OrderListTableProps {
   data: SellerOrderListResponse | null;
@@ -35,12 +39,88 @@ interface OrderListTableProps {
   onRowsPerPageChange: (rowsPerPage: number) => void;
   onDetailView: (orderNumber: string) => void;
   onStatusChange: (orderNumber: string, currentStatus: OrderStatus) => void;
-  onTrackingRegister: (orderNumber: string) => void;
+  onDeleteOrder: (orderNumber: string) => void;
 }
+
+// 주문 상태별 Chip 스타일
+const getStatusChipProps = (status: OrderStatus) => {
+  switch (status) {
+    case "PAYMENT_COMPLETED":
+      return {
+        label: "결제완료",
+        sx: {
+          backgroundColor: `${BRAND_COLORS.PRIMARY}15`,
+          color: BRAND_COLORS.PRIMARY,
+          fontWeight: 500,
+        },
+      };
+    case "PREPARING":
+      return {
+        label: "상품준비중",
+        sx: {
+          backgroundColor: "#fff3e0",
+          color: "#f57c00",
+          fontWeight: 500,
+        },
+      };
+    case "READY_FOR_SHIPMENT":
+      return {
+        label: "배송준비완료",
+        sx: {
+          backgroundColor: "#e3f2fd",
+          color: "#1976d2",
+          fontWeight: 500,
+        },
+      };
+    case "IN_DELIVERY":
+      return {
+        label: "배송중",
+        sx: {
+          backgroundColor: "#f3e5f5",
+          color: "#9c27b0",
+          fontWeight: 500,
+        },
+      };
+    case "DELIVERED":
+      return {
+        label: "배송완료",
+        sx: {
+          backgroundColor: "#e8f5e8",
+          color: "#2e7d32",
+          fontWeight: 500,
+        },
+      };
+    case "CANCELLED":
+      return {
+        label: "주문취소",
+        sx: {
+          backgroundColor: "#ffebee",
+          color: "#d32f2f",
+          fontWeight: 500,
+        },
+      };
+    default:
+      return {
+        label: status,
+        sx: {
+          backgroundColor: "#f5f5f5",
+          color: "#757575",
+          fontWeight: 500,
+        },
+      };
+  }
+};
+
+// 상태 변경 가능 여부 확인
+const canChangeStatus = (status: OrderStatus): boolean => {
+  return ["PAYMENT_COMPLETED", "PREPARING", "READY_FOR_SHIPMENT"].includes(
+    status
+  );
+};
 
 /**
  * 주문 목록 테이블 컴포넌트
- * 기존 프로젝트 Material-UI 패턴 준수
+ * Frontend-prototype 브랜드 스타일 적용 + 삭제 버튼 추가
  */
 const OrderListTable: React.FC<OrderListTableProps> = ({
   data,
@@ -49,14 +129,20 @@ const OrderListTable: React.FC<OrderListTableProps> = ({
   onRowsPerPageChange,
   onDetailView,
   onStatusChange,
-  onTrackingRegister,
+  onDeleteOrder,
 }) => {
   // 로딩 중이거나 데이터가 없는 경우
   if (loading) {
     return (
-      <Paper sx={{ borderRadius: 3, overflow: "hidden" }}>
+      <Paper
+        sx={{
+          borderRadius: 2,
+          overflow: "hidden",
+          border: `1px solid ${BRAND_COLORS.BORDER}`,
+        }}
+      >
         <Box sx={{ p: 4, textAlign: "center" }}>
-          <Typography variant="body1" color="text.secondary">
+          <Typography variant="body1" color={BRAND_COLORS.TEXT_SECONDARY}>
             주문 목록을 불러오는 중...
           </Typography>
         </Box>
@@ -66,9 +152,15 @@ const OrderListTable: React.FC<OrderListTableProps> = ({
 
   if (!data || data.orders.length === 0) {
     return (
-      <Paper sx={{ borderRadius: 3, overflow: "hidden" }}>
+      <Paper
+        sx={{
+          borderRadius: 2,
+          overflow: "hidden",
+          border: `1px solid ${BRAND_COLORS.BORDER}`,
+        }}
+      >
         <Box sx={{ p: 4, textAlign: "center" }}>
-          <Typography variant="body1" color="text.secondary">
+          <Typography variant="body1" color={BRAND_COLORS.TEXT_SECONDARY}>
             등록된 주문이 없습니다.
           </Typography>
         </Box>
@@ -76,84 +168,57 @@ const OrderListTable: React.FC<OrderListTableProps> = ({
     );
   }
 
-  // 주문 상태별 Chip 색상 결정
-  const getStatusChipProps = (status: OrderStatus) => {
-    switch (status) {
-      case "PAYMENT_COMPLETED":
-        return { color: "info" as const, variant: "filled" as const };
-      case "PREPARING":
-        return { color: "warning" as const, variant: "filled" as const };
-      case "READY_FOR_SHIPMENT":
-        return { color: "primary" as const, variant: "filled" as const };
-      case "IN_DELIVERY":
-        return { color: "secondary" as const, variant: "filled" as const };
-      case "DELIVERED":
-        return { color: "success" as const, variant: "filled" as const };
-      case "CANCELLED":
-        return { color: "error" as const, variant: "filled" as const };
-      default:
-        return { color: "default" as const, variant: "filled" as const };
-    }
-  };
-
-  // 상태 변경 가능 여부 확인
-  const canChangeStatus = (status: OrderStatus): boolean => {
-    return ["PAYMENT_COMPLETED", "PREPARING", "READY_FOR_SHIPMENT"].includes(
-      status
-    );
-  };
-
-  // 운송장 등록 가능 여부 확인
-  const canRegisterTracking = (
-    status: OrderStatus,
-    shipmentInfo: any
-  ): boolean => {
-    return status === "READY_FOR_SHIPMENT" && !shipmentInfo.trackingNumber;
-  };
-
-  // 페이지 변경 핸들러
-  const handlePageChange = (_: unknown, newPage: number) => {
-    onPageChange(newPage);
-  };
-
-  // 행당 개수 변경 핸들러
-  const handleRowsPerPageChange = (
-    event: React.ChangeEvent<HTMLInputElement>
-  ) => {
-    onRowsPerPageChange(parseInt(event.target.value, 10));
-  };
-
   return (
-    <Paper sx={{ borderRadius: 3, overflow: "hidden" }}>
+    <Paper
+      sx={{
+        borderRadius: 2,
+        overflow: "hidden",
+        border: `1px solid ${BRAND_COLORS.BORDER}`,
+      }}
+    >
       <TableContainer>
         <Table>
-          <TableHead>
+          <TableHead sx={{ backgroundColor: BRAND_COLORS.SECONDARY }}>
             <TableRow>
-              <TableCell sx={{ backgroundColor: "#f9fafb", fontWeight: 600 }}>
+              <TableCell
+                sx={{ fontWeight: 600, color: BRAND_COLORS.TEXT_PRIMARY }}
+              >
                 주문번호
               </TableCell>
-              <TableCell sx={{ backgroundColor: "#f9fafb", fontWeight: 600 }}>
-                주문일시
+              <TableCell
+                sx={{ fontWeight: 600, color: BRAND_COLORS.TEXT_PRIMARY }}
+              >
+                주문일
               </TableCell>
-              <TableCell sx={{ backgroundColor: "#f9fafb", fontWeight: 600 }}>
-                구매자
+              <TableCell
+                sx={{ fontWeight: 600, color: BRAND_COLORS.TEXT_PRIMARY }}
+              >
+                고객명
               </TableCell>
-              <TableCell sx={{ backgroundColor: "#f9fafb", fontWeight: 600 }}>
-                주문상품
+              <TableCell
+                sx={{ fontWeight: 600, color: BRAND_COLORS.TEXT_PRIMARY }}
+              >
+                상품정보
               </TableCell>
-              <TableCell sx={{ backgroundColor: "#f9fafb", fontWeight: 600 }}>
+              <TableCell
+                sx={{ fontWeight: 600, color: BRAND_COLORS.TEXT_PRIMARY }}
+              >
                 주문금액
               </TableCell>
-              <TableCell sx={{ backgroundColor: "#f9fafb", fontWeight: 600 }}>
+              <TableCell
+                sx={{ fontWeight: 600, color: BRAND_COLORS.TEXT_PRIMARY }}
+              >
                 주문상태
               </TableCell>
-              <TableCell sx={{ backgroundColor: "#f9fafb", fontWeight: 600 }}>
+              <TableCell
+                sx={{ fontWeight: 600, color: BRAND_COLORS.TEXT_PRIMARY }}
+              >
                 배송정보
               </TableCell>
               <TableCell
                 sx={{
-                  backgroundColor: "#f9fafb",
                   fontWeight: 600,
+                  color: BRAND_COLORS.TEXT_PRIMARY,
                   textAlign: "center",
                 }}
               >
@@ -162,185 +227,217 @@ const OrderListTable: React.FC<OrderListTableProps> = ({
             </TableRow>
           </TableHead>
           <TableBody>
-            {data.orders.map((order: SellerOrderSummary) => (
-              <TableRow key={order.orderNumber}>
-                {/* 주문번호 */}
-                <TableCell>
-                  <Typography variant="body2" sx={{ fontWeight: 500 }}>
-                    {order.orderNumber}
-                  </Typography>
-                </TableCell>
+            {data.orders.map((order) => {
+              const firstProduct = order.orderItems[0];
+              const additionalCount = order.orderItems.length - 1;
+              const statusChipProps = getStatusChipProps(order.orderStatus);
 
-                {/* 주문일시 */}
-                <TableCell>
-                  <Typography variant="body2" color="text.secondary">
-                    {new Date(order.orderDate).toLocaleDateString("ko-KR", {
-                      year: "numeric",
-                      month: "2-digit",
-                      day: "2-digit",
-                      hour: "2-digit",
-                      minute: "2-digit",
-                    })}
-                  </Typography>
-                </TableCell>
+              return (
+                <TableRow key={order.orderNumber} hover>
+                  {/* 주문번호 */}
+                  <TableCell>
+                    <Typography
+                      variant="body2"
+                      sx={{
+                        fontWeight: 500,
+                        color: BRAND_COLORS.PRIMARY,
+                        cursor: "pointer",
+                      }}
+                      onClick={() => onDetailView(order.orderNumber)}
+                    >
+                      {order.orderNumber}
+                    </Typography>
+                  </TableCell>
 
-                {/* 구매자 */}
-                <TableCell>
-                  <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-                    <Avatar sx={{ width: 24, height: 24, fontSize: "0.75rem" }}>
-                      {order.maskedBuyerName.charAt(0)}
-                    </Avatar>
+                  {/* 주문일 */}
+                  <TableCell>
                     <Typography variant="body2">
+                      {new Date(order.orderDate).toLocaleDateString("ko-KR")}
+                    </Typography>
+                  </TableCell>
+
+                  {/* 고객명 */}
+                  <TableCell>
+                    <Typography variant="body2" sx={{ fontWeight: 500 }}>
                       {order.maskedBuyerName}
                     </Typography>
-                  </Box>
-                </TableCell>
+                  </TableCell>
 
-                {/* 주문상품 */}
-                <TableCell>
-                  <Box>
-                    {order.orderItems.slice(0, 2).map((item, index) => (
-                      <Typography key={index} variant="body2" sx={{ mb: 0.5 }}>
-                        {item.productName}
+                  {/* 상품정보 */}
+                  <TableCell>
+                    <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                      <Avatar
+                        src={firstProduct.productImage}
+                        alt={firstProduct.productName}
+                        sx={{ width: 40, height: 40, borderRadius: 1 }}
+                      />
+                      <Box>
                         <Typography
-                          component="span"
-                          variant="caption"
-                          color="text.secondary"
+                          variant="body2"
+                          sx={{
+                            fontWeight: 500,
+                            lineHeight: 1.2,
+                            maxWidth: 150,
+                            overflow: "hidden",
+                            textOverflow: "ellipsis",
+                            whiteSpace: "nowrap",
+                          }}
+                          title={firstProduct.productName}
                         >
-                          {" "}
-                          × {item.quantity}
+                          {firstProduct.productName}
                         </Typography>
-                      </Typography>
-                    ))}
-                    {order.orderItems.length > 2 && (
-                      <Typography variant="caption" color="text.secondary">
-                        외 {order.orderItems.length - 2}개
+                        {additionalCount > 0 && (
+                          <Typography
+                            variant="caption"
+                            color={BRAND_COLORS.TEXT_SECONDARY}
+                          >
+                            외 {additionalCount}건
+                          </Typography>
+                        )}
+                      </Box>
+                    </Box>
+                  </TableCell>
+
+                  {/* 주문금액 */}
+                  <TableCell>
+                    <Typography variant="body2" sx={{ fontWeight: 500 }}>
+                      {order.orderSummary.totalAmount.toLocaleString()}원
+                    </Typography>
+                  </TableCell>
+
+                  {/* 주문상태 */}
+                  <TableCell>
+                    <Chip
+                      size="small"
+                      label={statusChipProps.label}
+                      sx={{
+                        borderRadius: 2,
+                        ...statusChipProps.sx,
+                      }}
+                    />
+                  </TableCell>
+
+                  {/* 배송정보 */}
+                  <TableCell>
+                    {order.shipmentInfo.isShipped ? (
+                      <Box>
+                        <Typography variant="body2" sx={{ fontWeight: 500 }}>
+                          {order.shipmentInfo.courier}
+                        </Typography>
+                        <Typography
+                          variant="caption"
+                          color={BRAND_COLORS.TEXT_SECONDARY}
+                        >
+                          {order.shipmentInfo.trackingNumber}
+                        </Typography>
+                      </Box>
+                    ) : (
+                      <Typography
+                        variant="caption"
+                        color={BRAND_COLORS.TEXT_SECONDARY}
+                      >
+                        운송장 미등록
                       </Typography>
                     )}
-                  </Box>
-                </TableCell>
+                  </TableCell>
 
-                {/* 주문금액 */}
-                <TableCell>
-                  <Typography variant="body2" sx={{ fontWeight: 500 }}>
-                    {order.orderSummary.totalAmount.toLocaleString()}원
-                  </Typography>
-                  <Typography variant="caption" color="text.secondary">
-                    ({order.orderSummary.itemCount}개)
-                  </Typography>
-                </TableCell>
-
-                {/* 주문상태 */}
-                <TableCell>
-                  <Chip
-                    label={ORDER_STATUS_LABELS[order.orderStatus]}
-                    size="small"
-                    {...getStatusChipProps(order.orderStatus)}
-                  />
-                </TableCell>
-
-                {/* 배송정보 */}
-                <TableCell>
-                  {order.shipmentInfo.trackingNumber ? (
-                    <Box>
-                      <Typography variant="body2" sx={{ fontWeight: 500 }}>
-                        {order.shipmentInfo.courier}
-                      </Typography>
-                      <Typography variant="caption" color="text.secondary">
-                        {order.shipmentInfo.trackingNumber}
-                      </Typography>
-                    </Box>
-                  ) : (
-                    <Typography variant="caption" color="text.secondary">
-                      운송장 미등록
-                    </Typography>
-                  )}
-                </TableCell>
-
-                {/* 관리 버튼들 */}
-                <TableCell>
-                  <Box
-                    sx={{ display: "flex", gap: 0.5, justifyContent: "center" }}
-                  >
-                    {/* 상세보기 버튼 */}
-                    <Button
-                      variant="outlined"
-                      size="small"
-                      startIcon={<VisibilityIcon />}
-                      onClick={() => onDetailView(order.orderNumber)}
+                  {/* 관리 버튼들 */}
+                  <TableCell>
+                    <Box
                       sx={{
-                        textTransform: "none",
-                        fontSize: "0.75rem",
-                        height: "32px",
-                        minWidth: "80px",
+                        display: "flex",
+                        gap: 0.5,
+                        justifyContent: "center",
+                        flexWrap: "wrap",
                       }}
                     >
-                      상세보기
-                    </Button>
-
-                    {/* 상태변경 버튼 */}
-                    {canChangeStatus(order.orderStatus) && (
-                      <Button
-                        variant="outlined"
+                      {/* 상세보기 버튼 (항상 표시) */}
+                      <PrimaryButton
                         size="small"
-                        startIcon={<EditIcon />}
-                        onClick={() =>
-                          onStatusChange(order.orderNumber, order.orderStatus)
-                        }
+                        startIcon={<VisibilityIcon sx={{ fontSize: 14 }} />}
+                        onClick={() => onDetailView(order.orderNumber)}
                         sx={{
-                          textTransform: "none",
+                          minWidth: 80,
+                          height: 32,
                           fontSize: "0.75rem",
-                          height: "32px",
-                          minWidth: "80px",
                         }}
                       >
-                        상태변경
-                      </Button>
-                    )}
+                        상세보기
+                      </PrimaryButton>
 
-                    {/* 운송장등록 버튼 */}
-                    {canRegisterTracking(
-                      order.orderStatus,
-                      order.shipmentInfo
-                    ) && (
-                      <Button
-                        variant="contained"
-                        size="small"
-                        startIcon={<ShippingIcon />}
-                        onClick={() => onTrackingRegister(order.orderNumber)}
-                        sx={{
-                          textTransform: "none",
-                          fontSize: "0.75rem",
-                          height: "32px",
-                          minWidth: "90px",
-                          bgcolor: "#ef9942",
-                          "&:hover": { bgcolor: "#e08830" },
-                        }}
-                      >
-                        운송장등록
-                      </Button>
-                    )}
-                  </Box>
-                </TableCell>
-              </TableRow>
-            ))}
+                      {/* 상태변경 버튼 (변경 가능한 상태일 때만) */}
+                      {canChangeStatus(order.orderStatus) && (
+                        <SecondaryButton
+                          size="small"
+                          startIcon={<EditIcon sx={{ fontSize: 14 }} />}
+                          onClick={() =>
+                            onStatusChange(order.orderNumber, order.orderStatus)
+                          }
+                          sx={{
+                            minWidth: 80,
+                            height: 32,
+                            fontSize: "0.75rem",
+                          }}
+                        >
+                          상태변경
+                        </SecondaryButton>
+                      )}
+
+                      {/* 삭제 버튼 (배송완료/취소된 주문만) */}
+                      {(order.orderStatus === "DELIVERED" ||
+                        order.orderStatus === "CANCELLED") && (
+                        <Button
+                          variant="outlined"
+                          color="error"
+                          size="small"
+                          startIcon={<DeleteIcon sx={{ fontSize: 14 }} />}
+                          onClick={() => onDeleteOrder(order.orderNumber)}
+                          sx={{
+                            minWidth: 60,
+                            height: 32,
+                            fontSize: "0.75rem",
+                            borderRadius: 2,
+                            textTransform: "none",
+                          }}
+                        >
+                          삭제
+                        </Button>
+                      )}
+                    </Box>
+                  </TableCell>
+                </TableRow>
+              );
+            })}
           </TableBody>
         </Table>
       </TableContainer>
 
       {/* 페이지네이션 */}
       <TablePagination
+        rowsPerPageOptions={[10, 20, 50]}
         component="div"
         count={data.totalElements}
-        page={data.currentPage}
-        onPageChange={handlePageChange}
         rowsPerPage={data.pageSize}
-        onRowsPerPageChange={handleRowsPerPageChange}
+        page={data.currentPage}
+        onPageChange={(_, newPage) => onPageChange(newPage)}
+        onRowsPerPageChange={(event) =>
+          onRowsPerPageChange(parseInt(event.target.value, 10))
+        }
         labelRowsPerPage="페이지당 행 수:"
         labelDisplayedRows={({ from, to, count }) =>
           `${count}개 중 ${from}-${to}`
         }
-        rowsPerPageOptions={[10, 20, 50]}
+        sx={{
+          borderTop: `1px solid ${BRAND_COLORS.BORDER}`,
+          backgroundColor: BRAND_COLORS.BACKGROUND_LIGHT,
+          "& .MuiTablePagination-toolbar": {
+            paddingRight: 2,
+          },
+          "& .MuiTablePagination-selectLabel, & .MuiTablePagination-displayedRows":
+            {
+              color: BRAND_COLORS.TEXT_SECONDARY,
+            },
+        }}
       />
     </Paper>
   );

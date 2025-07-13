@@ -21,6 +21,41 @@ export type CourierCompany =
   | "LOGEN" // 로젠택배
   | "POST_OFFICE"; // 우체국택배
 
+/**
+ * 주문 상태별 라벨
+ */
+export const ORDER_STATUS_LABELS: Record<OrderStatus, string> = {
+  PAYMENT_COMPLETED: "결제완료",
+  PREPARING: "상품준비중",
+  READY_FOR_SHIPMENT: "배송준비완료",
+  IN_DELIVERY: "배송중",
+  DELIVERED: "배송완료",
+  CANCELLED: "주문취소",
+} as const;
+
+/**
+ * 택배사별 라벨
+ */
+export const COURIER_COMPANY_LABELS: Record<CourierCompany, string> = {
+  CJ_DAEHAN: "CJ대한통운",
+  HANJIN: "한진택배",
+  LOTTE: "롯데택배",
+  LOGEN: "로젠택배",
+  POST_OFFICE: "우체국택배",
+} as const;
+
+// ===== API 응답 공통 타입 =====
+
+/**
+ * API 응답 래퍼
+ */
+export interface ApiResponse<T> {
+  success: boolean;
+  data: T;
+  message: string;
+  code?: string;
+}
+
 // ===== 판매자용 주문 목록 관련 타입 =====
 
 /**
@@ -42,6 +77,7 @@ export interface SellerOrderItem {
 export interface OrderSummaryInfo {
   itemCount: number;
   totalAmount: number;
+  delayReason?: string; // 출고 지연 사유 추가
 }
 
 /**
@@ -51,7 +87,7 @@ export interface ShipmentBasicInfo {
   courier: string;
   trackingNumber: string;
   isShipped: boolean;
-  shippedAt: string;
+  shippedAt?: string;
 }
 
 /**
@@ -80,9 +116,9 @@ export interface SellerOrderListResponse {
   pageSize: number;
   hasNext: boolean;
   hasPrevious: boolean;
-  searchType: string;
-  searchKeyword: string;
-  filterStatus: OrderStatus;
+  searchType?: string;
+  searchKeyword?: string;
+  filterStatus?: OrderStatus;
 }
 
 // ===== 판매자용 주문 상세 관련 타입 =====
@@ -112,57 +148,41 @@ export interface OrderSummary {
 }
 
 /**
+ * 수취인 정보
+ */
+export interface RecipientInfo {
+  name: string;
+  phone: string;
+  address: string;
+}
+
+/**
  * 배송 정보 (상세용)
  */
 export interface ShipmentInfo {
-  courier: string;
-  trackingNumber: string;
-  shippedAt: string;
-  deliveredAt: string;
+  courier?: string;
+  trackingNumber?: string;
+  shippedAt?: string;
+  deliveredAt?: string;
   isShipped: boolean;
-  shipmentMemo: string;
 }
 
 /**
- * 배송지 정보
- */
-export interface ShippingAddress {
-  recipientName: string;
-  recipientPhone: string;
-  maskedPhone: string;
-  zipCode: string;
-  address: string;
-  addressDetail: string;
-  fullAddress: string;
-  deliveryRequest: string;
-}
-
-/**
- * 상태 관리 정보
- */
-export interface StatusManagement {
-  canChangeStatus: boolean;
-  availableStatuses: OrderStatus[];
-  canRegisterTracking: boolean;
-  statusDescription: string;
-}
-
-/**
- * 판매자용 주문 상세 응답
+ * 판매자용 주문 상세 정보 응답
  * API: GET /v1/sellers/orders/{order-number}
  */
 export interface SellerOrderDetailResponse {
   orderNumber: string;
   orderStatus: OrderStatus;
   orderDate: string;
-  shippingAddress: ShippingAddress;
+  buyerName: string;
   orderItems: SellerOrderDetailItem[];
   orderSummary: OrderSummary;
-  shipmentInfo: ShipmentInfo;
-  statusManagement: StatusManagement;
+  recipientInfo: RecipientInfo;
+  shipmentInfo?: ShipmentInfo;
 }
 
-// ===== 요청 DTO 타입들 =====
+// ===== 요청 타입들 =====
 
 /**
  * 주문 상태 변경 요청
@@ -174,6 +194,9 @@ export interface OrderStatusUpdateRequest {
   reason?: string;
   isDelayed?: boolean;
   expectedShipDate?: string;
+  // 운송장 정보 (배송중으로 변경시)
+  courierCompany?: CourierCompany;
+  trackingNumber?: string;
 }
 
 /**
@@ -184,8 +207,6 @@ export interface TrackingNumberRegisterRequest {
   orderNumber: string;
   courierCompany: CourierCompany;
   trackingNumber: string;
-  shipmentMemo?: string;
-  startShipmentImmediately?: boolean;
 }
 
 /**
@@ -193,30 +214,30 @@ export interface TrackingNumberRegisterRequest {
  * API: DELETE /v1/sellers/orders
  */
 export interface OrderDeleteRequest {
-  orderNumbers: string[];
+  orderNumber: string;
 }
 
-// ===== 응답 DTO 타입들 =====
+// ===== 응답 타입들 =====
 
 /**
  * 주문 상태 변경 응답
  */
 export interface OrderStatusUpdateResponse {
   orderNumber: string;
-  oldStatus: OrderStatus;
+  previousStatus: OrderStatus;
   newStatus: OrderStatus;
   updatedAt: string;
   message: string;
 }
 
 /**
- * 운송장 등록 응답
+ * 운송장 번호 등록 응답
  */
 export interface TrackingNumberRegisterResponse {
   orderNumber: string;
   courierCompany: CourierCompany;
   trackingNumber: string;
-  shippedAt: string;
+  registeredAt: string;
   message: string;
 }
 
@@ -224,90 +245,73 @@ export interface TrackingNumberRegisterResponse {
  * 주문 삭제 응답
  */
 export interface OrderDeleteResponse {
-  deletedOrderNumbers: string[];
-  successCount: number;
+  orderNumber: string;
+  deletedAt: string;
   message: string;
 }
 
 /**
- * 업데이트된 주문 정보 (동기화용)
- */
-export interface UpdatedOrderInfo {
-  orderNumber: string;
-  trackingNumber: string;
-  courier: string;
-  deliveredAt: string;
-}
-
-/**
- * 실패한 주문 정보 (동기화용)
- */
-export interface FailedOrderInfo {
-  orderNumber: string;
-  trackingNumber: string;
-  courier: string;
-  errorReason: string;
-}
-
-/**
  * 배송 상태 동기화 응답
- * API: POST /v1/sellers/orders/sync-shipment-status
  */
 export interface ShipmentSyncResponse {
   totalCheckedOrders: number;
   updatedOrders: number;
   failedOrders: number;
-  updatedOrderList: UpdatedOrderInfo[];
-  failedOrderList: FailedOrderInfo[];
   syncedAt: string;
   message: string;
+  updatedOrderNumbers?: string[];
+}
+
+// ===== Frontend-prototype 복원용 추가 타입들 =====
+
+/**
+ * 주문 현황 요약 (대시보드용)
+ */
+export interface OrderSummaryStats {
+  paymentCompleted: number;
+  preparing: number;
+  readyForDelivery: number;
+  inTransit: number;
+  delivered: number;
 }
 
 /**
- * 전역 API 응답 포맷
+ * 긴급 작업 현황
  */
-export interface ApiResponse<T> {
-  success: boolean;
+export interface UrgentTasks {
+  delayRequests: number; // 출고 지연 요청
+  longTermUndelivered: number; // 장기 미배송
+}
+
+/**
+ * 기간별 필터 타입
+ */
+export type DateRange = "today" | "7days" | "30days" | "90days" | "custom";
+
+/**
+ * 검색 조건 타입
+ */
+export type SearchCondition = "orderNumber" | "buyerName" | "productName";
+
+/**
+ * 주문 필터 인터페이스
+ */
+export interface OrderFilter {
+  dateRange: DateRange;
+  startDate?: string;
+  endDate?: string;
+  statusFilter: OrderStatus | "ALL";
+  searchCondition: SearchCondition;
+  searchKeyword: string;
+}
+
+// ===== API 에러 타입 =====
+
+/**
+ * API 에러 정보
+ */
+export interface ApiError {
   message: string;
-  data: T;
-  timestamp: string;
-  path: string;
-  errors: any[];
+  status?: number;
+  code?: string;
 }
-
-// ===== 상수 정의 =====
-
-/**
- * 주문 상태 라벨
- */
-export const ORDER_STATUS_LABELS: Record<OrderStatus, string> = {
-  PAYMENT_COMPLETED: "결제완료",
-  PREPARING: "상품준비중",
-  READY_FOR_SHIPMENT: "배송준비완료",
-  IN_DELIVERY: "배송중",
-  DELIVERED: "배송완료",
-  CANCELLED: "주문취소",
-};
-
-/**
- * 택배사 라벨
- */
-export const COURIER_COMPANY_LABELS: Record<CourierCompany, string> = {
-  CJ_DAEHAN: "CJ대한통운",
-  HANJIN: "한진택배",
-  LOTTE: "롯데택배",
-  LOGEN: "로젠택배",
-  POST_OFFICE: "우체국택배",
-};
-
-/**
- * 상태별 변경 가능한 다음 상태들
- */
-export const ALLOWED_STATUS_TRANSITIONS: Record<OrderStatus, OrderStatus[]> = {
-  PAYMENT_COMPLETED: ["PREPARING"],
-  PREPARING: ["READY_FOR_SHIPMENT", "CANCELLED"],
-  READY_FOR_SHIPMENT: ["IN_DELIVERY"],
-  IN_DELIVERY: ["DELIVERED"],
-  DELIVERED: [],
-  CANCELLED: [],
-};
