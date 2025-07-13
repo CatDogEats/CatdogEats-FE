@@ -1,279 +1,269 @@
-// src/hooks/useSellerOrderManagement.ts
+// src/service/api/sellerOrderApi.ts
 
-import { useState, useEffect, useCallback } from "react";
-import { sellerOrderApi } from "@/service/api/sellerOrderApi";
+import axios from "axios";
 import type {
   SellerOrderListResponse,
-  ShipmentSyncResponse,
-  ApiError,
+  SellerOrderDetailResponse,
   OrderStatusUpdateRequest,
+  OrderStatusUpdateResponse,
   TrackingNumberRegisterRequest,
+  TrackingNumberRegisterResponse,
+  OrderDeleteRequest,
+  OrderDeleteResponse,
+  ShipmentSyncResponse,
+  ApiResponse,
+  ApiError,
 } from "@/types/sellerOrder.types";
 
+// API 기본 URL (환경에 따라 조정)
+const API_BASE_URL =
+  import.meta.env.MODE === "development"
+    ? "/api"
+    : import.meta.env.VITE_API_PROXY_TARGET || "";
+
 /**
- * 판매자 주문 관리를 위한 통합 훅
- * 주문 목록 조회, 상태 변경, 운송장 등록, 동기화 등 모든 기능을 포함
+ * API 에러 처리 헬퍼 함수
  */
-export const useSellerOrderManagement = (
-  page: number = 0,
-  sort: string = "createdAt,desc"
-) => {
-  // ===== 주문 목록 상태 =====
-  const [orders, setOrders] = useState<SellerOrderListResponse | null>(null);
-  const [ordersLoading, setOrdersLoading] = useState<boolean>(false);
-  const [ordersError, setOrdersError] = useState<ApiError | null>(null);
-
-  // ===== 액션 상태 (상태 변경, 운송장 등록 등) =====
-  const [actionLoading, setActionLoading] = useState<boolean>(false);
-  const [actionError, setActionError] = useState<ApiError | null>(null);
-
-  // ===== 주문 목록 조회 =====
-  const fetchOrders = useCallback(async () => {
-    try {
-      setOrdersLoading(true);
-      setOrdersError(null);
-
-      const response = await sellerOrderApi.getSellerOrders(page, sort);
-
-      if (response.success) {
-        setOrders(response.data);
-      } else {
-        setOrdersError({
-          message: response.message || "주문 목록 조회에 실패했습니다",
-          status: 400,
-        });
-      }
-    } catch (err) {
-      const error = err as Error;
-      setOrdersError({
-        message: error.message || "주문 목록 조회 중 오류가 발생했습니다",
-        status: 500,
-      });
-    } finally {
-      setOrdersLoading(false);
+export const handleApiError = (error: any): ApiError => {
+  if (axios.isAxiosError(error)) {
+    const response = error.response;
+    if (response) {
+      return {
+        message: response.data?.message || error.message,
+        status: response.status,
+        code: response.data?.code,
+      };
     }
-  }, [page, sort]);
-
-  // ===== 페이지나 정렬 조건 변경 시 자동 재조회 =====
-  useEffect(() => {
-    fetchOrders();
-  }, [fetchOrders]);
-
-  // ===== 수동 새로고침 =====
-  const refreshOrders = useCallback(() => {
-    fetchOrders();
-  }, [fetchOrders]);
-
-  // ===== 주문 상태 변경 =====
-  const updateOrderStatus = useCallback(
-    async (request: OrderStatusUpdateRequest) => {
-      try {
-        setActionLoading(true);
-        setActionError(null);
-
-        const response = await sellerOrderApi.updateOrderStatus(request);
-
-        if (response.success) {
-          // 성공 시 목록 새로고침
-          await refreshOrders();
-          return response.data;
-        } else {
-          setActionError({
-            message: response.message || "주문 상태 변경에 실패했습니다",
-            status: 400,
-          });
-          return null;
-        }
-      } catch (err) {
-        const error = err as Error;
-        setActionError({
-          message: error.message || "주문 상태 변경 중 오류가 발생했습니다",
-          status: 500,
-        });
-        return null;
-      } finally {
-        setActionLoading(false);
-      }
-    },
-    [refreshOrders]
-  );
-
-  // ===== 운송장 번호 등록 =====
-  const registerTrackingNumber = useCallback(
-    async (request: TrackingNumberRegisterRequest) => {
-      try {
-        setActionLoading(true);
-        setActionError(null);
-
-        const response = await sellerOrderApi.registerTrackingNumber(request);
-
-        if (response.success) {
-          // 성공 시 목록 새로고침
-          await refreshOrders();
-          return response.data;
-        } else {
-          setActionError({
-            message: response.message || "운송장 번호 등록에 실패했습니다",
-            status: 400,
-          });
-          return null;
-        }
-      } catch (err) {
-        const error = err as Error;
-        setActionError({
-          message: error.message || "운송장 번호 등록 중 오류가 발생했습니다",
-          status: 500,
-        });
-        return null;
-      } finally {
-        setActionLoading(false);
-      }
-    },
-    [refreshOrders]
-  );
-
-  // ===== 주문 삭제 =====
-  const deleteOrder = useCallback(
-    async (orderNumber: string) => {
-      try {
-        setActionLoading(true);
-        setActionError(null);
-
-        const response = await sellerOrderApi.deleteOrder({ orderNumber });
-
-        if (response.success) {
-          // 성공 시 목록 새로고침
-          await refreshOrders();
-          return response.data;
-        } else {
-          setActionError({
-            message: response.message || "주문 삭제에 실패했습니다",
-            status: 400,
-          });
-          return null;
-        }
-      } catch (err) {
-        const error = err as Error;
-        setActionError({
-          message: error.message || "주문 삭제 중 오류가 발생했습니다",
-          status: 500,
-        });
-        return null;
-      } finally {
-        setActionLoading(false);
-      }
-    },
-    [refreshOrders]
-  );
-
-  // ===== 배송 상태 동기화 =====
-  const syncShipmentStatus =
-    useCallback(async (): Promise<ShipmentSyncResponse | null> => {
-      try {
-        setActionLoading(true);
-        setActionError(null);
-
-        const response = await sellerOrderApi.syncShipmentStatus();
-
-        if (response.success) {
-          // 성공 시 목록 새로고침
-          await refreshOrders();
-          return response.data;
-        } else {
-          setActionError({
-            message: response.message || "배송 상태 동기화에 실패했습니다",
-            status: 400,
-          });
-          return null;
-        }
-      } catch (err) {
-        const error = err as Error;
-        setActionError({
-          message: error.message || "배송 상태 동기화 중 오류가 발생했습니다",
-          status: 500,
-        });
-        return null;
-      } finally {
-        setActionLoading(false);
-      }
-    }, [refreshOrders]);
-
-  // ===== 통합 상태 변경 + 운송장 등록 =====
-  const updateOrderStatusWithTracking = useCallback(
-    async (
-      orderNumber: string,
-      newStatus: "IN_DELIVERY",
-      courierCompany: string,
-      trackingNumber: string,
-      reason?: string
-    ) => {
-      try {
-        setActionLoading(true);
-        setActionError(null);
-
-        // 1단계: 운송장 등록
-        const trackingResponse = await sellerOrderApi.registerTrackingNumber({
-          orderNumber,
-          courierCompany: courierCompany as any,
-          trackingNumber,
-        });
-
-        if (!trackingResponse.success) {
-          setActionError({
-            message: trackingResponse.message || "운송장 등록에 실패했습니다",
-            status: 400,
-          });
-          return null;
-        }
-
-        // 2단계: 상태 변경 (배송중)
-        const statusResponse = await sellerOrderApi.updateOrderStatus({
-          orderNumber,
-          newStatus,
-          reason,
-        });
-
-        if (statusResponse.success) {
-          // 성공 시 목록 새로고침
-          await refreshOrders();
-          return statusResponse.data;
-        } else {
-          setActionError({
-            message: statusResponse.message || "상태 변경에 실패했습니다",
-            status: 400,
-          });
-          return null;
-        }
-      } catch (err) {
-        const error = err as Error;
-        setActionError({
-          message: error.message || "배송 등록 중 오류가 발생했습니다",
-          status: 500,
-        });
-        return null;
-      } finally {
-        setActionLoading(false);
-      }
-    },
-    [refreshOrders]
-  );
+  }
 
   return {
-    // 주문 목록 데이터
-    orders,
-    ordersLoading,
-    ordersError,
-    refreshOrders,
-
-    // 액션 상태
-    actionLoading,
-    actionError,
-
-    // 액션 함수들
-    updateOrderStatus,
-    registerTrackingNumber,
-    deleteOrder,
-    syncShipmentStatus,
-    updateOrderStatusWithTracking,
+    message: error.message || "알 수 없는 오류가 발생했습니다",
+    status: 500,
   };
+};
+
+/**
+ * 판매자용 주문 관리 API 서비스
+ * 기존 프로젝트의 axios 패턴을 준수하여 구현
+ */
+export const sellerOrderApi = {
+  /**
+   * 배송 관리 (판매자 목록 조회)
+   * API: GET /v1/sellers/orders/list?page={}&sort={}
+   */
+  getSellerOrders: async (
+    page: number = 0,
+    sort: string = "createdAt,desc"
+  ): Promise<ApiResponse<SellerOrderListResponse>> => {
+    try {
+      const response = await axios.get<ApiResponse<SellerOrderListResponse>>(
+        `${API_BASE_URL}/v1/sellers/orders/list`,
+        {
+          params: {
+            page,
+            sort,
+          },
+        }
+      );
+      return response.data;
+    } catch (error) {
+      console.error("판매자 주문 목록 조회 실패:", error);
+      throw handleApiError(error);
+    }
+  },
+
+  /**
+   * 배송 고객 주소 조회 (판매자)
+   * API: GET /v1/sellers/orders/{order-number}
+   */
+  getSellerOrderDetail: async (
+    orderNumber: string
+  ): Promise<ApiResponse<SellerOrderDetailResponse>> => {
+    try {
+      const response = await axios.get<ApiResponse<SellerOrderDetailResponse>>(
+        `${API_BASE_URL}/v1/sellers/orders/${orderNumber}`
+      );
+      return response.data;
+    } catch (error) {
+      console.error("판매자 주문 상세 조회 실패:", error);
+      throw handleApiError(error);
+    }
+  },
+
+  /**
+   * 배송 상태 관리 (판매자)
+   * API: POST /v1/sellers/orders/status
+   */
+  updateOrderStatus: async (
+    request: OrderStatusUpdateRequest
+  ): Promise<ApiResponse<OrderStatusUpdateResponse>> => {
+    try {
+      const response = await axios.post<ApiResponse<OrderStatusUpdateResponse>>(
+        `${API_BASE_URL}/v1/sellers/orders/status`,
+        request,
+        {
+          headers: {
+            "Content-Type": "application/json",
+          },
+        }
+      );
+      return response.data;
+    } catch (error) {
+      console.error("주문 상태 변경 실패:", error);
+      throw handleApiError(error);
+    }
+  },
+
+  /**
+   * 배송 운송장 등록 (판매자)
+   * API: POST /v1/sellers/orders/tracking-number
+   */
+  registerTrackingNumber: async (
+    request: TrackingNumberRegisterRequest
+  ): Promise<ApiResponse<TrackingNumberRegisterResponse>> => {
+    try {
+      const response = await axios.post<
+        ApiResponse<TrackingNumberRegisterResponse>
+      >(`${API_BASE_URL}/v1/sellers/orders/tracking-number`, request, {
+        headers: {
+          "Content-Type": "application/json",
+        },
+      });
+      return response.data;
+    } catch (error) {
+      console.error("운송장 번호 등록 실패:", error);
+      throw handleApiError(error);
+    }
+  },
+
+  /**
+   * 주문 내역 삭제 (판매자)
+   * API: DELETE /v1/sellers/orders
+   */
+  deleteOrder: async (
+    request: OrderDeleteRequest
+  ): Promise<ApiResponse<OrderDeleteResponse>> => {
+    try {
+      const response = await axios.delete<ApiResponse<OrderDeleteResponse>>(
+        `${API_BASE_URL}/v1/sellers/orders`,
+        {
+          data: request,
+          headers: {
+            "Content-Type": "application/json",
+          },
+        }
+      );
+      return response.data;
+    } catch (error) {
+      console.error("주문 삭제 실패:", error);
+      throw handleApiError(error);
+    }
+  },
+
+  /**
+   * 배송 상태 동기화 (판매자)
+   * API: POST /v1/sellers/orders/sync
+   */
+  syncShipmentStatus: async (): Promise<ApiResponse<ShipmentSyncResponse>> => {
+    try {
+      const response = await axios.post<ApiResponse<ShipmentSyncResponse>>(
+        `${API_BASE_URL}/v1/sellers/orders/sync`,
+        {},
+        {
+          headers: {
+            "Content-Type": "application/json",
+          },
+        }
+      );
+      return response.data;
+    } catch (error) {
+      console.error("배송 상태 동기화 실패:", error);
+      throw handleApiError(error);
+    }
+  },
+
+  /**
+   * 검색 조건으로 주문 목록 조회
+   * API: GET /v1/sellers/orders/search
+   */
+  searchOrders: async (searchParams: {
+    page?: number;
+    sort?: string;
+    searchType?: string;
+    searchKeyword?: string;
+    statusFilter?: string;
+    dateFrom?: string;
+    dateTo?: string;
+  }): Promise<ApiResponse<SellerOrderListResponse>> => {
+    try {
+      const response = await axios.get<ApiResponse<SellerOrderListResponse>>(
+        `${API_BASE_URL}/v1/sellers/orders/search`,
+        {
+          params: {
+            page: searchParams.page || 0,
+            sort: searchParams.sort || "createdAt,desc",
+            ...searchParams,
+          },
+        }
+      );
+      return response.data;
+    } catch (error) {
+      console.error("주문 검색 실패:", error);
+      throw handleApiError(error);
+    }
+  },
+
+  /**
+   * 출고 지연 요청 해결
+   * API: POST /v1/sellers/orders/resolve-delay
+   */
+  resolveDelayRequest: async (
+    orderNumber: string,
+    expectedDate?: string
+  ): Promise<ApiResponse<OrderStatusUpdateResponse>> => {
+    try {
+      const response = await axios.post<ApiResponse<OrderStatusUpdateResponse>>(
+        `${API_BASE_URL}/v1/sellers/orders/resolve-delay`,
+        {
+          orderNumber,
+          expectedDate,
+        },
+        {
+          headers: {
+            "Content-Type": "application/json",
+          },
+        }
+      );
+      return response.data;
+    } catch (error) {
+      console.error("출고 지연 해결 실패:", error);
+      throw handleApiError(error);
+    }
+  },
+
+  /**
+   * 상태별 주문 개수 조회 (대시보드용)
+   * API: GET /v1/sellers/orders/summary
+   */
+  getOrderSummary: async (): Promise<
+    ApiResponse<{
+      paymentCompleted: number;
+      preparing: number;
+      readyForDelivery: number;
+      inTransit: number;
+      delivered: number;
+      delayRequests: number;
+      longTermUndelivered: number;
+    }>
+  > => {
+    try {
+      const response = await axios.get(
+        `${API_BASE_URL}/v1/sellers/orders/summary`
+      );
+      return response.data;
+    } catch (error) {
+      console.error("주문 요약 조회 실패:", error);
+      throw handleApiError(error);
+    }
+  },
 };

@@ -20,12 +20,11 @@ import {
   IconButton,
   CircularProgress,
   Alert,
-  Grid,
 } from "@mui/material";
+import Grid from "@mui/material/Grid";
 import {
   Close as CloseIcon,
   LocationOn as LocationIcon,
-  Phone as PhoneIcon,
   LocalShipping as ShippingIcon,
   Person as PersonIcon,
 } from "@mui/icons-material";
@@ -201,7 +200,7 @@ const OrderDetailModal: React.FC<OrderDetailModalProps> = ({
         ) : orderDetail ? (
           <Grid container spacing={3}>
             {/* 주문 기본 정보 */}
-            <Grid item xs={12} md={6}>
+            <Grid size={{ xs: 12, md: 6 }}>
               <Paper
                 sx={{
                   p: 3,
@@ -274,7 +273,7 @@ const OrderDetailModal: React.FC<OrderDetailModalProps> = ({
             </Grid>
 
             {/* 배송지 정보 */}
-            <Grid item xs={12} md={6}>
+            <Grid size={{ xs: 12, md: 6 }}>
               <Paper
                 sx={{
                   p: 3,
@@ -343,7 +342,7 @@ const OrderDetailModal: React.FC<OrderDetailModalProps> = ({
 
             {/* 배송 정보 */}
             {orderDetail.shipmentInfo && (
-              <Grid item xs={12}>
+              <Grid size={{ xs: 12 }}>
                 <Paper
                   sx={{
                     p: 3,
@@ -368,7 +367,7 @@ const OrderDetailModal: React.FC<OrderDetailModalProps> = ({
                   </Typography>
 
                   <Grid container spacing={2}>
-                    <Grid item xs={12} sm={4}>
+                    <Grid size={{ xs: 12, sm: 4 }}>
                       <Typography
                         variant="body2"
                         color={BRAND_COLORS.TEXT_SECONDARY}
@@ -381,7 +380,7 @@ const OrderDetailModal: React.FC<OrderDetailModalProps> = ({
                       </Typography>
                     </Grid>
 
-                    <Grid item xs={12} sm={4}>
+                    <Grid size={{ xs: 12, sm: 4 }}>
                       <Typography
                         variant="body2"
                         color={BRAND_COLORS.TEXT_SECONDARY}
@@ -394,7 +393,7 @@ const OrderDetailModal: React.FC<OrderDetailModalProps> = ({
                       </Typography>
                     </Grid>
 
-                    <Grid item xs={12} sm={4}>
+                    <Grid size={{ xs: 12, sm: 4 }}>
                       <Typography
                         variant="body2"
                         color={BRAND_COLORS.TEXT_SECONDARY}
@@ -416,7 +415,7 @@ const OrderDetailModal: React.FC<OrderDetailModalProps> = ({
             )}
 
             {/* 주문 상품 목록 */}
-            <Grid item xs={12}>
+            <Grid size={{ xs: 12 }}>
               <Paper
                 sx={{
                   borderRadius: 2,
@@ -523,7 +522,7 @@ const OrderDetailModal: React.FC<OrderDetailModalProps> = ({
                   sx={{ p: 2, backgroundColor: BRAND_COLORS.BACKGROUND_LIGHT }}
                 >
                   <Grid container spacing={2}>
-                    <Grid item xs={12} sm={6}>
+                    <Grid size={{ xs: 12, sm: 6 }}>
                       <Typography
                         variant="body2"
                         color={BRAND_COLORS.TEXT_SECONDARY}
@@ -531,7 +530,7 @@ const OrderDetailModal: React.FC<OrderDetailModalProps> = ({
                         총 상품 개수: {orderDetail.orderSummary.itemCount}개
                       </Typography>
                     </Grid>
-                    <Grid item xs={12} sm={6} sx={{ textAlign: "right" }}>
+                    <Grid size={{ xs: 12, sm: 6 }} sx={{ textAlign: "right" }}>
                       <Typography
                         variant="h6"
                         sx={{ fontWeight: 600, color: BRAND_COLORS.PRIMARY }}

@@ -1,7 +1,8 @@
 // src/components/OrderManagement/components/OrderStatusDashboard.tsx
 
 import React from "react";
-import { Box, Grid, Paper, Typography, Chip } from "@mui/material";
+import { Box, Paper, Typography, Chip } from "@mui/material";
+import Grid from "@mui/material/Grid";
 import {
   Payment as PaymentIcon,
   Inventory2 as InventoryIcon,
@@ -98,9 +99,16 @@ const OrderStatusDashboard: React.FC<OrderStatusDashboardProps> = ({
         주문 현황 요약
       </Typography>
 
-      <Grid container spacing={3}>
+      <Grid
+        container
+        spacing={3}
+        columns={{ xs: 12, sm: 12, md: 20 }} // md 이상은 20-column 체계
+      >
         {statusCards.map((card) => (
-          <Grid item xs={12} sm={6} md={2.4} key={card.key}>
+          <Grid
+            key={card.key}
+            size={{ xs: 12, sm: 6, md: 4 }} // 4 / 20  → 20 %  (5칸)
+          >
             <Paper
               sx={{
                 p: 3,

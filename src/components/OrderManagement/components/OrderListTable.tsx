@@ -28,7 +28,6 @@ import {
 } from "@/components/SellerDashboard/SellerInfo";
 import type {
   SellerOrderListResponse,
-  SellerOrderSummary,
   OrderStatus,
 } from "@/types/sellerOrder.types";
 
