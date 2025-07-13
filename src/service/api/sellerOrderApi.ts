@@ -15,7 +15,10 @@ import type {
 } from "@/types/sellerOrder.types";
 
 // API 기본 URL (환경에 따라 조정)
-const API_BASE_URL = process.env.REACT_APP_API_URL || "";
+const API_BASE_URL =
+  import.meta.env.MODE === "development"
+    ? "/api"
+    : import.meta.env.VITE_API_PROXY_TARGET || "";
 
 /**
  * 판매자용 주문 관리 API 서비스
