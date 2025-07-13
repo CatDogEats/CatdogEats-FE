@@ -11,7 +11,11 @@ import {
 } from "@mui/material";
 import OrderSearchFilter from "./OrderSearchFilter";
 import OrderListTable from "./OrderListTable";
+import OrderDetailModal from "./OrderDetailModal";
+import OrderStatusUpdateModal from "./OrderStatusUpdateModal";
+import TrackingRegisterModal from "./TrackingRegisterModal";
 import { useSellerOrderManagement } from "@/hooks/useSellerOrders";
+import { useOrderModals } from "@/hooks/useOrderModals";
 import type {
   OrderStatus,
   ShipmentSyncResponse,
@@ -29,7 +33,17 @@ const OrderShippingManagement: React.FC = () => {
 
   // ===== 페이지네이션 상태 =====
   const [page, setPage] = useState(0);
-  const [sort, setSort] = useState("createdAt,desc");
+
+  // ===== 모달 상태 관리 =====
+  const {
+    modals,
+    openDetailModal,
+    openStatusUpdateModal,
+    openTrackingRegisterModal,
+    closeDetailModal,
+    closeStatusUpdateModal,
+    closeTrackingRegisterModal,
+  } = useOrderModals();
 
   // ===== UI 상태 =====
   const [snackbarOpen, setSnackbarOpen] = useState(false);
@@ -47,7 +61,7 @@ const OrderShippingManagement: React.FC = () => {
     actionLoading,
     actionError,
     syncShipmentStatus,
-  } = useSellerOrderManagement(page, sort);
+  } = useSellerOrderManagement(page, "createdAt,desc");
 
   // ===== 에러 처리 =====
   useEffect(() => {
@@ -128,7 +142,7 @@ const OrderShippingManagement: React.FC = () => {
   }, []);
 
   const handleRowsPerPageChange = useCallback(
-    (rowsPerPage: number) => {
+    (_rowsPerPage: number) => {
       // 실제 구현에서는 rowsPerPage 상태를 추가하고 API에 전달
       setPage(0);
       refreshOrders();
@@ -138,30 +152,30 @@ const OrderShippingManagement: React.FC = () => {
 
   const handleDetailView = useCallback(
     (orderNumber: string) => {
-      // TODO: 상세보기 모달 열기
-      showSnackbar(`${orderNumber} 상세보기 - 모달 구현 예정`, "info");
+      openDetailModal(orderNumber);
     },
-    [showSnackbar]
+    [openDetailModal]
   );
 
   const handleStatusChange = useCallback(
     (orderNumber: string, currentStatus: OrderStatus) => {
-      // TODO: 상태변경 모달 열기
-      showSnackbar(
-        `${orderNumber} 상태변경 (현재: ${currentStatus}) - 모달 구현 예정`,
-        "info"
-      );
+      openStatusUpdateModal(orderNumber, currentStatus);
     },
-    [showSnackbar]
+    [openStatusUpdateModal]
   );
 
   const handleTrackingRegister = useCallback(
     (orderNumber: string) => {
-      // TODO: 운송장등록 모달 열기
-      showSnackbar(`${orderNumber} 운송장등록 - 모달 구현 예정`, "info");
+      openTrackingRegisterModal(orderNumber);
     },
-    [showSnackbar]
+    [openTrackingRegisterModal]
   );
+
+  // ===== 모달 성공 콜백들 =====
+  const handleModalSuccess = useCallback(() => {
+    refreshOrders(); // 목록 새로고침
+    showSnackbar("처리가 완료되었습니다.", "success");
+  }, [refreshOrders, showSnackbar]);
 
   // ===== 스낵바 닫기 =====
   const handleSnackbarClose = useCallback(() => {
@@ -257,6 +271,32 @@ const OrderShippingManagement: React.FC = () => {
           {snackbarMessage}
         </Alert>
       </Snackbar>
+
+      {/* ===== 모달들 ===== */}
+
+      {/* 주문 상세보기 모달 */}
+      <OrderDetailModal
+        open={modals.detail.open}
+        onClose={closeDetailModal}
+        orderNumber={modals.detail.orderNumber}
+      />
+
+      {/* 주문 상태 변경 모달 */}
+      <OrderStatusUpdateModal
+        open={modals.statusUpdate.open}
+        onClose={closeStatusUpdateModal}
+        orderNumber={modals.statusUpdate.orderNumber}
+        currentStatus={modals.statusUpdate.currentStatus}
+        onSuccess={handleModalSuccess}
+      />
+
+      {/* 운송장 등록 모달 */}
+      <TrackingRegisterModal
+        open={modals.trackingRegister.open}
+        onClose={closeTrackingRegisterModal}
+        orderNumber={modals.trackingRegister.orderNumber}
+        onSuccess={handleModalSuccess}
+      />
     </Container>
   );
 };
