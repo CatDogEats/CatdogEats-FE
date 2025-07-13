@@ -20,7 +20,7 @@ import {
 import {
   Search as SearchIcon,
   FilterList as FilterIcon,
-  SyncIcon,
+  Sync as SyncIcon,
   Clear as ClearIcon,
 } from "@mui/icons-material";
 import { BRAND_COLORS } from "@/components/SellerDashboard/SellerInfo";
@@ -111,19 +111,19 @@ const OrderSearchTab: React.FC<OrderSearchTabProps> = ({
   onStatusChange,
   onDeleteOrder,
 }) => {
-  // 고급 검색 표시 상태
+  // ===== 지역 상태 =====
   const [showAdvancedSearch, setShowAdvancedSearch] = useState(false);
 
-  // 키보드 이벤트 핸들러
-  const handleKeyPress = (event: React.KeyboardEvent) => {
-    if (event.key === "Enter") {
+  // ===== 이벤트 핸들러 =====
+  const handleKeyPress = (e: React.KeyboardEvent) => {
+    if (e.key === "Enter") {
       onSearch();
     }
   };
 
   return (
     <Box sx={{ p: 3 }}>
-      {/* 헤더 섹션 */}
+      {/* 검색 헤더 */}
       <Box
         sx={{
           display: "flex",
@@ -142,59 +142,36 @@ const OrderSearchTab: React.FC<OrderSearchTabProps> = ({
           주문 검색 및 필터링
         </Typography>
 
-        <Box sx={{ display: "flex", gap: 1 }}>
-          <Button
-            variant="outlined"
-            startIcon={<SyncIcon />}
-            onClick={onSync}
-            disabled={syncLoading}
-            sx={{
-              color: BRAND_COLORS.PRIMARY,
+        <Button
+          variant="outlined"
+          startIcon={<SyncIcon />}
+          onClick={onSync}
+          disabled={syncLoading}
+          sx={{
+            color: BRAND_COLORS.PRIMARY,
+            borderColor: BRAND_COLORS.PRIMARY,
+            "&:hover": {
+              backgroundColor: `${BRAND_COLORS.PRIMARY}10`,
               borderColor: BRAND_COLORS.PRIMARY,
-              "&:hover": {
-                backgroundColor: `${BRAND_COLORS.PRIMARY}10`,
-                borderColor: BRAND_COLORS.PRIMARY,
-              },
-            }}
-          >
-            {syncLoading ? <CircularProgress size={16} /> : "상태 동기화"}
-          </Button>
-        </Box>
+            },
+          }}
+        >
+          {syncLoading ? <CircularProgress size={16} /> : "동기화"}
+        </Button>
       </Box>
 
-      {/* 검색 필터 영역 */}
+      {/* 검색 폼 */}
       <Paper
         sx={{
           p: 3,
           mb: 3,
-          borderRadius: 2,
           border: `1px solid ${BRAND_COLORS.BORDER}`,
-          backgroundColor: "#f8f9fa",
+          borderRadius: 2,
         }}
       >
-        <Box
-          sx={{
-            display: "flex",
-            alignItems: "center",
-            gap: 1,
-            mb: 2,
-          }}
-        >
-          <FilterIcon sx={{ color: BRAND_COLORS.PRIMARY, fontSize: 20 }} />
-          <Typography
-            variant="subtitle1"
-            sx={{
-              fontWeight: 600,
-              color: BRAND_COLORS.TEXT_PRIMARY,
-            }}
-          >
-            검색 조건
-          </Typography>
-        </Box>
-
-        <Grid container spacing={2} alignItems="center">
+        <Grid container spacing={2} alignItems="end">
           {/* 검색 조건 선택 */}
-          <Grid xs={12} sm={6} md={2}>
+          <Grid size={{ xs: 12, sm: 6, md: 3 }}>
             <FormControl fullWidth size="small">
               <InputLabel>검색 조건</InputLabel>
               <Select
@@ -212,7 +189,7 @@ const OrderSearchTab: React.FC<OrderSearchTabProps> = ({
           </Grid>
 
           {/* 검색어 입력 */}
-          <Grid xs={12} sm={6} md={4}>
+          <Grid size={{ xs: 12, sm: 6, md: 4 }}>
             <TextField
               fullWidth
               size="small"
@@ -231,7 +208,7 @@ const OrderSearchTab: React.FC<OrderSearchTabProps> = ({
           </Grid>
 
           {/* 상태 필터 */}
-          <Grid xs={12} sm={6} md={3}>
+          <Grid size={{ xs: 12, sm: 6, md: 3 }}>
             <FormControl fullWidth size="small">
               <InputLabel>주문 상태</InputLabel>
               <Select
@@ -251,7 +228,7 @@ const OrderSearchTab: React.FC<OrderSearchTabProps> = ({
           </Grid>
 
           {/* 액션 버튼들 */}
-          <Grid xs={12} sm={6} md={3}>
+          <Grid size={{ xs: 12, sm: 6, md: 2 }}>
             <Box sx={{ display: "flex", gap: 1, height: "100%" }}>
               <Button
                 variant="contained"
@@ -298,7 +275,7 @@ const OrderSearchTab: React.FC<OrderSearchTabProps> = ({
           <>
             <Divider sx={{ my: 2 }} />
             <Grid container spacing={2}>
-              <Grid xs={12} sm={6} md={3}>
+              <Grid size={{ xs: 12, sm: 6, md: 3 }}>
                 <TextField
                   fullWidth
                   size="small"
@@ -307,7 +284,7 @@ const OrderSearchTab: React.FC<OrderSearchTabProps> = ({
                   InputLabelProps={{ shrink: true }}
                 />
               </Grid>
-              <Grid xs={12} sm={6} md={3}>
+              <Grid size={{ xs: 12, sm: 6, md: 3 }}>
                 <TextField
                   fullWidth
                   size="small"
@@ -316,7 +293,7 @@ const OrderSearchTab: React.FC<OrderSearchTabProps> = ({
                   InputLabelProps={{ shrink: true }}
                 />
               </Grid>
-              <Grid xs={12} sm={6} md={3}>
+              <Grid size={{ xs: 12, sm: 6, md: 3 }}>
                 <TextField
                   fullWidth
                   size="small"
@@ -329,7 +306,7 @@ const OrderSearchTab: React.FC<OrderSearchTabProps> = ({
                   }}
                 />
               </Grid>
-              <Grid xs={12} sm={6} md={3}>
+              <Grid size={{ xs: 12, sm: 6, md: 3 }}>
                 <TextField
                   fullWidth
                   size="small"
@@ -358,24 +335,15 @@ const OrderSearchTab: React.FC<OrderSearchTabProps> = ({
               fontSize: "0.875rem",
             }}
           >
-            {showAdvancedSearch ? "고급 검색 숨기기" : "고급 검색 옵션"}
+            {showAdvancedSearch ? "간단 검색" : "고급 검색 옵션"}
           </Button>
         </Box>
       </Paper>
 
-      {/* 검색 결과 정보 */}
-      {data && data.orders.length > 0 && (
+      {/* 검색 결과 요약 */}
+      {data.totalElements > 0 && (
         <Box sx={{ mb: 2 }}>
-          <Alert
-            severity="info"
-            sx={{
-              backgroundColor: `${BRAND_COLORS.PRIMARY}10`,
-              border: `1px solid ${BRAND_COLORS.PRIMARY}30`,
-              "& .MuiAlert-icon": {
-                color: BRAND_COLORS.PRIMARY,
-              },
-            }}
-          >
+          <Alert severity="info" icon={<FilterIcon />}>
             <Typography variant="body2">
               총 <strong>{data.totalElements}건</strong>의 주문을 찾았습니다.
               {statusFilter !== "ALL" && (
@@ -391,30 +359,12 @@ const OrderSearchTab: React.FC<OrderSearchTabProps> = ({
                   )
                 </>
               )}
-              {searchKeyword && (
-                <>
-                  {" "}
-                  (검색어: <strong>"{searchKeyword}"</strong>)
-                </>
-              )}
             </Typography>
           </Alert>
         </Box>
       )}
 
-      {/* 검색 결과가 없는 경우 */}
-      {data && data.orders.length === 0 && !loading && (
-        <Box sx={{ mb: 2 }}>
-          <Alert severity="warning">
-            <Typography variant="body2">
-              검색 조건에 맞는 주문을 찾을 수 없습니다. 다른 검색 조건을
-              시도해보세요.
-            </Typography>
-          </Alert>
-        </Box>
-      )}
-
-      {/* 주문 목록 테이블 */}
+      {/* 검색 결과 테이블 */}
       <OrderListTable
         data={data}
         loading={loading}
@@ -424,57 +374,6 @@ const OrderSearchTab: React.FC<OrderSearchTabProps> = ({
         onStatusChange={onStatusChange}
         onDeleteOrder={onDeleteOrder}
       />
-
-      {/* 빠른 필터 버튼들 */}
-      {data && data.orders.length > 0 && (
-        <Box sx={{ mt: 3 }}>
-          <Typography
-            variant="subtitle2"
-            sx={{
-              color: BRAND_COLORS.TEXT_SECONDARY,
-              mb: 1,
-              fontWeight: 600,
-            }}
-          >
-            빠른 필터
-          </Typography>
-          <Box sx={{ display: "flex", gap: 1, flexWrap: "wrap" }}>
-            {STATUS_OPTIONS.filter((status) => status.value !== "ALL").map(
-              (status) => (
-                <Button
-                  key={status.value}
-                  variant={
-                    statusFilter === status.value ? "contained" : "outlined"
-                  }
-                  size="small"
-                  onClick={() => onStatusFilterChange(status.value)}
-                  sx={{
-                    textTransform: "none",
-                    fontSize: "0.75rem",
-                    ...(statusFilter === status.value
-                      ? {
-                          backgroundColor: BRAND_COLORS.PRIMARY,
-                          "&:hover": {
-                            backgroundColor: `${BRAND_COLORS.PRIMARY}dd`,
-                          },
-                        }
-                      : {
-                          color: BRAND_COLORS.TEXT_SECONDARY,
-                          borderColor: BRAND_COLORS.BORDER,
-                          "&:hover": {
-                            backgroundColor: `${BRAND_COLORS.TEXT_SECONDARY}10`,
-                            borderColor: BRAND_COLORS.TEXT_SECONDARY,
-                          },
-                        }),
-                  }}
-                >
-                  {status.label}
-                </Button>
-              )
-            )}
-          </Box>
-        </Box>
-      )}
     </Box>
   );
 };

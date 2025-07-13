@@ -14,8 +14,6 @@ import {
   Select,
   MenuItem,
   TextField,
-  FormControlLabel,
-  Checkbox,
   Alert,
   CircularProgress,
   Grid,
@@ -24,8 +22,6 @@ import {
   CardContent,
 } from "@mui/material";
 import {
-  Close as CloseIcon,
-  Warning as WarningIcon,
   LocalShipping as ShippingIcon,
   Schedule as ScheduleIcon,
   Info as InfoIcon,
@@ -105,104 +101,88 @@ const OrderStatusUpdateModal: React.FC<OrderStatusUpdateModalProps> = ({
   // ===== 기본 상태 =====
   const [selectedStatus, setSelectedStatus] =
     useState<OrderStatus>(currentStatus);
-  const [reason, setReason] = useState("");
-
-  // ===== 출고 지연 관련 상태 =====
-  const [isDelayed, setIsDelayed] = useState(false);
   const [delayReason, setDelayReason] = useState("");
   const [expectedShipDate, setExpectedShipDate] = useState("");
 
-  // ===== 운송장 관련 상태 (배송중 선택시) =====
+  // ===== 배송 관련 상태 =====
   const [courierCompany, setCourierCompany] = useState<CourierCompany | "">("");
   const [trackingNumber, setTrackingNumber] = useState("");
 
   // ===== UI 상태 =====
-  const [errors, setErrors] = useState<Record<string, string>>({});
+  const [validationErrors, setValidationErrors] = useState<string[]>([]);
 
-  // ===== 사용 가능한 상태 목록 =====
+  // ===== 유틸리티 =====
   const availableStatuses = getAvailableStatuses(currentStatus);
+  const currentStatusInfo = ORDER_STATUS_INFO_MAP[currentStatus];
+  const selectedStatusInfo = ORDER_STATUS_INFO_MAP[selectedStatus];
 
-  // ===== 초기값 설정 =====
-  useEffect(() => {
-    if (open) {
-      setSelectedStatus(currentStatus);
-      setReason("");
-      setIsDelayed(false);
-      setDelayReason("");
-      setExpectedShipDate("");
-      setCourierCompany("");
-      setTrackingNumber("");
-      setErrors({});
-    }
-  }, [open, currentStatus]);
-
-  // ===== 유효성 검사 =====
-  const validateForm = (): boolean => {
-    const newErrors: Record<string, string> = {};
-
-    // 배송중으로 변경하는 경우 운송장 정보 필수
-    if (selectedStatus === "IN_DELIVERY") {
-      if (!courierCompany) {
-        newErrors.courierCompany = "택배사를 선택해주세요.";
-      }
-      if (!trackingNumber) {
-        newErrors.trackingNumber = "운송장 번호를 입력해주세요.";
-      } else if (trackingNumber.length < 8) {
-        newErrors.trackingNumber = "올바른 운송장 번호를 입력해주세요.";
-      }
-    }
-
-    // 출고 지연인 경우 추가 정보 필수
-    if (isDelayed) {
-      if (!delayReason) {
-        newErrors.delayReason = "지연 사유를 입력해주세요.";
-      }
-      if (!expectedShipDate) {
-        newErrors.expectedShipDate = "예상 출고일을 선택해주세요.";
-      }
-    }
-
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
-  };
-
-  // ===== 제출 핸들러 =====
-  const handleSubmit = async () => {
-    if (!validateForm()) {
-      return;
-    }
-
-    try {
-      const request: OrderStatusUpdateRequest = {
-        orderNumber,
-        newStatus: selectedStatus,
-        reason: reason || undefined,
-        isDelayed: isDelayed || undefined,
-        expectedShipDate: expectedShipDate || undefined,
-        courierCompany: courierCompany || undefined,
-        trackingNumber: trackingNumber || undefined,
-      };
-
-      await updateOrderStatus(request);
-      onSuccess();
-      onClose();
-    } catch (error) {
-      console.error("주문 상태 변경 실패:", error);
-    }
-  };
-
-  // ===== 날짜 포맷 헬퍼 =====
+  // 날짜 포맷 헬퍼
   const formatDate = (dateString: string): string => {
     return new Date(dateString).toLocaleDateString("ko-KR", {
       year: "numeric",
       month: "long",
       day: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
     });
   };
 
-  // ===== 상태 정보 표시 =====
-  const currentStatusInfo = ORDER_STATUS_INFO_MAP[currentStatus];
-  const selectedStatusInfo = ORDER_STATUS_INFO_MAP[selectedStatus];
+  // ===== 이벤트 핸들러 =====
+  const handleSubmit = async () => {
+    const errors: string[] = [];
+
+    // 배송중으로 변경 시 운송장 정보 필수
+    if (selectedStatus === "IN_DELIVERY") {
+      if (!courierCompany) errors.push("택배사를 선택해주세요.");
+      if (!trackingNumber.trim()) errors.push("운송장번호를 입력해주세요.");
+    }
+
+    // 출고 지연 처리 시 필수 정보
+    if (selectedStatus === "PREPARING" && currentStatus === "PREPARING") {
+      if (!delayReason.trim()) errors.push("지연 사유를 입력해주세요.");
+      if (!expectedShipDate) errors.push("예상 출고일을 선택해주세요.");
+    }
+
+    if (errors.length > 0) {
+      setValidationErrors(errors);
+      return;
+    }
+
+    try {
+      const updateRequest: OrderStatusUpdateRequest = {
+        orderNumber,
+        newStatus: selectedStatus,
+        ...(selectedStatus === "IN_DELIVERY" && {
+          courierCompany: courierCompany as CourierCompany,
+          trackingNumber: trackingNumber.trim(),
+        }),
+        ...(selectedStatus === "PREPARING" &&
+          currentStatus === "PREPARING" && {
+            reason: delayReason.trim(),
+            isDelayed: true,
+            expectedShipDate,
+          }),
+      };
+
+      await updateOrderStatus(updateRequest);
+      onSuccess();
+      onClose();
+    } catch (error) {
+      console.error("상태 변경 실패:", error);
+    }
+  };
+
+  // ===== 초기화 효과 =====
+  useEffect(() => {
+    if (open) {
+      setSelectedStatus(currentStatus);
+      setDelayReason("");
+      setExpectedShipDate("");
+      setCourierCompany("");
+      setTrackingNumber("");
+      setValidationErrors([]);
+    }
+  }, [open, currentStatus]);
 
   return (
     <Dialog
@@ -210,8 +190,8 @@ const OrderStatusUpdateModal: React.FC<OrderStatusUpdateModalProps> = ({
       onClose={onClose}
       maxWidth="md"
       fullWidth
-      PaperProps={{
-        sx: {
+      sx={{
+        "& .MuiDialog-paper": {
           borderRadius: 2,
           maxHeight: "90vh",
         },
@@ -220,20 +200,24 @@ const OrderStatusUpdateModal: React.FC<OrderStatusUpdateModalProps> = ({
       {/* 모달 헤더 */}
       <DialogTitle
         sx={{
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
-          backgroundColor: BRAND_COLORS.BACKGROUND_LIGHT,
+          p: 3,
+          pb: 0,
           borderBottom: `1px solid ${BRAND_COLORS.BORDER}`,
+          backgroundColor: BRAND_COLORS.BACKGROUND_LIGHT,
         }}
       >
-        <Box>
+        <Box
+          sx={{
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+          }}
+        >
           <Typography
             variant="h6"
             sx={{
-              color: BRAND_COLORS.TEXT_PRIMARY,
               fontWeight: 700,
-              mb: 0.5,
+              color: BRAND_COLORS.TEXT_PRIMARY,
             }}
           >
             주문 상태 변경
@@ -242,17 +226,15 @@ const OrderStatusUpdateModal: React.FC<OrderStatusUpdateModalProps> = ({
             variant="body2"
             sx={{
               color: BRAND_COLORS.TEXT_SECONDARY,
+              fontFamily: "monospace",
             }}
           >
-            주문번호: {orderNumber}
+            {orderNumber}
           </Typography>
         </Box>
-        <SecondaryButton onClick={onClose} size="small">
-          <CloseIcon />
-        </SecondaryButton>
       </DialogTitle>
 
-      {/* 모달 내용 */}
+      {/* 모달 콘텐츠 */}
       <DialogContent sx={{ p: 3 }}>
         {detailLoading ? (
           <Box
@@ -283,7 +265,7 @@ const OrderStatusUpdateModal: React.FC<OrderStatusUpdateModalProps> = ({
                   </Typography>
 
                   <Grid container spacing={2}>
-                    <Grid xs={6}>
+                    <Grid size={{ xs: 6 }}>
                       <Typography
                         variant="body2"
                         color={BRAND_COLORS.TEXT_SECONDARY}
@@ -294,7 +276,7 @@ const OrderStatusUpdateModal: React.FC<OrderStatusUpdateModalProps> = ({
                         {formatDate(orderDetail.orderDate)}
                       </Typography>
                     </Grid>
-                    <Grid xs={6}>
+                    <Grid size={{ xs: 6 }}>
                       <Typography
                         variant="body2"
                         color={BRAND_COLORS.TEXT_SECONDARY}
@@ -305,7 +287,7 @@ const OrderStatusUpdateModal: React.FC<OrderStatusUpdateModalProps> = ({
                         {orderDetail.buyerName}
                       </Typography>
                     </Grid>
-                    <Grid xs={12}>
+                    <Grid size={{ xs: 12 }}>
                       <Typography
                         variant="body2"
                         color={BRAND_COLORS.TEXT_SECONDARY}
@@ -363,119 +345,91 @@ const OrderStatusUpdateModal: React.FC<OrderStatusUpdateModalProps> = ({
               {selectedStatus !== currentStatus && (
                 <Alert severity="info" icon={<InfoIcon />} sx={{ mb: 2 }}>
                   <Typography variant="body2">
-                    <strong>{currentStatusInfo.label}</strong> →{" "}
-                    <strong>{selectedStatusInfo.label}</strong>
-                    <br />
-                    {selectedStatusInfo.description}
+                    <strong>{currentStatusInfo.label}</strong>에서{" "}
+                    <strong>{selectedStatusInfo.label}</strong>로 변경됩니다.
                   </Typography>
                 </Alert>
               )}
-
-              {/* 변경 사유 */}
-              <TextField
-                fullWidth
-                label="변경 사유 (선택사항)"
-                multiline
-                rows={2}
-                value={reason}
-                onChange={(e) => setReason(e.target.value)}
-                placeholder="상태 변경 사유를 입력하세요"
-                sx={{ mb: 2 }}
-              />
             </Box>
 
-            {/* 출고 지연 처리 */}
-            {(selectedStatus === "PREPARING" ||
-              currentStatus === "PREPARING") && (
-              <Paper
-                sx={{
-                  p: 2,
-                  mb: 3,
-                  backgroundColor: "#fff3e0",
-                  border: "1px solid #ffb74d",
-                }}
-              >
-                <FormControlLabel
-                  control={
-                    <Checkbox
-                      checked={isDelayed}
-                      onChange={(e) => setIsDelayed(e.target.checked)}
-                      color="warning"
-                    />
-                  }
-                  label={
-                    <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-                      <ScheduleIcon sx={{ color: "#f57c00", fontSize: 18 }} />
-                      <Typography variant="body2" sx={{ fontWeight: 600 }}>
-                        출고 지연 요청
-                      </Typography>
-                    </Box>
-                  }
-                />
-
-                {isDelayed && (
-                  <Box sx={{ mt: 2, ml: 4 }}>
-                    <TextField
-                      fullWidth
-                      label="지연 사유"
-                      value={delayReason}
-                      onChange={(e) => setDelayReason(e.target.value)}
-                      error={!!errors.delayReason}
-                      helperText={errors.delayReason}
-                      sx={{ mb: 2 }}
-                      required
-                    />
-
-                    <TextField
-                      fullWidth
-                      label="예상 출고일"
-                      type="date"
-                      value={expectedShipDate}
-                      onChange={(e) => setExpectedShipDate(e.target.value)}
-                      error={!!errors.expectedShipDate}
-                      helperText={errors.expectedShipDate}
-                      InputLabelProps={{ shrink: true }}
-                      inputProps={{
-                        min: new Date().toISOString().split("T")[0],
-                      }}
-                      required
-                    />
+            {/* 출고 지연 처리 (상품준비중 → 상품준비중) */}
+            {selectedStatus === "PREPARING" &&
+              currentStatus === "PREPARING" && (
+                <Paper
+                  sx={{
+                    p: 3,
+                    mb: 3,
+                    border: `1px solid #ffb74d`,
+                    backgroundColor: "#fff3e0",
+                  }}
+                >
+                  <Box
+                    sx={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: 1,
+                      mb: 2,
+                    }}
+                  >
+                    <ScheduleIcon sx={{ color: "#f57c00" }} />
+                    <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>
+                      출고 지연 처리
+                    </Typography>
                   </Box>
-                )}
-              </Paper>
-            )}
 
-            {/* 운송장 정보 입력 (배송중으로 변경시) */}
+                  <Grid container spacing={2}>
+                    <Grid size={{ xs: 12 }}>
+                      <TextField
+                        fullWidth
+                        multiline
+                        rows={3}
+                        label="지연 사유"
+                        placeholder="고객에게 안내할 지연 사유를 입력해주세요"
+                        value={delayReason}
+                        onChange={(e) => setDelayReason(e.target.value)}
+                        required
+                      />
+                    </Grid>
+                    <Grid size={{ xs: 12, sm: 6 }}>
+                      <TextField
+                        fullWidth
+                        type="date"
+                        label="예상 출고일"
+                        value={expectedShipDate}
+                        onChange={(e) => setExpectedShipDate(e.target.value)}
+                        InputLabelProps={{ shrink: true }}
+                        inputProps={{
+                          min: new Date().toISOString().split("T")[0],
+                        }}
+                        required
+                      />
+                    </Grid>
+                  </Grid>
+                </Paper>
+              )}
+
+            {/* 배송 정보 입력 (배송중으로 변경) */}
             {selectedStatus === "IN_DELIVERY" && (
               <Paper
                 sx={{
-                  p: 2,
-                  backgroundColor: "#e3f2fd",
-                  border: "1px solid #90caf9",
+                  p: 3,
+                  mb: 3,
+                  border: `1px solid ${BRAND_COLORS.PRIMARY}`,
+                  backgroundColor: `${BRAND_COLORS.PRIMARY}10`,
                 }}
               >
                 <Box
                   sx={{ display: "flex", alignItems: "center", gap: 1, mb: 2 }}
                 >
-                  <ShippingIcon sx={{ color: "#1976d2" }} />
-                  <Typography variant="subtitle2" sx={{ fontWeight: 600 }}>
-                    운송장 정보 등록
+                  <ShippingIcon sx={{ color: BRAND_COLORS.PRIMARY }} />
+                  <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>
+                    배송 정보 등록
                   </Typography>
                 </Box>
 
-                <Alert severity="info" sx={{ mb: 2 }}>
-                  <Typography variant="body2">
-                    배송중 상태로 변경하려면 운송장 정보를 등록해야 합니다.
-                  </Typography>
-                </Alert>
-
                 <Grid container spacing={2}>
-                  <Grid xs={12} sm={6}>
-                    <FormControl
-                      fullWidth
-                      error={!!errors.courierCompany}
-                      required
-                    >
+                  <Grid size={{ xs: 12, sm: 6 }}>
+                    <FormControl fullWidth required>
                       <InputLabel>택배사</InputLabel>
                       <Select
                         value={courierCompany}
@@ -490,29 +444,15 @@ const OrderStatusUpdateModal: React.FC<OrderStatusUpdateModalProps> = ({
                           </MenuItem>
                         ))}
                       </Select>
-                      {errors.courierCompany && (
-                        <Typography
-                          variant="caption"
-                          color="error"
-                          sx={{ mt: 0.5 }}
-                        >
-                          {errors.courierCompany}
-                        </Typography>
-                      )}
                     </FormControl>
                   </Grid>
-
-                  <Grid xs={12} sm={6}>
+                  <Grid size={{ xs: 12, sm: 6 }}>
                     <TextField
                       fullWidth
-                      label="운송장 번호"
+                      label="운송장번호"
+                      placeholder="운송장번호를 입력하세요"
                       value={trackingNumber}
-                      onChange={(e) =>
-                        setTrackingNumber(e.target.value.replace(/\D/g, ""))
-                      }
-                      error={!!errors.trackingNumber}
-                      helperText={errors.trackingNumber}
-                      placeholder="숫자만 입력"
+                      onChange={(e) => setTrackingNumber(e.target.value)}
                       required
                     />
                   </Grid>
@@ -520,13 +460,19 @@ const OrderStatusUpdateModal: React.FC<OrderStatusUpdateModalProps> = ({
               </Paper>
             )}
 
-            {/* 경고 메시지 */}
-            {selectedStatus !== currentStatus && (
-              <Alert severity="warning" icon={<WarningIcon />} sx={{ mt: 2 }}>
-                <Typography variant="body2">
-                  <strong>주의:</strong> 주문 상태를 변경하면 되돌릴 수
-                  없습니다. 변경하기 전에 신중히 확인해주세요.
+            {/* 검증 오류 표시 */}
+            {validationErrors.length > 0 && (
+              <Alert severity="error" sx={{ mb: 2 }}>
+                <Typography variant="body2" sx={{ fontWeight: 600, mb: 1 }}>
+                  다음 항목을 확인해주세요:
                 </Typography>
+                <ul style={{ margin: 0, paddingLeft: 20 }}>
+                  {validationErrors.map((error, index) => (
+                    <li key={index}>
+                      <Typography variant="body2">{error}</Typography>
+                    </li>
+                  ))}
+                </ul>
               </Alert>
             )}
           </Box>
@@ -544,10 +490,9 @@ const OrderStatusUpdateModal: React.FC<OrderStatusUpdateModalProps> = ({
         <SecondaryButton onClick={onClose} disabled={actionLoading}>
           취소
         </SecondaryButton>
-
         <PrimaryButton
           onClick={handleSubmit}
-          disabled={actionLoading || selectedStatus === currentStatus}
+          disabled={actionLoading}
           startIcon={actionLoading ? <CircularProgress size={16} /> : null}
         >
           {actionLoading ? "처리중..." : "상태 변경"}

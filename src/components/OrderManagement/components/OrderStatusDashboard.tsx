@@ -10,7 +10,6 @@ import {
   DirectionsRun as TransitIcon,
   CheckCircle as DeliveredIcon,
   Warning as WarningIcon,
-  Schedule as DelayIcon,
 } from "@mui/icons-material";
 import { BRAND_COLORS } from "@/components/SellerDashboard/SellerInfo";
 import type { OrderSummaryStats, UrgentTasks } from "@/types/sellerOrder.types";
@@ -153,7 +152,7 @@ const OrderStatusDashboard: React.FC<OrderStatusDashboardProps> = ({
       {/* 상태 카드 그리드 */}
       <Grid container spacing={3}>
         {statusCards.map((card) => (
-          <Grid key={card.key} xs={12} sm={6} md={2.4}>
+          <Grid key={card.key} size={{ xs: 12, sm: 6, md: 2.4 }}>
             <Paper
               sx={{
                 p: 3,
@@ -175,29 +174,35 @@ const OrderStatusDashboard: React.FC<OrderStatusDashboardProps> = ({
               onClick={() => onCardClick?.(card.key)}
             >
               {/* 긴급 표시 배지 */}
-              {card.urgent && card.urgentLabel && (
-                <Chip
-                  icon={<DelayIcon sx={{ fontSize: 12 }} />}
-                  label={card.urgentLabel}
-                  size="small"
-                  color="error"
+              {card.urgent && (
+                <Box
                   sx={{
                     position: "absolute",
                     top: 8,
                     right: 8,
-                    fontSize: "0.7rem",
-                    height: 20,
                   }}
-                />
+                >
+                  <Chip
+                    icon={<WarningIcon sx={{ fontSize: 12 }} />}
+                    label={card.urgentLabel}
+                    color="error"
+                    size="small"
+                    variant="filled"
+                    sx={{
+                      fontSize: "0.65rem",
+                      height: 20,
+                    }}
+                  />
+                </Box>
               )}
 
               {/* 아이콘 */}
               <Box
                 sx={{
+                  color: card.color,
+                  mb: 2,
                   display: "flex",
                   justifyContent: "center",
-                  mb: 2,
-                  color: card.color,
                 }}
               >
                 {card.icon}
@@ -205,28 +210,26 @@ const OrderStatusDashboard: React.FC<OrderStatusDashboardProps> = ({
 
               {/* 제목 */}
               <Typography
-                variant="subtitle2"
+                variant="h6"
                 sx={{
-                  color: BRAND_COLORS.TEXT_PRIMARY,
                   fontWeight: 600,
+                  color: BRAND_COLORS.TEXT_PRIMARY,
                   mb: 1,
-                  fontSize: "0.9rem",
                 }}
               >
                 {card.title}
               </Typography>
 
-              {/* 수량 */}
+              {/* 카운트 */}
               <Typography
                 variant="h4"
                 sx={{
-                  color: card.color,
                   fontWeight: 700,
+                  color: card.color,
                   mb: 1,
-                  fontSize: "2rem",
                 }}
               >
-                {card.count}
+                {card.count.toLocaleString()}
               </Typography>
 
               {/* 설명 */}
@@ -236,16 +239,13 @@ const OrderStatusDashboard: React.FC<OrderStatusDashboardProps> = ({
                   color: BRAND_COLORS.TEXT_SECONDARY,
                   fontSize: "0.75rem",
                   lineHeight: 1.2,
-                  display: "-webkit-box",
-                  WebkitLineClamp: 2,
-                  WebkitBoxOrient: "vertical",
-                  overflow: "hidden",
+                  display: "block",
                 }}
               >
                 {card.description}
               </Typography>
 
-              {/* 진행률 표시 (옵션) */}
+              {/* 진행률 바 (선택사항) */}
               {totalOrders > 0 && (
                 <Box sx={{ mt: 2 }}>
                   <Box
