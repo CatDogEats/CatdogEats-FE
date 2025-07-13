@@ -25,8 +25,8 @@ import type {
   SellerOrderListResponse,
   SellerOrderSummary,
   OrderStatus,
-  ORDER_STATUS_LABELS,
 } from "@/types/sellerOrder.types";
+import { ORDER_STATUS_LABELS } from "@/types/sellerOrder.types";
 
 interface OrderListTableProps {
   data: SellerOrderListResponse | null;
