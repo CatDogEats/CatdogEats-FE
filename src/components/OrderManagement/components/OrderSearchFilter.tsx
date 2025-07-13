@@ -1,6 +1,6 @@
 // src/components/OrderManagement/components/OrderSearchFilter.tsx
 
-import React, { useState } from "react";
+import React from "react";
 import {
   Box,
   Paper,
@@ -20,10 +20,8 @@ import {
   Clear as ClearIcon,
   Sync as SyncIcon,
 } from "@mui/icons-material";
-import type {
-  OrderStatus,
-  ORDER_STATUS_LABELS,
-} from "@/types/sellerOrder.types";
+import type { OrderStatus } from "@/types/sellerOrder.types";
+import { ORDER_STATUS_LABELS } from "@/types/sellerOrder.types";
 
 interface OrderSearchFilterProps {
   // 검색 관련
@@ -84,9 +82,9 @@ const OrderSearchFilter: React.FC<OrderSearchFilterProps> = ({
 
   return (
     <Paper sx={{ p: 3, mb: 3, borderRadius: 3 }}>
-      <Grid container spacing={2} alignItems="flex-end">
+      <Grid container spacing={2} sx={{ alignItems: "flex-end" }}>
         {/* 검색 조건 선택 */}
-        <Grid item xs={12} sm={6} md={2}>
+        <Grid size={{ xs: 12, sm: 6, md: 2 }}>
           <FormControl fullWidth size="small">
             <InputLabel>검색조건</InputLabel>
             <Select
@@ -116,14 +114,14 @@ const OrderSearchFilter: React.FC<OrderSearchFilterProps> = ({
         </Grid>
 
         {/* 검색어 입력 */}
-        <Grid item xs={12} sm={6} md={3}>
+        <Grid size={{ xs: 12, sm: 6, md: 4 }}>
           <TextField
             fullWidth
             size="small"
-            placeholder="검색어를 입력하세요"
             value={searchKeyword}
             onChange={(e) => onSearchKeywordChange(e.target.value)}
             onKeyPress={handleKeyPress}
+            placeholder="검색어를 입력하세요"
             InputProps={{
               startAdornment: (
                 <InputAdornment position="start">
@@ -133,16 +131,10 @@ const OrderSearchFilter: React.FC<OrderSearchFilterProps> = ({
               endAdornment: searchKeyword && (
                 <InputAdornment position="end">
                   <Button
-                    size="small"
                     onClick={handleClearSearch}
-                    sx={{
-                      minWidth: "auto",
-                      p: 0.5,
-                      borderRadius: "50%",
-                      color: "#9ca3af",
-                    }}
+                    sx={{ minWidth: "auto", p: 0.5 }}
                   >
-                    <ClearIcon fontSize="small" />
+                    <ClearIcon sx={{ fontSize: 16, color: "#9ca3af" }} />
                   </Button>
                 </InputAdornment>
               ),
@@ -165,7 +157,7 @@ const OrderSearchFilter: React.FC<OrderSearchFilterProps> = ({
         </Grid>
 
         {/* 주문 상태 필터 */}
-        <Grid item xs={12} sm={6} md={2}>
+        <Grid size={{ xs: 12, sm: 6, md: 2 }}>
           <FormControl fullWidth size="small">
             <InputLabel>주문상태</InputLabel>
             <Select
@@ -198,7 +190,7 @@ const OrderSearchFilter: React.FC<OrderSearchFilterProps> = ({
         </Grid>
 
         {/* 검색 버튼 */}
-        <Grid item xs={12} sm={6} md={1.5}>
+        <Grid size={{ xs: 12, sm: 6, md: 1.5 }}>
           <Button
             fullWidth
             variant="contained"
@@ -220,7 +212,7 @@ const OrderSearchFilter: React.FC<OrderSearchFilterProps> = ({
         </Grid>
 
         {/* 초기화 버튼 */}
-        <Grid item xs={12} sm={6} md={1.5}>
+        <Grid size={{ xs: 12, sm: 6, md: 1.5 }}>
           <Button
             fullWidth
             variant="outlined"
@@ -244,7 +236,7 @@ const OrderSearchFilter: React.FC<OrderSearchFilterProps> = ({
         </Grid>
 
         {/* 주문 상태 동기화 버튼 */}
-        <Grid item xs={12} sm={6} md={2}>
+        <Grid size={{ xs: 12, sm: 6, md: 2 }}>
           <Button
             fullWidth
             variant="contained"
