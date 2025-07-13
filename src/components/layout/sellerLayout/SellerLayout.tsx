@@ -1,4 +1,3 @@
-// src/components/layout/SellerLayout.tsx
 import { useState } from 'react';
 import { Outlet, useLocation, useNavigate } from 'react-router-dom';
 import {
@@ -15,6 +14,7 @@ import {
 } from '@mui/material';
 import SellerHeader from './SellerHeader.tsx';
 import { SellerInfo, Notification } from '@/components/layout/sellerLayout/types/seller.types.ts';
+import { useAuth } from '@/service/auth/AuthAPI';
 
 // 더미 데이터 (추후 전역 상태 관리로 이동)
 const mockSellerInfo: SellerInfo = {
@@ -61,10 +61,20 @@ const SellerLayout = () => {
     const [mobileOpen, setMobileOpen] = useState(false);
     const location = useLocation(); // 현재 위치 감지
     const navigate = useNavigate(); // 네비게이션 함수
+    const { loading, isAuthenticated, logout } = useAuth();
 
     const handleDrawerToggle = () => {
         setMobileOpen(!mobileOpen);
     };
+
+
+    if (loading) {
+            return (
+                  <Box sx={{ display:'flex', alignItems:'center', justifyContent:'center', minHeight:'100vh' }}>
+                        <Typography>Loading...</Typography>
+            </Box>
+             );
+        }
 
     const handleNotificationClick = (notification: Notification) => {
         console.log('알림 클릭:', notification);
@@ -80,6 +90,17 @@ const SellerLayout = () => {
 
     const handleInquiryClick = () => {
         console.log('1:1 문의 클릭');
+    };
+
+    const handleLogout = async () => {
+        try {
+            await logout();
+            console.log('로그아웃 완료');
+            // 로그아웃 후 로그인 페이지로 이동할 수도 있음
+            navigate('/login');
+        } catch (error) {
+            console.error('로그아웃 중 오류 발생:', error);
+        }
     };
 
     const menuItems = [
@@ -148,6 +169,50 @@ const SellerLayout = () => {
             setMobileOpen(false);
         }
     };
+
+    // 로그인되지 않은 상태에서는 로그인 페이지로 리다이렉트하거나 로그인 폼 표시
+    if (!isAuthenticated) {
+        return (
+            <Box sx={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                minHeight: '100vh',
+                backgroundColor: theme.palette.background.default
+            }}>
+                <Box sx={{
+                    textAlign: 'center',
+                    p: 4,
+                    backgroundColor: theme.palette.background.paper,
+                    borderRadius: 2,
+                    boxShadow: '0 4px 12px rgba(0,0,0,0.1)'
+                }}>
+                    <Typography variant="h5" sx={{ mb: 2, color: theme.palette.text.primary }}>
+                        판매자 로그인이 필요합니다
+                    </Typography>
+                    <Typography variant="body1" sx={{ mb: 3, color: theme.palette.text.secondary }}>
+                        판매자 대시보드에 접근하려면 로그인하세요.
+                    </Typography>
+                    <Box sx={{ display: 'flex', gap: 2, justifyContent: 'center' }}>
+                        <button
+                            onClick={() => navigate('/login')}
+                            style={{
+                                padding: '12px 24px',
+                                backgroundColor: theme.palette.primary.main,
+                                color: 'white',
+                                border: 'none',
+                                borderRadius: '8px',
+                                cursor: 'pointer',
+                                fontSize: '1rem'
+                            }}
+                        >
+                            로그인하기
+                        </button>
+                    </Box>
+                </Box>
+            </Box>
+        );
+    }
 
     const drawer = (
         <Box sx={{
@@ -252,6 +317,8 @@ const SellerLayout = () => {
                     onAnnouncementClick={handleAnnouncementClick}
                     onFaqClick={handleFaqClick}
                     onInquiryClick={handleInquiryClick}
+                    onLogout={handleLogout}
+                    isAuthenticated={isAuthenticated}
                 />
             </Box>
 

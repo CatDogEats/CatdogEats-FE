@@ -10,6 +10,10 @@ import { useNavigate } from 'react-router-dom';
 import { SellerHeaderProps } from '@/components/layout/sellerLayout/types/seller.types.ts';
 import { NotificationMenu, ProfileMenu } from '@/components/common';
 
+interface ExtendedSellerHeaderProps extends SellerHeaderProps {
+      isAuthenticated: boolean;
+}
+
 const SellerHeader = ({
                           sellerInfo,
                           notifications,
@@ -17,9 +21,10 @@ const SellerHeader = ({
                           onAnnouncementClick,
                           onFaqClick,
                           onInquiryClick,
+                          onLogout,
                           onProfileEdit,
-                          onLogout
-                      }: SellerHeaderProps) => {
+                          isAuthenticated,
+                      }: ExtendedSellerHeaderProps) => {
     const theme = useTheme();
     const navigate = useNavigate();
 
@@ -32,9 +37,14 @@ const SellerHeader = ({
         }
     };
 
+    // 로그인 핸들러
+    const handleLogin = () => {
+        navigate('/login');
+    };
+
     return (
         <AppBar
-            position="static" // sticky에서 static으로 변경
+            position="static"
             sx={{
                 backgroundColor: theme.palette.background.paper,
                 color: theme.palette.text.primary,
@@ -47,16 +57,17 @@ const SellerHeader = ({
                 <Box sx={{ display: 'flex', alignItems: 'center' }}>
                     <Box
                         sx={{
-                            width: 32,  // Header와 동일하게 32px로 변경
-                            height: 32, // Header와 동일하게 32px로 변경
+                            width: 32,
+                            height: 32,
                             borderRadius: '50%',
                             background: theme.palette.primary.main,
                             display: 'flex',
                             alignItems: 'center',
                             justifyContent: 'center',
-                            mr: 1.5, // Header와 동일하게 1.5로 변경
+                            mr: 1.5,
                             cursor: 'pointer'
                         }}
+                        onClick={() => navigate('/seller')}
                     >
                         <span className="material-icons" style={{ color: 'white', fontSize: '20px' }}>
                             pets
@@ -65,14 +76,15 @@ const SellerHeader = ({
                     <Box>
                         <Typography
                             variant="h6"
-                            component="div"  // Header와 동일하게 component 추가
+                            component="div"
                             sx={{
                                 fontWeight: 700,
-                                color: 'text.primary',  // Header와 동일하게 text.primary로 변경
-                                cursor: 'pointer',  // Header와 동일하게 cursor 추가
-                                fontSize: { xs: '1.1rem', sm: '1.25rem' },  // Header와 동일한 반응형 크기
+                                color: 'text.primary',
+                                cursor: 'pointer',
+                                fontSize: { xs: '1.1rem', sm: '1.25rem' },
                                 lineHeight: 1
                             }}
+                            onClick={() => navigate('/seller')}
                         >
                             CatDogEats
                         </Typography>
@@ -90,86 +102,131 @@ const SellerHeader = ({
 
                 {/* 우측 메뉴 */}
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                    {/* 네비게이션 메뉴 */}
-                    <Box sx={{
-                        display: { xs: 'none', md: 'flex' },
-                        alignItems: 'center',
-                        gap: 0.5,
-                        mr: 2
-                    }}>
-                        <Button
-                            color="inherit"
-                            startIcon={<span className="material-icons">campaign</span>}
-                            onClick={onAnnouncementClick}
-                            sx={{
-                                textTransform: 'none',
-                                color: theme.palette.text.secondary,
-                                fontWeight: 400,  // Header와 동일하게 400으로 변경
-                                fontSize: '0.875rem',
-                                minWidth: 'auto',  // Header와 동일하게 추가
-                                px: 1,  // Header와 동일하게 px: 1 추가
-                                '&:hover': {
-                                    color: theme.palette.text.primary,
-                                    backgroundColor: 'transparent'  // Header와 동일하게 transparent로 변경
-                                }
-                            }}
-                        >
-                            공지사항
-                        </Button>
+                    {isAuthenticated ? (
+                        <>
+                            {/* 로그인된 상태: 네비게이션 메뉴 + 알림 + 프로필 */}
+                            <Box sx={{
+                                display: { xs: 'none', md: 'flex' },
+                                alignItems: 'center',
+                                gap: 0.5,
+                                mr: 2
+                            }}>
+                                <Button
+                                    color="inherit"
+                                    startIcon={<span className="material-icons">campaign</span>}
+                                    onClick={onAnnouncementClick}
+                                    sx={{
+                                        textTransform: 'none',
+                                        color: theme.palette.text.secondary,
+                                        fontWeight: 400,
+                                        fontSize: '0.875rem',
+                                        minWidth: 'auto',
+                                        px: 1,
+                                        '&:hover': {
+                                            color: theme.palette.text.primary,
+                                            backgroundColor: 'transparent'
+                                        }
+                                    }}
+                                >
+                                    공지사항
+                                </Button>
 
-                        <Button
-                            color="inherit"
-                            startIcon={<span className="material-icons">help</span>}
-                            onClick={onFaqClick}
-                            sx={{
-                                textTransform: 'none',
-                                color: theme.palette.text.secondary,
-                                fontWeight: 400,  // Header와 동일하게 400으로 변경
-                                fontSize: '0.875rem',
-                                minWidth: 'auto',  // Header와 동일하게 추가
-                                px: 1,  // Header와 동일하게 px: 1 추가
-                                '&:hover': {
-                                    color: theme.palette.text.primary,
-                                    backgroundColor: 'transparent'  // Header와 동일하게 transparent로 변경
-                                }
-                            }}
-                        >
-                            FAQ
-                        </Button>
+                                <Button
+                                    color="inherit"
+                                    startIcon={<span className="material-icons">help</span>}
+                                    onClick={onFaqClick}
+                                    sx={{
+                                        textTransform: 'none',
+                                        color: theme.palette.text.secondary,
+                                        fontWeight: 400,
+                                        fontSize: '0.875rem',
+                                        minWidth: 'auto',
+                                        px: 1,
+                                        '&:hover': {
+                                            color: theme.palette.text.primary,
+                                            backgroundColor: 'transparent'
+                                        }
+                                    }}
+                                >
+                                    FAQ
+                                </Button>
 
-                        <Button
-                            color="inherit"
-                            startIcon={<span className="material-icons">support_agent</span>}
-                            onClick={onInquiryClick}
-                            sx={{
-                                textTransform: 'none',
-                                color: theme.palette.text.secondary,
-                                fontWeight: 400,  // Header와 동일하게 400으로 변경
-                                fontSize: '0.875rem',
-                                minWidth: 'auto',  // Header와 동일하게 추가
-                                px: 1,  // Header와 동일하게 px: 1 추가
-                                '&:hover': {
-                                    color: theme.palette.text.primary,
-                                    backgroundColor: 'transparent'  // Header와 동일하게 transparent로 변경
-                                }
-                            }}
-                        >
-                            1:1 문의
-                        </Button>
-                    </Box>
+                                <Button
+                                    color="inherit"
+                                    startIcon={<span className="material-icons">support_agent</span>}
+                                    onClick={onInquiryClick}
+                                    sx={{
+                                        textTransform: 'none',
+                                        color: theme.palette.text.secondary,
+                                        fontWeight: 400,
+                                        fontSize: '0.875rem',
+                                        minWidth: 'auto',
+                                        px: 1,
+                                        '&:hover': {
+                                            color: theme.palette.text.primary,
+                                            backgroundColor: 'transparent'
+                                        }
+                                    }}
+                                >
+                                    1:1 문의
+                                </Button>
+                            </Box>
 
-                    {/* 알림 메뉴 */}
-                    <NotificationMenu
-                        notifications={notifications}
-                        onNotificationClick={onNotificationClick}
-                    />
+                            {/* 알림 메뉴 */}
+                            <NotificationMenu
+                                notifications={notifications}
+                                onNotificationClick={onNotificationClick}
+                            />
 
-                    {/* 프로필 메뉴 */}
-                    <ProfileMenu
-                        userInfo={sellerInfo}
-                        onProfileEdit={handleProfileEdit}
-                        onLogout={onLogout}
-                    />
+                            {/* 프로필 메뉴 */}
+                            <ProfileMenu
+                                userInfo={sellerInfo}
+                                onProfileEdit={handleProfileEdit}
+                                onLogout={onLogout}
+                            />
+                        </>
+                    ) : (
+                        <>
+                            {/* 로그인되지 않은 상태: 로그인 버튼 */}
+                            <Button
+                                variant="text"
+                                onClick={handleLogin}
+                                sx={{
+                                    fontSize: '0.875rem',
+                                    fontWeight: 400,
+                                    color: theme.palette.text.secondary,
+                                    textTransform: 'none',
+                                    minWidth: 'auto',
+                                    px: 2,
+                                    '&:hover': {
+                                        color: theme.palette.text.primary,
+                                        backgroundColor: 'transparent',
+                                    }
+                                }}
+                            >
+                                로그인
+                            </Button>
+                            <Button
+                                variant="contained"
+                                onClick={handleLogin}
+                                sx={{
+                                    fontSize: '0.875rem',
+                                    fontWeight: 500,
+                                    backgroundColor: theme.palette.primary.main,
+                                    color: 'white',
+                                    textTransform: 'none',
+                                    borderRadius: '20px',
+                                    px: 3,
+                                    py: 1,
+                                    '&:hover': {
+                                        backgroundColor: theme.palette.primary.dark,
+                                    }
+                                }}
+                            >
+                                판매자 가입
+                            </Button>
+                        </>
+                    )}
                 </Box>
             </Toolbar>
         </AppBar>

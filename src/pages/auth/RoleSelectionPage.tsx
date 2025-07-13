@@ -8,6 +8,8 @@ import {
 } from '@/components/Auth';
 import { UserRole } from '@/components/Auth/types';
 import { ROLE_INFO } from '@/components/Auth/constants';
+import { authApi } from '@/service/auth/AuthAPI.ts';
+
 
 const RoleSelectionPage = () => {
     const navigate = useNavigate();
@@ -18,18 +20,18 @@ const RoleSelectionPage = () => {
         setSelectedRole(role);
     };
 
-    const handleContinue = () => {
+    const handleContinue = async () => {
         if (!selectedRole) return;
 
         setIsLoading(true);
 
-        setTimeout(() => {
-            setIsLoading(false);
-            console.log(`역할 선택 완료: ${selectedRole}`);
+        setIsLoading(false);
+        console.log(`역할 선택 완료: ${selectedRole}`);
 
-            const redirectPath = ROLE_INFO[selectedRole].redirectPath;
-            navigate(redirectPath);
-        }, 1000);
+        const redirectPath = ROLE_INFO[selectedRole].redirectPath;
+
+        await authApi.selectRole(selectedRole)
+        navigate(redirectPath);
     };
 
     return (

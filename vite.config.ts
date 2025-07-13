@@ -1,40 +1,48 @@
-import { defineConfig } from 'vite'
-import react from '@vitejs/plugin-react'
-import path from 'path'
+import { defineConfig, loadEnv } from 'vite';
+import react from '@vitejs/plugin-react';
+import path from 'path';
+import type { ProxyOptions } from 'vite';
 
-export default defineConfig({
-  plugins: [react()],
+export default defineConfig(({ mode }) => {
+  const env = loadEnv(mode, process.cwd());
 
-  resolve: {
-    alias: {
-      '@': path.resolve(__dirname, './src'),
+  // 타입을 명확히 하기 위한 별도 설정 객체
+  const proxyConfig: Record<string, ProxyOptions> = {
+    '/api': {
+      target: env.VITE_API_PROXY_TARGET,
+      changeOrigin: true,
+      rewrite: (path) => path.replace(/^\/api/, ''),
+      configure: (proxy) => {
+        proxy.on('proxyReq', (proxyReq, req, res) => {
+          if (req.headers.cookie) {
+            proxyReq.setHeader('Cookie', req.headers.cookie);
+          }
+        });
+
+        proxy.on('proxyRes', (proxyRes, req, res) => {
+          if (proxyRes.headers['set-cookie']) {
+            proxyRes.headers['set-cookie'] = proxyRes.headers['set-cookie'].map((cookie: string) =>
+                cookie.replace(/SameSite=Strict/gi, 'SameSite=Lax')
+            );
+          }
+        });
+      }
     },
-  },
+    '/auth': { target: env.VITE_EXPRESS_URL, changeOrigin: true }
+  };
 
-  optimizeDeps: {
-    include: ['@mui/material', '@mui/icons-material'],
-  },
-
-  // CORS 문제 해결을 위한 프록시 설정 추가
-  server: {
-    proxy: {
-      '/v1': {
-        target: 'http://localhost:8080',
-        changeOrigin: true,
-        secure: false,
-        // 요청 로그 확인용 (선택사항)
-        configure: (proxy, options) => {
-          proxy.on('error', (err, req, res) => {
-            console.log('proxy error', err);
-          });
-          proxy.on('proxyReq', (proxyReq, req, res) => {
-            console.log('Sending Request to the Target:', req.method, req.url);
-          });
-          proxy.on('proxyRes', (proxyRes, req, res) => {
-            console.log('Received Response from the Target:', proxyRes.statusCode, req.url);
-          });
-        },
+  return {
+    plugins: [react()],
+    resolve: {
+      alias: {
+        '@': path.resolve(__dirname, './src'),
       },
     },
-  },
-})
+    optimizeDeps: {
+      include: ['@mui/material', '@mui/icons-material'],
+    },
+    server: {
+      proxy: proxyConfig,
+    },
+  };
+});

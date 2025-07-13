@@ -36,11 +36,12 @@ const ProfileMenu: React.FC<ProfileMenuProps> = ({
         setProfileAnchor(null);
     };
 
-    const handleMenuItemClick = (callback?: () => void) => {
+    const handleMenuItemClick = async (callback?: () => void) => {
+        handleProfileClose(); // 1. 메뉴 닫기 먼저
+
         if (callback) {
-            callback();
+            callback(); // 3. 페이지 이동 등 후처리는 마지막에
         }
-        handleProfileClose();
     };
 
     // 전체 이름을 반환하는 함수
@@ -51,16 +52,6 @@ const ProfileMenu: React.FC<ProfileMenuProps> = ({
     return (
         <>
             <IconButton onClick={handleProfileClick} sx={{ p: 0.5 ,  fontSize: '1rem'}}  >
-                {/*<Avatar*/}
-                {/*    sx={{*/}
-                {/*        width: 36,*/}
-                {/*        height: 36,*/}
-                {/*        backgroundColor: theme.palette.primary.main,*/}
-                {/*        fontSize: '0.75rem', // 전체 이름을 표시하기 위해 폰트 크기 조정*/}
-                {/*        fontWeight: 600*/}
-                {/*    }}*/}
-                {/*    src={userInfo.profileImage}*/}
-                {/*>*/}
                 <span style={{ textDecoration: 'underline'}}>
                     {getDisplayName(userInfo.name)}
                   </span>                {/*</Avatar>*/}

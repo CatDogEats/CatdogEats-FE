@@ -4,10 +4,12 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "dev": "vite",
+    "client": "vite",
+    "server": "NODE_ENV=development node server/server.js",
+    "server:prod": "NODE_ENV=production node server/server.js",
+    "dev": "npm-run-all --parallel client server",
     "build": "tsc && vite build",
-    "lint": "eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0",
-    "preview": "vite preview"
+    "lint": "eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0"
   },
   "dependencies": {
     "@emotion/react": "^11.14.0",
@@ -18,8 +20,12 @@
     "@mui/icons-material": "^7.1.1",
     "@mui/material": "^7.1.1",
     "@mui/x-date-pickers": "^8.5.2",
-    "axios": "^1.9.0",
+    "axios": "^1.10.0",
+    "cookie-parser": "^1.4.7",
+    "cors": "^2.8.5",
     "date-fns": "^4.1.0",
+    "dotenv": "^17.2.0",
+    "express": "^5.1.0",
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
     "react-router-dom": "^7.6.2",
@@ -38,6 +44,7 @@
     "eslint-plugin-react-hooks": "^5.2.0",
     "eslint-plugin-react-refresh": "^0.4.19",
     "globals": "^16.0.0",
+    "npm-run-all": "^4.1.5",
     "prettier": "^3.5.3",
     "typescript": "^5.5.3",
     "typescript-eslint": "^8.0.0",
