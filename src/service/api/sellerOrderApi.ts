@@ -2,6 +2,7 @@
 
 import axios from "axios";
 import type {
+  APIResponse,
   SellerOrderListResponse,
   SellerOrderDetailResponse,
   OrderStatusUpdateRequest,
@@ -11,11 +12,11 @@ import type {
   OrderDeleteRequest,
   OrderDeleteResponse,
   ShipmentSyncResponse,
-  ApiResponse,
   ApiError,
+  PaginationInfo,
 } from "@/types/sellerOrder.types";
 
-// API 기본 URL (환경에 따라 조정)
+// API 기본 URL 설정
 const API_BASE_URL =
   import.meta.env.MODE === "development"
     ? "/api"
@@ -28,10 +29,12 @@ export const handleApiError = (error: any): ApiError => {
   if (axios.isAxiosError(error)) {
     const response = error.response;
     if (response) {
+      // 백엔드 APIResponse 에러 구조 처리
+      const errorData = response.data;
       return {
-        message: response.data?.message || error.message,
+        message: errorData?.error || errorData?.message || error.message,
         status: response.status,
-        code: response.data?.code,
+        code: errorData?.code,
       };
     }
   }
@@ -43,31 +46,82 @@ export const handleApiError = (error: any): ApiError => {
 };
 
 /**
+ * API 응답 데이터 추출 헬퍼
+ */
+const extractApiData = <T>(response: APIResponse<T>): T => {
+  if (!response.success || !response.data) {
+    throw new Error(response.error || response.message || "API 응답 오류");
+  }
+  return response.data;
+};
+
+/**
  * 판매자용 주문 관리 API 서비스
- * 기존 프로젝트의 axios 패턴을 준수하여 구현
+ * 백엔드 컨트롤러와 정확히 일치하는 API 호출
  */
 export const sellerOrderApi = {
   /**
-   * 배송 관리 (판매자 목록 조회)
+   * 배송 관리 (판매자) - 주문 목록 조회
    * API: GET /v1/sellers/orders/list?page={}&sort={}
    */
   getSellerOrders: async (
-    page: number = 0,
-    sort: string = "createdAt,desc"
-  ): Promise<ApiResponse<SellerOrderListResponse>> => {
+    pagination: PaginationInfo
+  ): Promise<SellerOrderListResponse> => {
     try {
-      const response = await axios.get<ApiResponse<SellerOrderListResponse>>(
+      const response = await axios.get<APIResponse<SellerOrderListResponse>>(
         `${API_BASE_URL}/v1/sellers/orders/list`,
         {
           params: {
-            page,
-            sort,
+            page: pagination.page,
+            sort: pagination.sort,
+            size: pagination.size,
+          },
+          headers: {
+            "Content-Type": "application/json",
           },
         }
       );
-      return response.data;
+
+      return extractApiData(response.data);
     } catch (error) {
       console.error("판매자 주문 목록 조회 실패:", error);
+      throw handleApiError(error);
+    }
+  },
+
+  /**
+   * 검색 조건으로 주문 목록 조회
+   * API: GET /v1/sellers/orders/search
+   */
+  searchSellerOrders: async (
+    pagination: PaginationInfo,
+    searchParams: {
+      searchType?: string;
+      searchKeyword?: string;
+      statusFilter?: string;
+      dateFrom?: string;
+      dateTo?: string;
+    }
+  ): Promise<SellerOrderListResponse> => {
+    try {
+      const response = await axios.get<APIResponse<SellerOrderListResponse>>(
+        `${API_BASE_URL}/v1/sellers/orders/search`,
+        {
+          params: {
+            page: pagination.page,
+            sort: pagination.sort,
+            size: pagination.size,
+            ...searchParams,
+          },
+          headers: {
+            "Content-Type": "application/json",
+          },
+        }
+      );
+
+      return extractApiData(response.data);
+    } catch (error) {
+      console.error("판매자 주문 검색 실패:", error);
       throw handleApiError(error);
     }
   },
@@ -78,12 +132,18 @@ export const sellerOrderApi = {
    */
   getSellerOrderDetail: async (
     orderNumber: string
-  ): Promise<ApiResponse<SellerOrderDetailResponse>> => {
+  ): Promise<SellerOrderDetailResponse> => {
     try {
-      const response = await axios.get<ApiResponse<SellerOrderDetailResponse>>(
-        `${API_BASE_URL}/v1/sellers/orders/${orderNumber}`
+      const response = await axios.get<APIResponse<SellerOrderDetailResponse>>(
+        `${API_BASE_URL}/v1/sellers/orders/${orderNumber}`,
+        {
+          headers: {
+            "Content-Type": "application/json",
+          },
+        }
       );
-      return response.data;
+
+      return extractApiData(response.data);
     } catch (error) {
       console.error("판매자 주문 상세 조회 실패:", error);
       throw handleApiError(error);
@@ -96,9 +156,9 @@ export const sellerOrderApi = {
    */
   updateOrderStatus: async (
     request: OrderStatusUpdateRequest
-  ): Promise<ApiResponse<OrderStatusUpdateResponse>> => {
+  ): Promise<OrderStatusUpdateResponse> => {
     try {
-      const response = await axios.post<ApiResponse<OrderStatusUpdateResponse>>(
+      const response = await axios.post<APIResponse<OrderStatusUpdateResponse>>(
         `${API_BASE_URL}/v1/sellers/orders/status`,
         request,
         {
@@ -107,7 +167,8 @@ export const sellerOrderApi = {
           },
         }
       );
-      return response.data;
+
+      return extractApiData(response.data);
     } catch (error) {
       console.error("주문 상태 변경 실패:", error);
       throw handleApiError(error);
@@ -120,16 +181,17 @@ export const sellerOrderApi = {
    */
   registerTrackingNumber: async (
     request: TrackingNumberRegisterRequest
-  ): Promise<ApiResponse<TrackingNumberRegisterResponse>> => {
+  ): Promise<TrackingNumberRegisterResponse> => {
     try {
       const response = await axios.post<
-        ApiResponse<TrackingNumberRegisterResponse>
+        APIResponse<TrackingNumberRegisterResponse>
       >(`${API_BASE_URL}/v1/sellers/orders/tracking-number`, request, {
         headers: {
           "Content-Type": "application/json",
         },
       });
-      return response.data;
+
+      return extractApiData(response.data);
     } catch (error) {
       console.error("운송장 번호 등록 실패:", error);
       throw handleApiError(error);
@@ -142,9 +204,9 @@ export const sellerOrderApi = {
    */
   deleteOrder: async (
     request: OrderDeleteRequest
-  ): Promise<ApiResponse<OrderDeleteResponse>> => {
+  ): Promise<OrderDeleteResponse> => {
     try {
-      const response = await axios.delete<ApiResponse<OrderDeleteResponse>>(
+      const response = await axios.delete<APIResponse<OrderDeleteResponse>>(
         `${API_BASE_URL}/v1/sellers/orders`,
         {
           data: request,
@@ -153,7 +215,8 @@ export const sellerOrderApi = {
           },
         }
       );
-      return response.data;
+
+      return extractApiData(response.data);
     } catch (error) {
       console.error("주문 삭제 실패:", error);
       throw handleApiError(error);
@@ -164,9 +227,9 @@ export const sellerOrderApi = {
    * 배송 상태 동기화 (판매자)
    * API: POST /v1/sellers/orders/sync
    */
-  syncShipmentStatus: async (): Promise<ApiResponse<ShipmentSyncResponse>> => {
+  syncShipmentStatus: async (): Promise<ShipmentSyncResponse> => {
     try {
-      const response = await axios.post<ApiResponse<ShipmentSyncResponse>>(
+      const response = await axios.post<APIResponse<ShipmentSyncResponse>>(
         `${API_BASE_URL}/v1/sellers/orders/sync`,
         {},
         {
@@ -175,7 +238,8 @@ export const sellerOrderApi = {
           },
         }
       );
-      return response.data;
+
+      return extractApiData(response.data);
     } catch (error) {
       console.error("배송 상태 동기화 실패:", error);
       throw handleApiError(error);
@@ -183,87 +247,125 @@ export const sellerOrderApi = {
   },
 
   /**
-   * 검색 조건으로 주문 목록 조회
-   * API: GET /v1/sellers/orders/search
+   * 판매자 주문 통계 조회 (대시보드용)
+   * API: GET /v1/sellers/orders/statistics
    */
-  searchOrders: async (searchParams: {
-    page?: number;
-    sort?: string;
-    searchType?: string;
-    searchKeyword?: string;
-    statusFilter?: string;
-    dateFrom?: string;
-    dateTo?: string;
-  }): Promise<ApiResponse<SellerOrderListResponse>> => {
+  getOrderStatistics: async (): Promise<{
+    orderSummary: {
+      paymentCompleted: number;
+      preparing: number;
+      readyForShipment: number;
+      inTransit: number;
+      delivered: number;
+    };
+    urgentTasks: {
+      delayRequests: number;
+      longTermUndelivered: number;
+    };
+  }> => {
     try {
-      const response = await axios.get<ApiResponse<SellerOrderListResponse>>(
-        `${API_BASE_URL}/v1/sellers/orders/search`,
-        {
-          params: {
-            page: searchParams.page || 0,
-            sort: searchParams.sort || "createdAt,desc",
-            ...searchParams,
-          },
-        }
-      );
-      return response.data;
-    } catch (error) {
-      console.error("주문 검색 실패:", error);
-      throw handleApiError(error);
-    }
-  },
-
-  /**
-   * 출고 지연 요청 해결
-   * API: POST /v1/sellers/orders/resolve-delay
-   */
-  resolveDelayRequest: async (
-    orderNumber: string,
-    expectedDate?: string
-  ): Promise<ApiResponse<OrderStatusUpdateResponse>> => {
-    try {
-      const response = await axios.post<ApiResponse<OrderStatusUpdateResponse>>(
-        `${API_BASE_URL}/v1/sellers/orders/resolve-delay`,
-        {
-          orderNumber,
-          expectedDate,
-        },
+      const response = await axios.get<APIResponse<any>>(
+        `${API_BASE_URL}/v1/sellers/orders/statistics`,
         {
           headers: {
             "Content-Type": "application/json",
           },
         }
       );
-      return response.data;
+
+      return extractApiData(response.data);
     } catch (error) {
-      console.error("출고 지연 해결 실패:", error);
-      throw handleApiError(error);
+      console.error("주문 통계 조회 실패:", error);
+
+      // 백엔드 API가 아직 없는 경우 목업 데이터 반환
+      console.warn("주문 통계 API가 구현되지 않아 목업 데이터를 사용합니다.");
+      return {
+        orderSummary: {
+          paymentCompleted: 0,
+          preparing: 0,
+          readyForShipment: 0,
+          inTransit: 0,
+          delivered: 0,
+        },
+        urgentTasks: {
+          delayRequests: 0,
+          longTermUndelivered: 0,
+        },
+      };
     }
   },
 
   /**
-   * 상태별 주문 개수 조회 (대시보드용)
-   * API: GET /v1/sellers/orders/summary
+   * 주문 상태별 개수 조회 (목록 데이터에서 계산)
    */
-  getOrderSummary: async (): Promise<
-    ApiResponse<{
-      paymentCompleted: number;
-      preparing: number;
-      readyForDelivery: number;
-      inTransit: number;
-      delivered: number;
-      delayRequests: number;
-      longTermUndelivered: number;
-    }>
-  > => {
-    try {
-      const response = await axios.get(
-        `${API_BASE_URL}/v1/sellers/orders/summary`
-      );
-      return response.data;
-    } catch (error) {
-      console.error("주문 요약 조회 실패:", error);
-      throw handleApiError(error);
-    }
+  calculateOrderStatistics: (orders: SellerOrderListResponse) => {
+    const stats = {
+      paymentCompleted: 0,
+      preparing: 0,
+      readyForShipment: 0,
+      inTransit: 0,
+      delivered: 0,
+    };
+
+    orders.orders.forEach((order) => {
+      switch (order.orderStatus) {
+        case "PAYMENT_COMPLETED":
+          stats.paymentCompleted++;
+          break;
+        case "PREPARING":
+          stats.preparing++;
+          break;
+        case "READY_FOR_SHIPMENT":
+          stats.readyForShipment++;
+          break;
+        case "IN_DELIVERY":
+          stats.inTransit++;
+          break;
+        case "DELIVERED":
+          stats.delivered++;
+          break;
+      }
+    });
+
+    return {
+      orderSummary: stats,
+      urgentTasks: {
+        delayRequests: orders.orders.filter((order) => order.isDelayed).length,
+        longTermUndelivered: orders.orders.filter(
+          (order) =>
+            order.orderStatus === "IN_DELIVERY" &&
+            new Date().getTime() - new Date(order.orderDate).getTime() >
+              7 * 24 * 60 * 60 * 1000
+        ).length,
+      },
+    };
   },
+};
+
+/**
+ * API 응답 타입 가드
+ */
+export const isAPIResponseSuccess = <T>(
+  response: APIResponse<T>
+): response is APIResponse<T> & { success: true; data: T } => {
+  return response.success && response.data !== undefined;
+};
+
+/**
+ * 백엔드 APIResponse 구조 검증
+ */
+export const validateAPIResponse = <T>(response: any): APIResponse<T> => {
+  if (typeof response !== "object" || response === null) {
+    throw new Error("Invalid API response format");
+  }
+
+  if (typeof response.success !== "boolean") {
+    throw new Error("Missing or invalid 'success' field in API response");
+  }
+
+  if (typeof response.message !== "string") {
+    throw new Error("Missing or invalid 'message' field in API response");
+  }
+
+  return response as APIResponse<T>;
 };
