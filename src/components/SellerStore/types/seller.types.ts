@@ -9,18 +9,18 @@ export interface SellerProfile {
     rating: number;
     reviewCount: number;
     salesCount: number;
-    establishedDate: string; // operationStartDate로 변경
+    establishedDate: string;
     tags: string[];
     operatingHours: string;
-    closedDays: string; // 새로 추가
-    location: string; // 주소 정보로 변경
+    closedDays: string;
+    location: string;
     shippingInfo: string;
     isVerified: boolean;
     isSafetyChecked: boolean;
     description?: string;
 }
 
-// 프론트엔드용 상품 타입 (백엔드 응답을 변환)
+// 프론트엔드용 상품 타입
 export interface SellerProduct {
     id: string;
     sellerId: string;
@@ -35,7 +35,7 @@ export interface SellerProduct {
     discountPercentage?: number;
 }
 
-// 유사 판매자 타입 (기존 유지)
+// 유사 판매자 타입
 export interface SimilarSeller {
     id: string;
     name: string;
@@ -118,7 +118,7 @@ export const transformSellerInfo = (sellerInfo: SellerInfoResponse): SellerProfi
                 ? `${storeAddress.fullAddress} (${storeAddress.phoneNumber})`
                 : storeAddress.fullAddress;
         }
-        return '서울'; // 기본값
+        return '정보 없음'; // 기본값
     };
 
     console.log('최종 이미지 URL:', profileImage); // 디버깅용
@@ -127,22 +127,22 @@ export const transformSellerInfo = (sellerInfo: SellerInfoResponse): SellerProfi
         id: sellerInfo.sellerId,
         name: sellerInfo.vendorName,
         profileImage: profileImage,
-        rating: 4.5, // 백엔드에서 평점 정보가 없으므로 기본값
+        rating: sellerInfo.avgReviewRating || 0,
         reviewCount: sellerInfo.totalReviews,
         salesCount: sellerInfo.totalSalesQuantity,
         establishedDate: formatOperationStartDate(sellerInfo.operationStartDate),
         tags: sellerInfo.tags ? sellerInfo.tags.split(',') : [],
         operatingHours: `${sellerInfo.operatingStartTime} - ${sellerInfo.operatingEndTime}`,
-        closedDays: sellerInfo.closedDays || '', // 휴무일 정보
-        location: formatLocation(), // 주소 정보
-        shippingInfo: formatShippingInfo(sellerInfo.avgDeliveryDays), // 개선된 배송 정보 포맷팅
+        closedDays: sellerInfo.closedDays || '',
+        location: formatLocation(),
+        shippingInfo: formatShippingInfo(sellerInfo.avgDeliveryDays),
         isVerified: true, // 기본값
         isSafetyChecked: true, // 기본값
         description: `${sellerInfo.vendorName}의 전문 스토어`
     };
 };
 
-export const transformProduct = (product: ProductResponse): SellerProduct => {
+export const transformProduct = (product: ProductResponse, sellerId: string): SellerProduct => {
     const isOutOfStock = product.stockStatus === 'OUT_OF_STOCK';
     const discountPercentage = product.discountRate || undefined;
     const originalPrice = product.discountRate ? product.price : undefined;
@@ -178,14 +178,14 @@ export const transformProduct = (product: ProductResponse): SellerProduct => {
 
     return {
         id: product.productId,
-        sellerId: '', // 백엔드 응답에 없으므로 빈 문자열
+        sellerId: sellerId,
         name: product.title,
         price: product.discountedPrice,
         originalPrice: originalPrice,
         image: productImage,
         rating: product.avgRating,
         reviewCount: product.reviewCount,
-        isLiked: false, // 기본값 (추후 찜 목록 API 연동 시 업데이트)
+        isLiked: false, //todo 나중에 좋아요(찜) 연동
         isOutOfStock: isOutOfStock,
         discountPercentage: discountPercentage
     };

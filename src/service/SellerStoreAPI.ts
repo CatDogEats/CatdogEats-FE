@@ -17,13 +17,14 @@ export interface SellerInfoResponse {
     tags: string;
     operatingStartTime: string;
     operatingEndTime: string;
-    closedDays: string; // 새로 추가
-    storeAddress: StoreAddress; // 새로 추가
-    operationStartDate: string; // operationStartYear에서 변경
+    closedDays: string;
+    storeAddress: StoreAddress;
+    operationStartDate: string;
     totalProducts: number;
     totalSalesQuantity: number;
     avgDeliveryDays: number;
     totalReviews: number;
+    avgReviewRating: number;
 }
 
 export interface ProductResponse {
