@@ -12,7 +12,6 @@ import {
   Chip,
   Button,
   CircularProgress,
-  Grid,
   FormControl,
   InputLabel,
   Select,
@@ -64,6 +63,8 @@ import {
   Receipt as ReceiptIcon,
   Send as SendIcon,
 } from "@mui/icons-material";
+import Grid from "@mui/material/GridLegacy";
+import { SvgIconProps } from "@mui/material/SvgIcon";
 import { DatePicker } from "@mui/x-date-pickers/DatePicker";
 import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
 import { AdapterDateFns } from "@mui/x-date-pickers/AdapterDateFns";
@@ -385,7 +386,7 @@ const OrderShippingManagement: React.FC = () => {
   const StatusCard: React.FC<{
     title: string;
     count: number;
-    icon: React.ReactNode;
+    icon: React.ReactElement<SvgIconProps>;
     color: string;
     bgColor: string;
     urgent?: boolean;
@@ -453,9 +454,7 @@ const OrderShippingManagement: React.FC = () => {
               justifyContent: "center",
             }}
           >
-            {React.cloneElement(icon as React.ReactElement, {
-              sx: { fontSize: 24, color },
-            })}
+            {React.cloneElement(icon, { sx: { fontSize: 24, color } })}
           </Box>
           <Typography
             variant="h4"
