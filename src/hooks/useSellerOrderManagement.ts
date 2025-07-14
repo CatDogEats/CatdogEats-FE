@@ -35,7 +35,7 @@ export const useSellerOrderManagement = (
 
       const response = await sellerOrderApi.getSellerOrders(page, sort);
 
-      if (response.success) {
+      if (response.success && response.data) {
         setOrders(response.data);
       } else {
         setOrdersError({
@@ -73,7 +73,7 @@ export const useSellerOrderManagement = (
 
         const response = await sellerOrderApi.updateOrderStatus(request);
 
-        if (response.success) {
+        if (response.success && response.data) {
           // 성공 시 목록 새로고침
           await refreshOrders();
           return response.data;
@@ -107,7 +107,7 @@ export const useSellerOrderManagement = (
 
         const response = await sellerOrderApi.registerTrackingNumber(request);
 
-        if (response.success) {
+        if (response.success && response.data) {
           // 성공 시 목록 새로고침
           await refreshOrders();
           return response.data;
@@ -144,7 +144,7 @@ export const useSellerOrderManagement = (
         if (response.success) {
           // 성공 시 목록 새로고침
           await refreshOrders();
-          return response.data;
+          return response.data || null;
         } else {
           setActionError({
             message: response.message || "주문 삭제에 실패했습니다",
@@ -175,7 +175,7 @@ export const useSellerOrderManagement = (
 
         const response = await sellerOrderApi.syncShipmentStatus();
 
-        if (response.success) {
+        if (response.success && response.data) {
           // 성공 시 목록 새로고침
           await refreshOrders();
           return response.data;
@@ -198,66 +198,6 @@ export const useSellerOrderManagement = (
       }
     }, [refreshOrders]);
 
-  // ===== 통합 상태 변경 + 운송장 등록 =====
-  const updateOrderStatusWithTracking = useCallback(
-    async (
-      orderNumber: string,
-      newStatus: "IN_DELIVERY",
-      courierCompany: string,
-      trackingNumber: string,
-      reason?: string
-    ) => {
-      try {
-        setActionLoading(true);
-        setActionError(null);
-
-        // 1단계: 운송장 등록
-        const trackingResponse = await sellerOrderApi.registerTrackingNumber({
-          orderNumber,
-          courierCompany: courierCompany as any,
-          trackingNumber,
-        });
-
-        if (!trackingResponse.success) {
-          setActionError({
-            message: trackingResponse.message || "운송장 등록에 실패했습니다",
-            status: 400,
-          });
-          return null;
-        }
-
-        // 2단계: 상태 변경 (배송중)
-        const statusResponse = await sellerOrderApi.updateOrderStatus({
-          orderNumber,
-          newStatus,
-          reason,
-        });
-
-        if (statusResponse.success) {
-          // 성공 시 목록 새로고침
-          await refreshOrders();
-          return statusResponse.data;
-        } else {
-          setActionError({
-            message: statusResponse.message || "상태 변경에 실패했습니다",
-            status: 400,
-          });
-          return null;
-        }
-      } catch (err) {
-        const error = err as Error;
-        setActionError({
-          message: error.message || "배송 등록 중 오류가 발생했습니다",
-          status: 500,
-        });
-        return null;
-      } finally {
-        setActionLoading(false);
-      }
-    },
-    [refreshOrders]
-  );
-
   return {
     // 주문 목록 데이터
     orders,
@@ -274,6 +214,5 @@ export const useSellerOrderManagement = (
     registerTrackingNumber,
     deleteOrder,
     syncShipmentStatus,
-    updateOrderStatusWithTracking,
   };
 };

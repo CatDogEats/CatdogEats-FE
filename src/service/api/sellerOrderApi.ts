@@ -13,7 +13,6 @@ import type {
   OrderDeleteResponse,
   ShipmentSyncResponse,
   ApiError,
-  PaginationInfo,
 } from "@/types/sellerOrder.types";
 
 // API 기본 URL 설정
@@ -65,16 +64,16 @@ export const sellerOrderApi = {
    * API: GET /v1/sellers/orders/list?page={}&sort={}
    */
   getSellerOrders: async (
-    pagination: PaginationInfo
-  ): Promise<SellerOrderListResponse> => {
+    page: number = 0,
+    sort: string = "createdAt,desc"
+  ): Promise<APIResponse<SellerOrderListResponse>> => {
     try {
       const response = await axios.get<APIResponse<SellerOrderListResponse>>(
         `${API_BASE_URL}/v1/sellers/orders/list`,
         {
           params: {
-            page: pagination.page,
-            sort: pagination.sort,
-            size: pagination.size,
+            page,
+            sort,
           },
           headers: {
             "Content-Type": "application/json",
@@ -82,7 +81,7 @@ export const sellerOrderApi = {
         }
       );
 
-      return extractApiData(response.data);
+      return response.data;
     } catch (error) {
       console.error("판매자 주문 목록 조회 실패:", error);
       throw handleApiError(error);
@@ -90,44 +89,7 @@ export const sellerOrderApi = {
   },
 
   /**
-   * 검색 조건으로 주문 목록 조회
-   * API: GET /v1/sellers/orders/search
-   */
-  searchSellerOrders: async (
-    pagination: PaginationInfo,
-    searchParams: {
-      searchType?: string;
-      searchKeyword?: string;
-      statusFilter?: string;
-      dateFrom?: string;
-      dateTo?: string;
-    }
-  ): Promise<SellerOrderListResponse> => {
-    try {
-      const response = await axios.get<APIResponse<SellerOrderListResponse>>(
-        `${API_BASE_URL}/v1/sellers/orders/search`,
-        {
-          params: {
-            page: pagination.page,
-            sort: pagination.sort,
-            size: pagination.size,
-            ...searchParams,
-          },
-          headers: {
-            "Content-Type": "application/json",
-          },
-        }
-      );
-
-      return extractApiData(response.data);
-    } catch (error) {
-      console.error("판매자 주문 검색 실패:", error);
-      throw handleApiError(error);
-    }
-  },
-
-  /**
-   * 배송 고객 주소 조회 (판매자)
+   * 배송 고객 주소 조회 (판매자) - 주문 상세 정보
    * API: GET /v1/sellers/orders/{order-number}
    */
   getSellerOrderDetail: async (
@@ -145,18 +107,18 @@ export const sellerOrderApi = {
 
       return extractApiData(response.data);
     } catch (error) {
-      console.error("판매자 주문 상세 조회 실패:", error);
+      console.error("주문 상세 정보 조회 실패:", error);
       throw handleApiError(error);
     }
   },
 
   /**
-   * 배송 상태 관리 (판매자)
+   * 배송 상태 관리 (판매자) - 주문 상태 변경
    * API: POST /v1/sellers/orders/status
    */
   updateOrderStatus: async (
     request: OrderStatusUpdateRequest
-  ): Promise<OrderStatusUpdateResponse> => {
+  ): Promise<APIResponse<OrderStatusUpdateResponse>> => {
     try {
       const response = await axios.post<APIResponse<OrderStatusUpdateResponse>>(
         `${API_BASE_URL}/v1/sellers/orders/status`,
@@ -168,7 +130,7 @@ export const sellerOrderApi = {
         }
       );
 
-      return extractApiData(response.data);
+      return response.data;
     } catch (error) {
       console.error("주문 상태 변경 실패:", error);
       throw handleApiError(error);
@@ -181,7 +143,7 @@ export const sellerOrderApi = {
    */
   registerTrackingNumber: async (
     request: TrackingNumberRegisterRequest
-  ): Promise<TrackingNumberRegisterResponse> => {
+  ): Promise<APIResponse<TrackingNumberRegisterResponse>> => {
     try {
       const response = await axios.post<
         APIResponse<TrackingNumberRegisterResponse>
@@ -191,7 +153,7 @@ export const sellerOrderApi = {
         },
       });
 
-      return extractApiData(response.data);
+      return response.data;
     } catch (error) {
       console.error("운송장 번호 등록 실패:", error);
       throw handleApiError(error);
@@ -204,7 +166,7 @@ export const sellerOrderApi = {
    */
   deleteOrder: async (
     request: OrderDeleteRequest
-  ): Promise<OrderDeleteResponse> => {
+  ): Promise<APIResponse<OrderDeleteResponse>> => {
     try {
       const response = await axios.delete<APIResponse<OrderDeleteResponse>>(
         `${API_BASE_URL}/v1/sellers/orders`,
@@ -216,7 +178,7 @@ export const sellerOrderApi = {
         }
       );
 
-      return extractApiData(response.data);
+      return response.data;
     } catch (error) {
       console.error("주문 삭제 실패:", error);
       throw handleApiError(error);
@@ -227,7 +189,7 @@ export const sellerOrderApi = {
    * 배송 상태 동기화 (판매자)
    * API: POST /v1/sellers/orders/sync
    */
-  syncShipmentStatus: async (): Promise<ShipmentSyncResponse> => {
+  syncShipmentStatus: async (): Promise<APIResponse<ShipmentSyncResponse>> => {
     try {
       const response = await axios.post<APIResponse<ShipmentSyncResponse>>(
         `${API_BASE_URL}/v1/sellers/orders/sync`,
@@ -239,106 +201,11 @@ export const sellerOrderApi = {
         }
       );
 
-      return extractApiData(response.data);
+      return response.data;
     } catch (error) {
       console.error("배송 상태 동기화 실패:", error);
       throw handleApiError(error);
     }
-  },
-
-  /**
-   * 판매자 주문 통계 조회 (대시보드용)
-   * API: GET /v1/sellers/orders/statistics
-   */
-  getOrderStatistics: async (): Promise<{
-    orderSummary: {
-      paymentCompleted: number;
-      preparing: number;
-      readyForShipment: number;
-      inTransit: number;
-      delivered: number;
-    };
-    urgentTasks: {
-      delayRequests: number;
-      longTermUndelivered: number;
-    };
-  }> => {
-    try {
-      const response = await axios.get<APIResponse<any>>(
-        `${API_BASE_URL}/v1/sellers/orders/statistics`,
-        {
-          headers: {
-            "Content-Type": "application/json",
-          },
-        }
-      );
-
-      return extractApiData(response.data);
-    } catch (error) {
-      console.error("주문 통계 조회 실패:", error);
-
-      // 백엔드 API가 아직 없는 경우 목업 데이터 반환
-      console.warn("주문 통계 API가 구현되지 않아 목업 데이터를 사용합니다.");
-      return {
-        orderSummary: {
-          paymentCompleted: 0,
-          preparing: 0,
-          readyForShipment: 0,
-          inTransit: 0,
-          delivered: 0,
-        },
-        urgentTasks: {
-          delayRequests: 0,
-          longTermUndelivered: 0,
-        },
-      };
-    }
-  },
-
-  /**
-   * 주문 상태별 개수 조회 (목록 데이터에서 계산)
-   */
-  calculateOrderStatistics: (orders: SellerOrderListResponse) => {
-    const stats = {
-      paymentCompleted: 0,
-      preparing: 0,
-      readyForShipment: 0,
-      inTransit: 0,
-      delivered: 0,
-    };
-
-    orders.orders.forEach((order) => {
-      switch (order.orderStatus) {
-        case "PAYMENT_COMPLETED":
-          stats.paymentCompleted++;
-          break;
-        case "PREPARING":
-          stats.preparing++;
-          break;
-        case "READY_FOR_SHIPMENT":
-          stats.readyForShipment++;
-          break;
-        case "IN_DELIVERY":
-          stats.inTransit++;
-          break;
-        case "DELIVERED":
-          stats.delivered++;
-          break;
-      }
-    });
-
-    return {
-      orderSummary: stats,
-      urgentTasks: {
-        delayRequests: orders.orders.filter((order) => order.isDelayed).length,
-        longTermUndelivered: orders.orders.filter(
-          (order) =>
-            order.orderStatus === "IN_DELIVERY" &&
-            new Date().getTime() - new Date(order.orderDate).getTime() >
-              7 * 24 * 60 * 60 * 1000
-        ).length,
-      },
-    };
   },
 };
 
