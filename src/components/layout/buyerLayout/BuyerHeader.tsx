@@ -146,7 +146,7 @@ const BuyerHeader = ({ user, isAuthenticated, loading, logout }: BuyerHeaderProp
 
     // 프로필 메뉴 핸들러들
     const handleProfileEdit = () => {
-        navigate('/mypage');
+        navigate('/account');
     };
 
     const handleLogout = async () => {
