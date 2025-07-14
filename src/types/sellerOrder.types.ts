@@ -78,21 +78,18 @@ export interface SellerOrderItem {
 }
 
 /**
- * 판매자용 주문 상세 정보 응답
+ * 판매자용 주문 상세 정보 응답 (백엔드와 정확히 일치)
  * API: GET /v1/sellers/orders/{order-number}
  */
 export interface SellerOrderDetailResponse {
   orderNumber: string;
   orderStatus: OrderStatus;
   orderDate: string; // ISO string
-  buyerName: string;
+  shippingAddress: ShippingAddress;
   orderItems: SellerOrderDetailItem[];
   orderSummary: OrderSummary;
-  recipientInfo: RecipientInfo;
   shipmentInfo?: ShipmentInfo;
-  isDelayed?: boolean;
-  delayReason?: string;
-  expectedShipDate?: string; // ISO string
+  statusManagement?: StatusManagement;
 }
 
 /**
@@ -110,13 +107,27 @@ export interface SellerOrderDetailItem {
 }
 
 /**
- * 주문 요약 정보
+ * 주문 요약 정보 (백엔드와 정확히 일치)
  */
 export interface OrderSummary {
-  totalProductAmount: number;
-  totalShippingFee: number;
-  totalDiscountAmount: number;
-  finalPaymentAmount: number;
+  itemCount: number;
+  totalProductPrice: number;
+  deliveryFee: number;
+  totalAmount: number;
+}
+
+/**
+ * 배송지 정보 (백엔드와 정확히 일치)
+ */
+export interface ShippingAddress {
+  recipientName: string;
+  recipientPhone: string;
+  maskedPhone: string;
+  zipCode: string;
+  address: string;
+  addressDetail: string;
+  fullAddress: string;
+  deliveryRequest?: string;
 }
 
 /**
@@ -135,11 +146,21 @@ export interface RecipientInfo {
  * 배송 정보
  */
 export interface ShipmentInfo {
-  courierCompany?: CourierCompany;
+  courier?: string;
   trackingNumber?: string;
   shippedAt?: string; // ISO string
   deliveredAt?: string; // ISO string
   isShipped: boolean;
+}
+
+/**
+ * 상태 관리 정보 (백엔드와 정확히 일치)
+ */
+export interface StatusManagement {
+  canChangeStatus: boolean;
+  availableStatuses: OrderStatus[];
+  canRegisterTracking: boolean;
+  statusDescription: string;
 }
 
 // ===== 요청 타입들 =====
