@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "client": "vite",
-    "server": "NODE_ENV=development node server/server.js",
+    "server": "cross-env NODE_ENV=development node server/server.js",
     "server:prod": "NODE_ENV=production node server/server.js",
     "dev": "npm-run-all --parallel client server",
     "build": "tsc && vite build",
@@ -38,6 +38,7 @@
     "@types/react-dom": "^19.1.2",
     "@types/react-router-dom": "^5.3.3",
     "@vitejs/plugin-react": "^4.4.1",
+    "cross-env": "^7.0.3",
     "eslint": "^9.25.0",
     "eslint-config-prettier": "^10.1.5",
     "eslint-plugin-prettier": "^5.4.1",
