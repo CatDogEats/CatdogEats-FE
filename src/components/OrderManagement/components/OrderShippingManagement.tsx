@@ -96,9 +96,9 @@ const transformToOrder = (sellerItem: SellerOrderItem): Order => ({
   orderNumber: sellerItem.orderNumber,
   orderDate: sellerItem.orderDate.split("T")[0], // ISO 날짜를 YYYY-MM-DD로 변환
   customerName: sellerItem.buyerName,
-  productName: `${sellerItem.orderItemCount}개 상품`,
-  quantity: sellerItem.orderItemCount,
-  amount: sellerItem.totalAmount,
+  productName: `${sellerItem.orderSummary.itemCount}개 상품`, // ✅ 수정: orderSummary에서 접근
+  quantity: sellerItem.orderSummary.itemCount, // ✅ 수정: orderSummary에서 접근
+  amount: sellerItem.orderSummary.totalAmount, // ✅ 수정: orderSummary에서 접근
   shippingStatus: mapAPIStatusToPrototype(sellerItem.orderStatus),
   customerPhone: sellerItem.recipientPhone,
   shippingAddress: sellerItem.shippingAddress,
@@ -107,6 +107,11 @@ const transformToOrder = (sellerItem: SellerOrderItem): Order => ({
   delayReason: sellerItem.delayReason,
   isDirect: false, // 기본값
 });
+
+//
+const safeToLocaleString = (amount: number | undefined): string => {
+  return (amount || 0).toLocaleString();
+};
 
 // ===== 상태 라벨 매핑 (프로토타입과 동일) =====
 const SHIPPING_STATUS_LABELS = {
@@ -233,6 +238,17 @@ const OrderShippingManagement: React.FC = () => {
 
   // 주문 현황 계산 (프로토타입과 동일)
   const orderSummary: OrderSummary = useMemo(() => {
+    // ✅ 추가: orders가 없거나 비어있을 때 기본값 반환
+    if (!orders || orders.length === 0) {
+      return {
+        paymentCompleted: 0,
+        preparing: 0,
+        readyForDelivery: 0,
+        inTransit: 0,
+        delivered: 0,
+      };
+    }
+
     const summary = orders
       .filter((order) => order.shippingStatus !== "order_cancelled")
       .reduce(
@@ -267,7 +283,6 @@ const OrderShippingManagement: React.FC = () => {
       );
     return summary;
   }, [orders]);
-
   // 출고 지연 요청 개수 계산
   const delayRequestedCount = useMemo(() => {
     return orders.filter((order) => order.shippingStatus === "delay_requested")
@@ -878,7 +893,9 @@ const OrderShippingManagement: React.FC = () => {
                       <TableCell>{order.customerName}</TableCell>
                       <TableCell>{order.productName}</TableCell>
                       <TableCell>{order.quantity}</TableCell>
-                      <TableCell>{order.amount.toLocaleString()}원</TableCell>
+                      <TableCell>
+                        {safeToLocaleString(order.amount)}원
+                      </TableCell>
                       <TableCell>
                         <Chip
                           label={

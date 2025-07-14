@@ -60,7 +60,10 @@ export interface SellerOrderItem {
   orderStatus: OrderStatus;
   orderDate: string; // ISO string
   buyerName: string;
-  totalAmount: number;
+  orderSummary: {
+    itemCount: number;
+    totalAmount: number;
+  };
   orderItemCount: number;
   recipientName: string;
   recipientPhone: string;
