@@ -1,6 +1,6 @@
 // src/components/OrderManagement/components/OrderShippingManagement.tsx
 
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useCallback } from "react";
 import {
   Box,
   Paper,
@@ -223,6 +223,7 @@ const OrderShippingManagement: React.FC = () => {
     ordersLoading,
     ordersError,
     updateOrderStatus,
+    registerTrackingNumber,
   } = useSellerOrderManagement();
 
   // ===== 상태 관리 =====
@@ -235,6 +236,15 @@ const OrderShippingManagement: React.FC = () => {
     searchKeyword: "",
     directShippingOnly: false,
   });
+
+  const resetFormData = useCallback(() => {
+    setNewStatus("payment_completed");
+    setTrackingNumber("");
+    setShippingCompany("");
+    setIsDelayRequested(false);
+    setDelayReason("");
+  }, []);
+
   const [appliedFilter, setAppliedFilter] = useState<OrderFilter>(filter);
 
   // 페이지네이션
@@ -379,9 +389,25 @@ const OrderShippingManagement: React.FC = () => {
   }, [orders, appliedFilter]);
 
   // ===== 이벤트 핸들러들 =====
+  const handleStatusChange = useCallback((value: string) => {
+    setNewStatus(value);
+
+    // 상품준비중이 아니면 지연 관련 값 초기화
+    if (value !== "preparing") {
+      setIsDelayRequested(false);
+      setDelayReason("");
+    }
+
+    // 배송중이 아니면 운송장 관련 값 초기화
+    if (value !== "in_transit") {
+      setShippingCompany("");
+      setTrackingNumber("");
+    }
+  }, []);
 
   // 상태 편집 핸들러
   const handleEditStatus = (order: Order) => {
+    resetFormData();
     setSelectedOrder(order);
     setNewStatus(order.shippingStatus);
     setStatusEditDialog(true);
@@ -465,12 +491,25 @@ const OrderShippingManagement: React.FC = () => {
       return;
     }
 
-    // ✅ 배송중 상태시 배송사/운송장 필수 검증
-    if (newStatus === "in_transit" && (!shippingCompany || !trackingNumber)) {
-      setAlertMessage("배송사와 운송장 번호를 입력해주세요.");
-      setAlertSeverity("error");
-      setShowAlert(true);
-      return;
+    // 배송중 상태시 배송사/운송장 필수 검증
+    if (newStatus === "in_transit") {
+      // ① 운송장 등록
+      await registerTrackingNumber({
+        orderNumber: selectedOrder.orderNumber,
+        courierCompany: shippingCompany as CourierCompany,
+        trackingNumber: trackingNumber,
+      });
+      // 운송장 등록이 끝나면 서버 쪽에서 자동으로 '배송중' 상태가 됩니다.
+    } else {
+      // 일반 상태 변경(운송장 정보 넘기지 말 것!)
+      await updateOrderStatus({
+        orderNumber: selectedOrder.orderNumber,
+        newStatus: mapPrototypeStatusToAPI(
+          isDelayRequested ? "preparing" : newStatus // delay 처리
+        ),
+        reason: delayReason || undefined,
+        isDelayed: isDelayRequested,
+      });
     }
 
     try {
@@ -1002,7 +1041,10 @@ const OrderShippingManagement: React.FC = () => {
         {/* ✅ 상태 변경 모달 - 기능 강화 */}
         <Dialog
           open={statusEditDialog}
-          onClose={() => setStatusEditDialog(false)}
+          onClose={() => {
+            setStatusEditDialog(false);
+            resetFormData();
+          }}
           maxWidth="sm"
           fullWidth
         >
@@ -1019,7 +1061,7 @@ const OrderShippingManagement: React.FC = () => {
                   <Select
                     value={newStatus}
                     label="새로운 상태"
-                    onChange={(e) => setNewStatus(e.target.value)}
+                    onChange={(e) => handleStatusChange(e.target.value)}
                   >
                     {/* ✅ 배송완료 옵션 제거 */}
                     <MenuItem value="payment_completed">주문확인</MenuItem>
@@ -1049,7 +1091,7 @@ const OrderShippingManagement: React.FC = () => {
                 )}
 
                 {/* ✅ 출고지연 체크시 지연사유 입력 필드 표시 */}
-                {isDelayRequested && (
+                {newStatus === "preparing" && isDelayRequested && (
                   <TextField
                     fullWidth
                     label="지연 사유"
@@ -1119,7 +1161,14 @@ const OrderShippingManagement: React.FC = () => {
             )}
           </DialogContent>
           <DialogActions>
-            <Button onClick={() => setStatusEditDialog(false)}>취소</Button>
+            <Button
+              onClick={() => {
+                setStatusEditDialog(false);
+                resetFormData();
+              }}
+            >
+              취소
+            </Button>
             <Button
               onClick={handleSaveStatusChange}
               variant="contained"
@@ -1144,10 +1193,14 @@ const OrderShippingManagement: React.FC = () => {
                 )
                   return true;
 
-                // 출고지연시 사유 필수 검증
-                if (isDelayRequested && !delayReason.trim()) return true;
-
-                return false;
+                // 출고 지연 사유 검증
+                if (
+                  newStatus === "preparing" &&
+                  isDelayRequested &&
+                  !delayReason.trim()
+                ) {
+                  return true; // 버튼 비활성화
+                }
               })()}
             >
               저장
