@@ -28,7 +28,7 @@ import { useCart } from '@/hooks/useCart';
 import { CartItem } from '@/service/cartApi';
 
 // AI Comparison Modal import
-import AIComparisonModal from "./AIComparisonModal";
+// import AIComparisonModal from "./AIComparisonModal";
 
 const ShoppingCart: React.FC = () => {
     const navigate = useNavigate();
@@ -51,7 +51,7 @@ const ShoppingCart: React.FC = () => {
 
     // 로컬 상태
     const [selectAll, setSelectAll] = useState(true);
-    const [comparisonOpen, setComparisonOpen] = useState(false);
+    // const [comparisonOpen, setComparisonOpen] = useState(false);
     const [snackbarOpen, setSnackbarOpen] = useState(false);
     const [snackbarMessage, setSnackbarMessage] = useState('');
 
@@ -134,15 +134,15 @@ const ShoppingCart: React.FC = () => {
         }
     };
 
-    // AI 상품 비교 기능
-    const handleCompareSelected = () => {
-        const selectedItems = getSelectedItems();
-        if (selectedItems.length === 0) {
-            showSnackbar('비교할 상품을 선택해주세요.');
-            return;
-        }
-        setComparisonOpen(true);
-    };
+    // // AI 상품 비교 기능
+    // const handleCompareSelected = () => {
+    //     const selectedItems = getSelectedItems();
+    //     if (selectedItems.length === 0) {
+    //         showSnackbar('비교할 상품을 선택해주세요.');
+    //         return;
+    //     }
+    //     setComparisonOpen(true);
+    // };
 
     // 결제 처리
     const handleCheckout = () => {
@@ -317,16 +317,16 @@ const ShoppingCart: React.FC = () => {
                                 </Box>
                             ))}
 
-                            {/* AI 비교 버튼 */}
+                            {/*/!* AI 비교 버튼 *!/*/}
                             <Box sx={{ mt: 3, textAlign: "center" }}>
-                                <Button
-                                    variant="outlined"
-                                    onClick={handleCompareSelected}
-                                    disabled={loading}
-                                    sx={{ mr: 2 }}
-                                >
-                                    AI 상품 비교
-                                </Button>
+                            {/*    <Button*/}
+                            {/*        variant="outlined"*/}
+                            {/*        onClick={handleCompareSelected}*/}
+                            {/*        disabled={loading}*/}
+                            {/*        sx={{ mr: 2 }}*/}
+                            {/*    >*/}
+                            {/*        AI 상품 비교*/}
+                            {/*    </Button>*/}
                                 <Button
                                     variant="text"
                                     onClick={handleContinueShopping}
@@ -449,18 +449,18 @@ const ShoppingCart: React.FC = () => {
                 )}
             </Box>
 
-            {/* AI 상품 비교 모달 */}
-            <AIComparisonModal
-                open={comparisonOpen}
-                onClose={() => setComparisonOpen(false)}
-                selectedProducts={getSelectedItems().map(item => ({
-                    id: item.productId,
-                    name: item.productName,
-                    price: item.price,
-                    image: item.productImage,
-                    seller: item.sellerName
-                }))}
-            />
+            {/*/!* AI 상품 비교 모달 *!/*/}
+            {/*<AIComparisonModal*/}
+            {/*    open={comparisonOpen}*/}
+            {/*    onClose={() => setComparisonOpen(false)}*/}
+            {/*    selectedProducts={getSelectedItems().map(item => ({*/}
+            {/*        id: item.productId,*/}
+            {/*        name: item.productName,*/}
+            {/*        price: item.price,*/}
+            {/*        image: item.productImage,*/}
+            {/*        seller: item.sellerName*/}
+            {/*    }))}*/}
+            {/*/>*/}
 
             {/* 스낵바 알림 */}
             <Snackbar

@@ -1,15 +1,8 @@
 import { useState, useEffect, useCallback } from 'react';
-import {
-    CartApiService,
-    CartResponse,
-    CartItem,
-    AddCartItemRequest,
-    RecommendationResponse
-} from '@/service/cartApi';
+import { CartApiService, CartItem, RecommendationResponse, AddCartItemRequest } from '@/service/cartApi';
 
-interface UseCartReturn {
+export interface UseCartReturn {
     // 상태
-    cartData: CartResponse | null;
     cartItems: CartItem[];
     loading: boolean;
     error: string | null;
@@ -17,219 +10,180 @@ interface UseCartReturn {
 
     // 액션
     fetchCart: () => Promise<void>;
-    addToCart: (productId: string, quantity: number) => Promise<boolean>;
+    addItem: (request: AddCartItemRequest) => Promise<boolean>;
     updateQuantity: (cartItemId: string, quantity: number) => Promise<boolean>;
     removeItem: (cartItemId: string) => Promise<boolean>;
     clearCart: () => Promise<boolean>;
+    updateItemSelection: (cartItemId: string, selected: boolean) => void;
     fetchRecommendations: () => Promise<void>;
 
-    // 유틸리티
+    // 계산된 값
     getTotalPrice: () => number;
     getTotalItemCount: () => number;
     getSelectedItems: () => CartItem[];
-    updateItemSelection: (cartItemId: string, selected: boolean) => void;
 }
 
 export const useCart = (): UseCartReturn => {
     // 상태 관리
-    const [cartData, setCartData] = useState<CartResponse | null>(null);
     const [cartItems, setCartItems] = useState<CartItem[]>([]);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [recommendations, setRecommendations] = useState<RecommendationResponse[]>([]);
 
-    // 에러 핸들링 유틸리티
+    // 에러 처리 헬퍼
     const handleError = useCallback((error: unknown, defaultMessage: string) => {
+        console.error('Cart operation failed:', error);
         const errorMessage = error instanceof Error ? error.message : defaultMessage;
         setError(errorMessage);
-        console.error(defaultMessage, error);
         return false;
     }, []);
 
-    // 성공 처리 유틸리티
-    const handleSuccess = useCallback(() => {
-        setError(null);
-        return true;
-    }, []);
-
     // 장바구니 조회
-    const fetchCart = useCallback(async (): Promise<void> => {
-        setLoading(true);
-        setError(null);
-
+    const fetchCart = useCallback(async () => {
         try {
-            const response = await CartApiService.getCart();
-            setCartData(response);
+            setLoading(true);
+            setError(null);
 
-            // 장바구니 아이템에 selected 속성 추가 (기본값: true)
+            const response = await CartApiService.getCart();
+
+            // 백엔드 응답에서 cartItems 배열 추출하고 selected 필드 초기화
             const itemsWithSelection = response.cartItems.map(item => ({
                 ...item,
-                selected: true
+                selected: true // 기본적으로 모든 아이템 선택
             }));
 
             setCartItems(itemsWithSelection);
-            console.log('장바구니 조회 성공:', response);
+
         } catch (error) {
-            handleError(error, '장바구니 조회에 실패했습니다.');
+            handleError(error, '장바구니를 불러오는데 실패했습니다.');
         } finally {
             setLoading(false);
         }
     }, [handleError]);
 
     // 장바구니에 상품 추가
-    const addToCart = useCallback(async (productId: string, quantity: number): Promise<boolean> => {
-        setLoading(true);
-
+    const addItem = useCallback(async (request: AddCartItemRequest): Promise<boolean> => {
         try {
-            const request: AddCartItemRequest = { productId, quantity };
-            const response = await CartApiService.addCartItem(request);
+            setLoading(true);
+            setError(null);
 
-            setCartData(response);
-            const itemsWithSelection = response.cartItems.map(item => ({
-                ...item,
-                selected: true
-            }));
-            setCartItems(itemsWithSelection);
+            await CartApiService.addCartItem(request);
+            await fetchCart(); // 장바구니 새로고침
 
-            console.log('장바구니 상품 추가 성공:', response);
-            return handleSuccess();
+            return true;
         } catch (error) {
             return handleError(error, '상품을 장바구니에 추가하는데 실패했습니다.');
         } finally {
             setLoading(false);
         }
-    }, [handleError, handleSuccess]);
+    }, [fetchCart, handleError]);
 
-    // 수량 변경
+    // 수량 수정
     const updateQuantity = useCallback(async (cartItemId: string, quantity: number): Promise<boolean> => {
         if (quantity < 1) return false;
 
-        setLoading(true);
-
         try {
-            const response = await CartApiService.updateCartItem(cartItemId, { quantity });
+            setLoading(true);
+            setError(null);
 
-            setCartData(response);
-            const itemsWithSelection = response.cartItems.map(item => {
-                const existingItem = cartItems.find(existing => existing.id === item.id);
-                return {
-                    ...item,
-                    selected: existingItem?.selected ?? true
-                };
-            });
-            setCartItems(itemsWithSelection);
+            await CartApiService.updateCartItem(cartItemId, { quantity });
 
-            console.log('장바구니 수량 변경 성공:', response);
-            return handleSuccess();
+            // 로컬 상태 즉시 업데이트 (UX 개선)
+            setCartItems(prev => prev.map(item =>
+                item.id === cartItemId ? { ...item, quantity } : item
+            ));
+
+            return true;
         } catch (error) {
-            return handleError(error, '상품 수량 변경에 실패했습니다.');
+            // 실패 시 서버에서 다시 가져와서 동기화
+            await fetchCart();
+            return handleError(error, '수량 변경에 실패했습니다.');
         } finally {
             setLoading(false);
         }
-    }, [cartItems, handleError, handleSuccess]);
+    }, [fetchCart, handleError]);
 
     // 상품 삭제
     const removeItem = useCallback(async (cartItemId: string): Promise<boolean> => {
-        setLoading(true);
-
         try {
+            setLoading(true);
+            setError(null);
+
             await CartApiService.removeCartItem(cartItemId);
 
-            // 로컬 상태에서 아이템 제거
-            const updatedItems = cartItems.filter(item => item.id !== cartItemId);
-            setCartItems(updatedItems);
+            // 로컬 상태에서 즉시 제거 (UX 개선)
+            setCartItems(prev => prev.filter(item => item.id !== cartItemId));
 
-            // cartData 업데이트
-            if (cartData) {
-                const newTotalItemCount = updatedItems.length;
-                const newTotalPrice = updatedItems.reduce((sum, item) => sum + (item.price * item.quantity), 0);
-
-                setCartData({
-                    ...cartData,
-                    totalItemCount: newTotalItemCount,
-                    totalPrice: newTotalPrice,
-                    cartItems: updatedItems.map(({ selected, ...item }) => item)
-                });
-            }
-
-            console.log('장바구니 상품 삭제 성공');
-            return handleSuccess();
+            return true;
         } catch (error) {
+            // 실패 시 서버에서 다시 가져와서 동기화
+            await fetchCart();
             return handleError(error, '상품 삭제에 실패했습니다.');
         } finally {
             setLoading(false);
         }
-    }, [cartItems, cartData, handleError, handleSuccess]);
+    }, [fetchCart, handleError]);
 
     // 장바구니 비우기
     const clearCart = useCallback(async (): Promise<boolean> => {
-        setLoading(true);
-
         try {
+            setLoading(true);
+            setError(null);
+
             await CartApiService.clearCart();
-
             setCartItems([]);
-            setCartData({
-                totalItemCount: 0,
-                totalPrice: 0,
-                cartItems: []
-            });
 
-            console.log('장바구니 비우기 성공');
-            return handleSuccess();
+            return true;
         } catch (error) {
             return handleError(error, '장바구니 비우기에 실패했습니다.');
         } finally {
             setLoading(false);
         }
-    }, [handleError, handleSuccess]);
-
-    // 추천 상품 조회
-    const fetchRecommendations = useCallback(async (): Promise<void> => {
-        try {
-            const response = await CartApiService.getRecommendations();
-            setRecommendations(response);
-            console.log('추천 상품 조회 성공:', response);
-        } catch (error) {
-            console.error('추천 상품 조회 실패:', error);
-            // 추천 상품은 실패해도 에러 상태로 설정하지 않음
-        }
-    }, []);
+    }, [handleError]);
 
     // 아이템 선택 상태 변경 (로컬 상태만 변경)
     const updateItemSelection = useCallback((cartItemId: string, selected: boolean) => {
-        setCartItems(prevItems =>
-            prevItems.map(item =>
-                item.id === cartItemId ? { ...item, selected } : item
-            )
-        );
+        setCartItems(prev => prev.map(item =>
+            item.id === cartItemId ? { ...item, selected } : item
+        ));
     }, []);
 
-    // 유틸리티 함수들
+    // 추천 상품 조회
+    const fetchRecommendations = useCallback(async () => {
+        try {
+            const data = await CartApiService.getRecommendations();
+            setRecommendations(data);
+        } catch (error) {
+            console.warn('추천 상품 조회 실패:', error);
+            // 추천 상품은 실패해도 에러로 처리하지 않음
+            setRecommendations([]);
+        }
+    }, []);
+
+    // 계산된 값들
     const getTotalPrice = useCallback((): number => {
         return cartItems
             .filter(item => item.selected)
-            .reduce((sum, item) => sum + (item.price * item.quantity), 0);
+            .reduce((total, item) => total + (item.price * item.quantity), 0);
     }, [cartItems]);
 
     const getTotalItemCount = useCallback((): number => {
         return cartItems
             .filter(item => item.selected)
-            .reduce((sum, item) => sum + item.quantity, 0);
+            .reduce((total, item) => total + item.quantity, 0);
     }, [cartItems]);
 
     const getSelectedItems = useCallback((): CartItem[] => {
         return cartItems.filter(item => item.selected);
     }, [cartItems]);
 
-    // 컴포넌트 마운트 시 장바구니 조회
+    // 컴포넌트 마운트 시 장바구니 로드
     useEffect(() => {
         fetchCart();
     }, [fetchCart]);
 
     return {
         // 상태
-        cartData,
         cartItems,
         loading,
         error,
@@ -237,16 +191,16 @@ export const useCart = (): UseCartReturn => {
 
         // 액션
         fetchCart,
-        addToCart,
+        addItem,
         updateQuantity,
         removeItem,
         clearCart,
+        updateItemSelection,
         fetchRecommendations,
 
-        // 유틸리티
+        // 계산된 값
         getTotalPrice,
         getTotalItemCount,
         getSelectedItems,
-        updateItemSelection,
     };
 };
