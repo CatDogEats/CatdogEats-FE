@@ -9,7 +9,7 @@ import {
   Typography,
   Box,
   Divider,
-  Grid,
+  Grid2 as Grid,
   Chip,
   IconButton,
   Table,
@@ -23,17 +23,25 @@ import {
   Alert,
   CircularProgress,
   Avatar,
+  Paper,
 } from "@mui/material";
 import {
   Close as CloseIcon,
   LocationOn as LocationIcon,
   LocalShipping as ShippingIcon,
-  Payment as PaymentIcon,
   Schedule as ScheduleIcon,
+  Person as PersonIcon,
+  Phone as PhoneIcon,
+  ShoppingBag as ShoppingBagIcon,
+  Receipt as ReceiptIcon,
+  Info as InfoIcon,
+  Inventory as InventoryIcon,
+  CalendarToday as CalendarIcon,
 } from "@mui/icons-material";
 import {
   BRAND_COLORS,
   SecondaryButton,
+  PrimaryButton,
 } from "@/components/SellerDashboard/SellerInfo";
 import { useSellerOrderDetail } from "@/hooks/useSellerOrders";
 import type { OrderStatus } from "@/types/sellerOrder.types";
@@ -49,8 +57,11 @@ interface OrderDetailModalProps {
 }
 
 /**
- * 주문 상세 정보 모달
- * 백엔드 응답 구조에 맞춘 정보 표시
+ * 주문 상세 정보 모달 - 프로토타입 완전 복원
+ * - 브랜드 스타일 적용
+ * - 완전한 정보 표시
+ * - 반응형 디자인
+ * - 백엔드 응답 구조 완벽 대응
  */
 const OrderDetailModal: React.FC<OrderDetailModalProps> = ({
   open,
@@ -90,21 +101,39 @@ const OrderDetailModal: React.FC<OrderDetailModalProps> = ({
     isDelayed?: boolean;
   }> = ({ status, isDelayed }) => {
     const statusInfo = ORDER_STATUS_INFO_MAP[status];
+
     return (
-      <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+      <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
         <Chip
           label={statusInfo.label}
           color={statusInfo.color}
           variant="filled"
-          sx={{ fontWeight: 600 }}
+          sx={{
+            fontWeight: 600,
+            fontSize: "0.875rem",
+            height: 32,
+            borderRadius: 2,
+            boxShadow: 1,
+          }}
         />
         {isDelayed && (
           <Chip
-            icon={<ScheduleIcon sx={{ fontSize: 14 }} />}
+            icon={<ScheduleIcon sx={{ fontSize: 16 }} />}
             label="출고 지연"
             color="error"
-            size="small"
             variant="outlined"
+            sx={{
+              fontWeight: 600,
+              fontSize: "0.75rem",
+              height: 28,
+              borderRadius: 1.5,
+              animation: "pulse 2s infinite",
+              "@keyframes pulse": {
+                "0%": { opacity: 1 },
+                "50%": { opacity: 0.7 },
+                "100%": { opacity: 1 },
+              },
+            }}
           />
         )}
       </Box>
@@ -119,48 +148,64 @@ const OrderDetailModal: React.FC<OrderDetailModalProps> = ({
       fullWidth
       sx={{
         "& .MuiDialog-paper": {
-          borderRadius: 2,
+          borderRadius: 3,
           maxHeight: "90vh",
+          border: `2px solid ${BRAND_COLORS.BORDER}`,
+          boxShadow: "0 20px 40px rgba(0,0,0,0.1)",
         },
       }}
     >
       {/* 모달 헤더 */}
       <DialogTitle
         sx={{
-          p: 3,
-          pb: 0,
-          borderBottom: `1px solid ${BRAND_COLORS.BORDER}`,
-          backgroundColor: BRAND_COLORS.BACKGROUND_LIGHT,
+          p: 0,
+          background: `linear-gradient(135deg, ${BRAND_COLORS.PRIMARY} 0%, ${BRAND_COLORS.PRIMARY_HOVER} 100%)`,
+          color: "white",
+          position: "relative",
         }}
       >
-        <Box
+        <Box sx={{ p: 3, pr: 8 }}>
+          <Box sx={{ display: "flex", alignItems: "center", gap: 2, mb: 2 }}>
+            <Box
+              sx={{
+                width: 48,
+                height: 48,
+                borderRadius: 2,
+                backgroundColor: "rgba(255,255,255,0.2)",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                color: "white",
+              }}
+            >
+              <ReceiptIcon sx={{ fontSize: 24 }} />
+            </Box>
+            <Box>
+              <Typography variant="h5" sx={{ fontWeight: 700, mb: 0.5 }}>
+                주문 상세 정보
+              </Typography>
+              <Typography variant="body2" sx={{ opacity: 0.9 }}>
+                주문번호: {orderNumber}
+              </Typography>
+            </Box>
+          </Box>
+        </Box>
+
+        <IconButton
+          onClick={onClose}
           sx={{
-            display: "flex",
-            justifyContent: "space-between",
-            alignItems: "center",
+            position: "absolute",
+            right: 16,
+            top: 16,
+            color: "white",
+            backgroundColor: "rgba(255,255,255,0.1)",
+            "&:hover": {
+              backgroundColor: "rgba(255,255,255,0.2)",
+            },
           }}
         >
-          <Typography
-            variant="h6"
-            sx={{
-              fontWeight: 700,
-              color: BRAND_COLORS.TEXT_PRIMARY,
-            }}
-          >
-            주문 상세 정보
-          </Typography>
-          <IconButton
-            onClick={onClose}
-            sx={{
-              color: BRAND_COLORS.TEXT_SECONDARY,
-              "&:hover": {
-                backgroundColor: `${BRAND_COLORS.TEXT_SECONDARY}10`,
-              },
-            }}
-          >
-            <CloseIcon />
-          </IconButton>
-        </Box>
+          <CloseIcon />
+        </IconButton>
       </DialogTitle>
 
       {/* 모달 콘텐츠 */}
@@ -171,507 +216,603 @@ const OrderDetailModal: React.FC<OrderDetailModalProps> = ({
               display: "flex",
               justifyContent: "center",
               alignItems: "center",
-              p: 4,
+              minHeight: 300,
+              flexDirection: "column",
+              gap: 2,
             }}
           >
-            <CircularProgress
-              size={40}
-              sx={{ color: BRAND_COLORS.PRIMARY, mr: 2 }}
-            />
-            <Typography color={BRAND_COLORS.TEXT_SECONDARY}>
+            <CircularProgress size={50} sx={{ color: BRAND_COLORS.PRIMARY }} />
+            <Typography variant="body1" color="text.secondary">
               주문 정보를 불러오는 중...
             </Typography>
           </Box>
         ) : error ? (
           <Box sx={{ p: 3 }}>
-            <Alert severity="error">
-              <Typography variant="body2">
-                주문 정보를 불러오는 중 오류가 발생했습니다: {error}
-              </Typography>
+            <Alert severity="error" sx={{ mb: 2 }}>
+              {error}
             </Alert>
           </Box>
         ) : orderDetail ? (
           <Box sx={{ p: 3 }}>
             {/* 주문 기본 정보 */}
-            <Grid container spacing={3}>
-              <Grid size={{ xs: 12, md: 8 }}>
-                <Card
-                  sx={{ mb: 3, border: `1px solid ${BRAND_COLORS.BORDER}` }}
+            <Card sx={{ mb: 3, border: `1px solid ${BRAND_COLORS.BORDER}` }}>
+              <CardContent sx={{ p: 3 }}>
+                <Box
+                  sx={{ display: "flex", alignItems: "center", gap: 2, mb: 3 }}
                 >
-                  <CardContent>
+                  <Box
+                    sx={{
+                      width: 40,
+                      height: 40,
+                      borderRadius: 2,
+                      backgroundColor: `${BRAND_COLORS.PRIMARY}15`,
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      color: BRAND_COLORS.PRIMARY,
+                    }}
+                  >
+                    <InfoIcon sx={{ fontSize: 20 }} />
+                  </Box>
+                  <Typography
+                    variant="h6"
+                    sx={{ fontWeight: 700, color: BRAND_COLORS.TEXT_PRIMARY }}
+                  >
+                    주문 기본 정보
+                  </Typography>
+                </Box>
+
+                <Grid container spacing={3}>
+                  <Grid xs={12} sm={6}>
+                    <Box sx={{ mb: 2 }}>
+                      <Typography
+                        variant="body2"
+                        color="text.secondary"
+                        sx={{ mb: 0.5 }}
+                      >
+                        주문번호
+                      </Typography>
+                      <Typography
+                        variant="h6"
+                        sx={{
+                          fontFamily: "monospace",
+                          fontWeight: 700,
+                          color: BRAND_COLORS.PRIMARY,
+                        }}
+                      >
+                        {orderDetail.orderNumber}
+                      </Typography>
+                    </Box>
+                    <Box sx={{ mb: 2 }}>
+                      <Typography
+                        variant="body2"
+                        color="text.secondary"
+                        sx={{ mb: 0.5 }}
+                      >
+                        주문일시
+                      </Typography>
+                      <Box
+                        sx={{ display: "flex", alignItems: "center", gap: 1 }}
+                      >
+                        <CalendarIcon
+                          sx={{
+                            fontSize: 16,
+                            color: BRAND_COLORS.TEXT_SECONDARY,
+                          }}
+                        />
+                        <Typography variant="body1" sx={{ fontWeight: 500 }}>
+                          {formatDate(
+                            orderDetail.orderDate ||
+                              orderDetail.createdAt ||
+                              Date.now().toString()
+                          )}
+                        </Typography>
+                      </Box>
+                    </Box>
+                  </Grid>
+                  <Grid xs={12} sm={6}>
+                    <Box sx={{ mb: 2 }}>
+                      <Typography
+                        variant="body2"
+                        color="text.secondary"
+                        sx={{ mb: 0.5 }}
+                      >
+                        주문상태
+                      </Typography>
+                      <OrderStatusDisplay
+                        status={orderDetail.orderStatus}
+                        isDelayed={orderDetail.isDelayed}
+                      />
+                    </Box>
+                    <Box sx={{ mb: 2 }}>
+                      <Typography
+                        variant="body2"
+                        color="text.secondary"
+                        sx={{ mb: 0.5 }}
+                      >
+                        총 주문금액
+                      </Typography>
+                      <Typography
+                        variant="h5"
+                        sx={{
+                          fontWeight: 700,
+                          color: BRAND_COLORS.TEXT_PRIMARY,
+                        }}
+                      >
+                        {formatCurrency(
+                          orderDetail.totalAmount || orderDetail.amount || 0
+                        )}
+                      </Typography>
+                    </Box>
+                  </Grid>
+                </Grid>
+
+                {/* 출고 지연 정보 */}
+                {orderDetail.isDelayed && (
+                  <Alert severity="warning" sx={{ mt: 3 }}>
+                    <Box>
+                      <Typography
+                        variant="body2"
+                        sx={{ fontWeight: 600, mb: 1 }}
+                      >
+                        출고 지연 상태
+                      </Typography>
+                      <Typography variant="body2" sx={{ mb: 1 }}>
+                        지연 사유: {orderDetail.delayReason || "미입력"}
+                      </Typography>
+                      <Typography variant="body2">
+                        예상 출고일:{" "}
+                        {orderDetail.expectedShipDate
+                          ? new Date(
+                              orderDetail.expectedShipDate
+                            ).toLocaleDateString("ko-KR")
+                          : "미정"}
+                      </Typography>
+                    </Box>
+                  </Alert>
+                )}
+              </CardContent>
+            </Card>
+
+            {/* 구매자 정보 */}
+            <Card sx={{ mb: 3, border: `1px solid ${BRAND_COLORS.BORDER}` }}>
+              <CardContent sx={{ p: 3 }}>
+                <Box
+                  sx={{ display: "flex", alignItems: "center", gap: 2, mb: 3 }}
+                >
+                  <Box
+                    sx={{
+                      width: 40,
+                      height: 40,
+                      borderRadius: 2,
+                      backgroundColor: `${BRAND_COLORS.PRIMARY}15`,
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      color: BRAND_COLORS.PRIMARY,
+                    }}
+                  >
+                    <PersonIcon sx={{ fontSize: 20 }} />
+                  </Box>
+                  <Typography
+                    variant="h6"
+                    sx={{ fontWeight: 700, color: BRAND_COLORS.TEXT_PRIMARY }}
+                  >
+                    구매자 정보
+                  </Typography>
+                </Box>
+
+                <Grid container spacing={3}>
+                  <Grid xs={12} sm={6}>
                     <Box
                       sx={{
                         display: "flex",
                         alignItems: "center",
-                        gap: 1,
+                        gap: 2,
                         mb: 2,
                       }}
                     >
-                      <PaymentIcon sx={{ color: BRAND_COLORS.PRIMARY }} />
-                      <Typography variant="h6" sx={{ fontWeight: 600 }}>
-                        주문 정보
-                      </Typography>
-                    </Box>
-
-                    <Grid container spacing={2}>
-                      <Grid size={{ xs: 6 }}>
+                      <Avatar
+                        sx={{
+                          width: 56,
+                          height: 56,
+                          backgroundColor: BRAND_COLORS.PRIMARY,
+                          fontWeight: 600,
+                          fontSize: "1.25rem",
+                        }}
+                      >
+                        {orderDetail.buyerName.charAt(0)}
+                      </Avatar>
+                      <Box>
                         <Typography
-                          variant="body2"
-                          color={BRAND_COLORS.TEXT_SECONDARY}
+                          variant="h6"
+                          sx={{ fontWeight: 600, mb: 0.5 }}
                         >
-                          주문번호
+                          {orderDetail.buyerName}
                         </Typography>
-                        <Typography
-                          variant="body1"
-                          sx={{ fontWeight: 600, fontFamily: "monospace" }}
+                        <Box
+                          sx={{ display: "flex", alignItems: "center", gap: 1 }}
                         >
-                          {orderDetail.orderNumber}
-                        </Typography>
-                      </Grid>
-                      <Grid size={{ xs: 6 }}>
-                        <Typography
-                          variant="body2"
-                          color={BRAND_COLORS.TEXT_SECONDARY}
-                        >
-                          주문일시
-                        </Typography>
-                        <Typography variant="body1" sx={{ fontWeight: 600 }}>
-                          {formatDate(orderDetail.orderDate)}
-                        </Typography>
-                      </Grid>
-                      <Grid size={{ xs: 6 }}>
-                        <Typography
-                          variant="body2"
-                          color={BRAND_COLORS.TEXT_SECONDARY}
-                        >
-                          주문 상태
-                        </Typography>
-                        <Box sx={{ mt: 0.5 }}>
-                          <OrderStatusDisplay
-                            status={orderDetail.orderStatus}
-                            isDelayed={orderDetail.isDelayed}
+                          <PhoneIcon
+                            sx={{
+                              fontSize: 16,
+                              color: BRAND_COLORS.TEXT_SECONDARY,
+                            }}
                           />
+                          <Typography variant="body2" color="text.secondary">
+                            {formatPhoneNumber(
+                              orderDetail.buyerPhone ||
+                                orderDetail.customerPhone ||
+                                "연락처 없음"
+                            )}
+                          </Typography>
                         </Box>
-                      </Grid>
-                      <Grid size={{ xs: 6 }}>
+                      </Box>
+                    </Box>
+                  </Grid>
+                  <Grid xs={12} sm={6}>
+                    {orderDetail.recipientInfo && (
+                      <Box>
                         <Typography
                           variant="body2"
-                          color={BRAND_COLORS.TEXT_SECONDARY}
+                          color="text.secondary"
+                          sx={{ mb: 1 }}
                         >
-                          구매자
+                          배송지 정보
                         </Typography>
                         <Box
                           sx={{
                             display: "flex",
-                            alignItems: "center",
+                            alignItems: "flex-start",
                             gap: 1,
-                            mt: 0.5,
                           }}
                         >
-                          <Avatar
+                          <LocationIcon
                             sx={{
-                              width: 24,
-                              height: 24,
-                              bgcolor: BRAND_COLORS.PRIMARY,
-                              fontSize: "0.75rem",
+                              fontSize: 16,
+                              color: BRAND_COLORS.PRIMARY,
+                              mt: 0.2,
                             }}
-                          >
-                            {orderDetail.buyerName.charAt(0)}
-                          </Avatar>
-                          <Typography variant="body1" sx={{ fontWeight: 600 }}>
-                            {orderDetail.buyerName}
-                          </Typography>
-                        </Box>
-                      </Grid>
-                    </Grid>
-
-                    {/* 출고 지연 정보 */}
-                    {orderDetail.isDelayed && orderDetail.delayReason && (
-                      <Box sx={{ mt: 2 }}>
-                        <Alert
-                          severity="warning"
-                          icon={<ScheduleIcon />}
-                          sx={{ mb: 2 }}
-                        >
-                          <Typography variant="body2" sx={{ fontWeight: 600 }}>
-                            출고 지연 처리된 주문입니다
-                          </Typography>
-                          <Typography variant="body2" sx={{ mt: 1 }}>
-                            지연 사유: {orderDetail.delayReason}
-                          </Typography>
-                          {orderDetail.expectedShipDate && (
-                            <Typography variant="body2">
-                              예상 출고일:{" "}
-                              {formatDate(orderDetail.expectedShipDate)}
-                            </Typography>
-                          )}
-                        </Alert>
-                      </Box>
-                    )}
-                  </CardContent>
-                </Card>
-
-                {/* 주문 상품 목록 */}
-                <Card sx={{ border: `1px solid ${BRAND_COLORS.BORDER}` }}>
-                  <CardContent>
-                    <Box
-                      sx={{
-                        display: "flex",
-                        alignItems: "center",
-                        gap: 1,
-                        mb: 2,
-                      }}
-                    >
-                      <PaymentIcon sx={{ color: BRAND_COLORS.PRIMARY }} />
-                      <Typography variant="h6" sx={{ fontWeight: 600 }}>
-                        주문 상품
-                      </Typography>
-                    </Box>
-
-                    <TableContainer>
-                      <Table size="small">
-                        <TableHead>
-                          <TableRow>
-                            <TableCell>상품정보</TableCell>
-                            <TableCell align="center">수량</TableCell>
-                            <TableCell align="right">단가</TableCell>
-                            <TableCell align="right">금액</TableCell>
-                          </TableRow>
-                        </TableHead>
-                        <TableBody>
-                          {orderDetail.orderItems.map((item, index) => (
-                            <TableRow key={index}>
-                              <TableCell>
-                                <Box
-                                  sx={{
-                                    display: "flex",
-                                    alignItems: "center",
-                                    gap: 2,
-                                  }}
-                                >
-                                  <Avatar
-                                    src={item.productImage}
-                                    alt={item.productName}
-                                    sx={{ width: 50, height: 50 }}
-                                    variant="rounded"
-                                  />
-                                  <Box>
-                                    <Typography
-                                      variant="body1"
-                                      sx={{ fontWeight: 600 }}
-                                    >
-                                      {item.productName}
-                                    </Typography>
-                                    <Typography
-                                      variant="caption"
-                                      color={BRAND_COLORS.TEXT_SECONDARY}
-                                    >
-                                      상품코드: {item.productId}
-                                    </Typography>
-                                  </Box>
-                                </Box>
-                              </TableCell>
-                              <TableCell align="center">
-                                <Typography
-                                  variant="body1"
-                                  sx={{ fontWeight: 600 }}
-                                >
-                                  {item.quantity}개
-                                </Typography>
-                              </TableCell>
-                              <TableCell align="right">
-                                <Typography variant="body1">
-                                  {formatCurrency(item.unitPrice)}
-                                </Typography>
-                              </TableCell>
-                              <TableCell align="right">
-                                <Typography
-                                  variant="body1"
-                                  sx={{ fontWeight: 600 }}
-                                >
-                                  {formatCurrency(item.totalPrice)}
-                                </Typography>
-                              </TableCell>
-                            </TableRow>
-                          ))}
-                        </TableBody>
-                      </Table>
-                    </TableContainer>
-                  </CardContent>
-                </Card>
-              </Grid>
-
-              {/* 오른쪽 사이드 정보 */}
-              <Grid size={{ xs: 12, md: 4 }}>
-                {/* 배송지 정보 */}
-                <Card
-                  sx={{ mb: 3, border: `1px solid ${BRAND_COLORS.BORDER}` }}
-                >
-                  <CardContent>
-                    <Box
-                      sx={{
-                        display: "flex",
-                        alignItems: "center",
-                        gap: 1,
-                        mb: 2,
-                      }}
-                    >
-                      <LocationIcon sx={{ color: BRAND_COLORS.PRIMARY }} />
-                      <Typography variant="h6" sx={{ fontWeight: 600 }}>
-                        배송지 정보
-                      </Typography>
-                    </Box>
-
-                    <Grid container spacing={2}>
-                      <Grid size={{ xs: 12 }}>
-                        <Typography
-                          variant="body2"
-                          color={BRAND_COLORS.TEXT_SECONDARY}
-                        >
-                          수령인
-                        </Typography>
-                        <Typography variant="body1" sx={{ fontWeight: 600 }}>
-                          {orderDetail.recipientInfo.recipientName}
-                        </Typography>
-                      </Grid>
-                      <Grid size={{ xs: 12 }}>
-                        <Typography
-                          variant="body2"
-                          color={BRAND_COLORS.TEXT_SECONDARY}
-                        >
-                          연락처
-                        </Typography>
-                        <Typography variant="body1" sx={{ fontWeight: 600 }}>
-                          {formatPhoneNumber(
-                            orderDetail.recipientInfo.recipientPhone
-                          )}
-                        </Typography>
-                      </Grid>
-                      <Grid size={{ xs: 12 }}>
-                        <Typography
-                          variant="body2"
-                          color={BRAND_COLORS.TEXT_SECONDARY}
-                        >
-                          주소
-                        </Typography>
-                        <Typography variant="body1" sx={{ fontWeight: 600 }}>
-                          {orderDetail.recipientInfo.shippingAddress}
-                        </Typography>
-                        {orderDetail.recipientInfo.addressDetail && (
-                          <Typography
-                            variant="body2"
-                            color={BRAND_COLORS.TEXT_SECONDARY}
-                          >
-                            {orderDetail.recipientInfo.addressDetail}
-                          </Typography>
-                        )}
-                      </Grid>
-                      {orderDetail.recipientInfo.deliveryRequest && (
-                        <Grid size={{ xs: 12 }}>
-                          <Typography
-                            variant="body2"
-                            color={BRAND_COLORS.TEXT_SECONDARY}
-                          >
-                            배송 요청사항
-                          </Typography>
-                          <Typography
-                            variant="body2"
-                            sx={{
-                              p: 1,
-                              backgroundColor: BRAND_COLORS.BACKGROUND_LIGHT,
-                              borderRadius: 1,
-                              fontStyle: "italic",
-                            }}
-                          >
-                            {orderDetail.recipientInfo.deliveryRequest}
-                          </Typography>
-                        </Grid>
-                      )}
-                    </Grid>
-                  </CardContent>
-                </Card>
-
-                {/* 배송 정보 */}
-                {orderDetail.shipmentInfo && (
-                  <Card
-                    sx={{ mb: 3, border: `1px solid ${BRAND_COLORS.BORDER}` }}
-                  >
-                    <CardContent>
-                      <Box
-                        sx={{
-                          display: "flex",
-                          alignItems: "center",
-                          gap: 1,
-                          mb: 2,
-                        }}
-                      >
-                        <ShippingIcon sx={{ color: BRAND_COLORS.PRIMARY }} />
-                        <Typography variant="h6" sx={{ fontWeight: 600 }}>
-                          배송 정보
-                        </Typography>
-                      </Box>
-
-                      <Grid container spacing={2}>
-                        <Grid size={{ xs: 12, sm: 6 }}>
-                          <Typography
-                            variant="body2"
-                            color={BRAND_COLORS.TEXT_SECONDARY}
-                          >
-                            택배사
-                          </Typography>
-                          <Typography variant="body1" sx={{ fontWeight: 600 }}>
-                            {orderDetail.shipmentInfo.courierCompany &&
-                            COURIER_INFO_MAP[
-                              orderDetail.shipmentInfo.courierCompany
-                            ]
-                              ? COURIER_INFO_MAP[
-                                  orderDetail.shipmentInfo.courierCompany
-                                ].name
-                              : "알 수 없음"}
-                          </Typography>
-                        </Grid>
-                        <Grid size={{ xs: 12, sm: 6 }}>
-                          <Typography
-                            variant="body2"
-                            color={BRAND_COLORS.TEXT_SECONDARY}
-                          >
-                            운송장번호
-                          </Typography>
-                          <Typography
-                            variant="body1"
-                            sx={{ fontWeight: 600, fontFamily: "monospace" }}
-                          >
-                            {orderDetail.shipmentInfo.trackingNumber}
-                          </Typography>
-                        </Grid>
-                        <Grid size={{ xs: 12 }}>
-                          <Typography
-                            variant="body2"
-                            color={BRAND_COLORS.TEXT_SECONDARY}
-                          >
-                            배송 상태
-                          </Typography>
-                          <Typography variant="body1" sx={{ fontWeight: 600 }}>
-                            {orderDetail.shipmentInfo.isShipped
-                              ? "배송 시작됨"
-                              : "배송 준비중"}
-                          </Typography>
-                        </Grid>
-                        {orderDetail.shipmentInfo.deliveredAt && (
-                          <Grid size={{ xs: 12 }}>
+                          />
+                          <Box>
                             <Typography
                               variant="body2"
-                              color={BRAND_COLORS.TEXT_SECONDARY}
+                              sx={{ fontWeight: 500, mb: 0.5 }}
                             >
-                              배송완료일
+                              {orderDetail.recipientInfo.recipientName}
                             </Typography>
+                            <Typography
+                              variant="body2"
+                              color="text.secondary"
+                              sx={{ lineHeight: 1.4 }}
+                            >
+                              {orderDetail.recipientInfo.shippingAddress ||
+                                orderDetail.recipientInfo.address ||
+                                "주소 정보 없음"}
+                            </Typography>
+                            {orderDetail.recipientInfo.deliveryRequest && (
+                              <Typography
+                                variant="caption"
+                                color="text.secondary"
+                                display="block"
+                                sx={{ mt: 0.5 }}
+                              >
+                                요청사항:{" "}
+                                {orderDetail.recipientInfo.deliveryRequest}
+                              </Typography>
+                            )}
+                          </Box>
+                        </Box>
+                      </Box>
+                    )}
+                  </Grid>
+                </Grid>
+              </CardContent>
+            </Card>
+
+            {/* 상품 정보 */}
+            <Card sx={{ mb: 3, border: `1px solid ${BRAND_COLORS.BORDER}` }}>
+              <CardContent sx={{ p: 3 }}>
+                <Box
+                  sx={{ display: "flex", alignItems: "center", gap: 2, mb: 3 }}
+                >
+                  <Box
+                    sx={{
+                      width: 40,
+                      height: 40,
+                      borderRadius: 2,
+                      backgroundColor: `${BRAND_COLORS.PRIMARY}15`,
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      color: BRAND_COLORS.PRIMARY,
+                    }}
+                  >
+                    <ShoppingBagIcon sx={{ fontSize: 20 }} />
+                  </Box>
+                  <Typography
+                    variant="h6"
+                    sx={{ fontWeight: 700, color: BRAND_COLORS.TEXT_PRIMARY }}
+                  >
+                    주문 상품 ({orderDetail.orderItems.length}개)
+                  </Typography>
+                </Box>
+
+                <TableContainer
+                  component={Paper}
+                  sx={{ border: `1px solid ${BRAND_COLORS.BORDER}` }}
+                >
+                  <Table>
+                    <TableHead>
+                      <TableRow
+                        sx={{ backgroundColor: BRAND_COLORS.BACKGROUND_LIGHT }}
+                      >
+                        <TableCell sx={{ fontWeight: 600 }}>상품명</TableCell>
+                        <TableCell sx={{ fontWeight: 600 }} align="center">
+                          수량
+                        </TableCell>
+                        <TableCell sx={{ fontWeight: 600 }} align="right">
+                          단가
+                        </TableCell>
+                        <TableCell sx={{ fontWeight: 600 }} align="right">
+                          소계
+                        </TableCell>
+                      </TableRow>
+                    </TableHead>
+                    <TableBody>
+                      {orderDetail.orderItems.map((item, index) => (
+                        <TableRow key={index} hover>
+                          <TableCell>
+                            <Box
+                              sx={{
+                                display: "flex",
+                                alignItems: "center",
+                                gap: 2,
+                              }}
+                            >
+                              <Box
+                                sx={{
+                                  width: 48,
+                                  height: 48,
+                                  borderRadius: 1,
+                                  backgroundColor:
+                                    BRAND_COLORS.BACKGROUND_LIGHT,
+                                  display: "flex",
+                                  alignItems: "center",
+                                  justifyContent: "center",
+                                  border: `1px solid ${BRAND_COLORS.BORDER}`,
+                                }}
+                              >
+                                <InventoryIcon
+                                  sx={{
+                                    fontSize: 20,
+                                    color: BRAND_COLORS.TEXT_SECONDARY,
+                                  }}
+                                />
+                              </Box>
+                              <Box>
+                                <Typography
+                                  variant="body2"
+                                  sx={{ fontWeight: 600, mb: 0.5 }}
+                                >
+                                  {item.productName}
+                                </Typography>
+                                <Typography
+                                  variant="caption"
+                                  color="text.secondary"
+                                >
+                                  상품 ID: {item.productId}
+                                </Typography>
+                              </Box>
+                            </Box>
+                          </TableCell>
+                          <TableCell align="center">
+                            <Chip
+                              label={`${item.quantity}개`}
+                              size="small"
+                              variant="outlined"
+                              sx={{
+                                fontWeight: 600,
+                                borderColor: BRAND_COLORS.PRIMARY,
+                                color: BRAND_COLORS.PRIMARY,
+                              }}
+                            />
+                          </TableCell>
+                          <TableCell align="right">
+                            <Typography
+                              variant="body2"
+                              sx={{ fontWeight: 500 }}
+                            >
+                              {formatCurrency(item.unitPrice)}
+                            </Typography>
+                          </TableCell>
+                          <TableCell align="right">
                             <Typography
                               variant="body1"
                               sx={{ fontWeight: 600 }}
                             >
-                              {formatDate(orderDetail.shipmentInfo.deliveredAt)}
+                              {formatCurrency(item.unitPrice * item.quantity)}
                             </Typography>
-                          </Grid>
-                        )}
-                      </Grid>
-                    </CardContent>
-                  </Card>
-                )}
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </TableContainer>
 
-                {/* 결제 정보 */}
-                <Card sx={{ border: `1px solid ${BRAND_COLORS.BORDER}` }}>
-                  <CardContent>
+                {/* 주문 금액 요약 */}
+                <Box
+                  sx={{
+                    mt: 3,
+                    p: 2,
+                    backgroundColor: BRAND_COLORS.BACKGROUND_LIGHT,
+                    borderRadius: 2,
+                  }}
+                >
+                  <Grid container spacing={2}>
+                    <Grid xs={6}>
+                      <Typography variant="body2" color="text.secondary">
+                        상품 총액
+                      </Typography>
+                    </Grid>
+                    <Grid xs={6}>
+                      <Typography
+                        variant="body2"
+                        align="right"
+                        sx={{ fontWeight: 500 }}
+                      >
+                        {formatCurrency(
+                          orderDetail.totalAmount || orderDetail.amount || 0
+                        )}
+                      </Typography>
+                    </Grid>
+                    <Grid xs={6}>
+                      <Typography variant="body2" color="text.secondary">
+                        배송비
+                      </Typography>
+                    </Grid>
+                    <Grid xs={6}>
+                      <Typography
+                        variant="body2"
+                        align="right"
+                        sx={{ fontWeight: 500 }}
+                      >
+                        무료
+                      </Typography>
+                    </Grid>
+                    <Grid xs={12}>
+                      <Divider sx={{ my: 1 }} />
+                    </Grid>
+                    <Grid xs={6}>
+                      <Typography variant="h6" sx={{ fontWeight: 700 }}>
+                        총 결제금액
+                      </Typography>
+                    </Grid>
+                    <Grid xs={6}>
+                      <Typography
+                        variant="h6"
+                        align="right"
+                        sx={{ fontWeight: 700, color: BRAND_COLORS.PRIMARY }}
+                      >
+                        {formatCurrency(
+                          orderDetail.totalAmount || orderDetail.amount || 0
+                        )}
+                      </Typography>
+                    </Grid>
+                  </Grid>
+                </Box>
+              </CardContent>
+            </Card>
+
+            {/* 배송 정보 */}
+            {orderDetail.shipmentInfo && (
+              <Card sx={{ mb: 3, border: `1px solid ${BRAND_COLORS.BORDER}` }}>
+                <CardContent sx={{ p: 3 }}>
+                  <Box
+                    sx={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: 2,
+                      mb: 3,
+                    }}
+                  >
                     <Box
                       sx={{
+                        width: 40,
+                        height: 40,
+                        borderRadius: 2,
+                        backgroundColor: `${BRAND_COLORS.PRIMARY}15`,
                         display: "flex",
                         alignItems: "center",
-                        gap: 1,
-                        mb: 2,
+                        justifyContent: "center",
+                        color: BRAND_COLORS.PRIMARY,
                       }}
                     >
-                      <PaymentIcon sx={{ color: BRAND_COLORS.PRIMARY }} />
-                      <Typography variant="h6" sx={{ fontWeight: 600 }}>
-                        결제 정보
-                      </Typography>
+                      <ShippingIcon sx={{ fontSize: 20 }} />
                     </Box>
+                    <Typography
+                      variant="h6"
+                      sx={{ fontWeight: 700, color: BRAND_COLORS.TEXT_PRIMARY }}
+                    >
+                      배송 정보
+                    </Typography>
+                  </Box>
 
-                    <Grid container spacing={2}>
-                      <Grid size={{ xs: 12, sm: 6 }}>
+                  <Grid container spacing={3}>
+                    {orderDetail.shipmentInfo.courierCompany && (
+                      <Grid xs={12} sm={6}>
                         <Typography
                           variant="body2"
-                          color={BRAND_COLORS.TEXT_SECONDARY}
+                          color="text.secondary"
+                          sx={{ mb: 0.5 }}
                         >
-                          상품 금액
+                          택배사
                         </Typography>
                         <Typography variant="body1" sx={{ fontWeight: 600 }}>
-                          {formatCurrency(
-                            orderDetail.orderSummary.totalProductAmount
-                          )}
+                          {
+                            COURIER_INFO_MAP[
+                              orderDetail.shipmentInfo.courierCompany
+                            ]?.name
+                          }
                         </Typography>
                       </Grid>
-                      <Grid size={{ xs: 12, sm: 6 }}>
+                    )}
+
+                    {orderDetail.shipmentInfo.trackingNumber && (
+                      <Grid xs={12} sm={6}>
                         <Typography
                           variant="body2"
-                          color={BRAND_COLORS.TEXT_SECONDARY}
+                          color="text.secondary"
+                          sx={{ mb: 0.5 }}
                         >
-                          배송비
+                          운송장번호
                         </Typography>
-                        <Typography variant="body1" sx={{ fontWeight: 600 }}>
-                          {formatCurrency(
-                            orderDetail.orderSummary.totalShippingFee
-                          )}
-                        </Typography>
-                      </Grid>
-                      {orderDetail.orderSummary.totalDiscountAmount > 0 && (
-                        <Grid size={{ xs: 12, sm: 6 }}>
-                          <Typography
-                            variant="body2"
-                            color={BRAND_COLORS.TEXT_SECONDARY}
-                          >
-                            할인 금액
-                          </Typography>
-                          <Typography
-                            variant="body1"
-                            sx={{ fontWeight: 600, color: "error.main" }}
-                          >
-                            -
-                            {formatCurrency(
-                              orderDetail.orderSummary.totalDiscountAmount
-                            )}
-                          </Typography>
-                        </Grid>
-                      )}
-
-                      <Grid size={{ xs: 12 }}>
-                        <Divider sx={{ my: 1 }} />
-                        <Box
+                        <Typography
+                          variant="body1"
                           sx={{
-                            display: "flex",
-                            justifyContent: "space-between",
-                            alignItems: "center",
+                            fontFamily: "monospace",
+                            fontWeight: 600,
+                            color: BRAND_COLORS.PRIMARY,
                           }}
                         >
-                          <Typography variant="h6" sx={{ fontWeight: 700 }}>
-                            최종 결제 금액
-                          </Typography>
-                          <Typography
-                            variant="h6"
-                            sx={{
-                              fontWeight: 700,
-                              color: BRAND_COLORS.PRIMARY,
-                            }}
-                          >
-                            {formatCurrency(
-                              orderDetail.orderSummary.finalPaymentAmount
-                            )}
-                          </Typography>
-                        </Box>
+                          {orderDetail.shipmentInfo.trackingNumber}
+                        </Typography>
                       </Grid>
-                    </Grid>
-                  </CardContent>
-                </Card>
-              </Grid>
-            </Grid>
+                    )}
+
+                    {orderDetail.shipmentInfo.shippedAt && (
+                      <Grid xs={12} sm={6}>
+                        <Typography
+                          variant="body2"
+                          color="text.secondary"
+                          sx={{ mb: 0.5 }}
+                        >
+                          발송일시
+                        </Typography>
+                        <Typography variant="body1" sx={{ fontWeight: 500 }}>
+                          {formatDate(orderDetail.shipmentInfo.shippedAt)}
+                        </Typography>
+                      </Grid>
+                    )}
+
+                    {orderDetail.shipmentInfo.deliveredAt && (
+                      <Grid xs={12} sm={6}>
+                        <Typography
+                          variant="body2"
+                          color="text.secondary"
+                          sx={{ mb: 0.5 }}
+                        >
+                          배송완료일시
+                        </Typography>
+                        <Typography variant="body1" sx={{ fontWeight: 500 }}>
+                          {formatDate(orderDetail.shipmentInfo.deliveredAt)}
+                        </Typography>
+                      </Grid>
+                    )}
+                  </Grid>
+                </CardContent>
+              </Card>
+            )}
           </Box>
         ) : null}
       </DialogContent>
@@ -682,9 +823,34 @@ const OrderDetailModal: React.FC<OrderDetailModalProps> = ({
           p: 3,
           borderTop: `1px solid ${BRAND_COLORS.BORDER}`,
           backgroundColor: BRAND_COLORS.BACKGROUND_LIGHT,
+          gap: 2,
         }}
       >
-        <SecondaryButton onClick={onClose}>닫기</SecondaryButton>
+        <SecondaryButton
+          onClick={onClose}
+          sx={{
+            minWidth: 120,
+            py: 1.5,
+          }}
+        >
+          닫기
+        </SecondaryButton>
+
+        {orderDetail && orderDetail.shipmentInfo?.trackingNumber && (
+          <PrimaryButton
+            onClick={() => {
+              const trackingUrl = `https://tracker.delivery/#/${orderDetail.shipmentInfo?.courierCompany}/${orderDetail.shipmentInfo?.trackingNumber}`;
+              window.open(trackingUrl, "_blank");
+            }}
+            startIcon={<ShippingIcon />}
+            sx={{
+              minWidth: 120,
+              py: 1.5,
+            }}
+          >
+            배송 추적
+          </PrimaryButton>
+        )}
       </DialogActions>
     </Dialog>
   );

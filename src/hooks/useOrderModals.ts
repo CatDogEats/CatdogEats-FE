@@ -3,40 +3,51 @@
 import { useState, useCallback } from "react";
 import type { OrderStatus } from "@/types/sellerOrder.types";
 
-interface DetailModalState {
-  open: boolean;
-  orderNumber: string;
+interface ModalState {
+  detail: {
+    open: boolean;
+    orderNumber: string | null;
+  };
+  statusUpdate: {
+    open: boolean;
+    orderNumber: string | null;
+    currentStatus: OrderStatus | null;
+  };
 }
 
-interface StatusUpdateModalState {
-  open: boolean;
-  orderNumber: string;
-  currentStatus: OrderStatus;
-}
-
-interface ModalsState {
-  detail: DetailModalState;
-  statusUpdate: StatusUpdateModalState;
+interface UseOrderModalsReturn {
+  modals: ModalState;
+  openDetailModal: (orderNumber: string) => void;
+  openStatusUpdateModal: (
+    orderNumber: string,
+    currentStatus: OrderStatus
+  ) => void;
+  closeDetailModal: () => void;
+  closeStatusUpdateModal: () => void;
+  closeAllModals: () => void;
 }
 
 /**
- * 주문 관리 모달들의 상태를 관리하는 훅
- * 각 모달의 열기/닫기 상태와 필요한 데이터를 중앙에서 관리
+ * 주문 관리 모달 상태 관리 Hook
+ * - 주문 상세 조회 모달
+ * - 주문 상태 변경 모달
+ * - 통합된 모달 상태 관리
  */
-export const useOrderModals = () => {
-  const [modals, setModals] = useState<ModalsState>({
+export const useOrderModals = (): UseOrderModalsReturn => {
+  // ===== 모달 상태 =====
+  const [modals, setModals] = useState<ModalState>({
     detail: {
       open: false,
-      orderNumber: "",
+      orderNumber: null,
     },
     statusUpdate: {
       open: false,
-      orderNumber: "",
-      currentStatus: "PAYMENT_COMPLETED",
+      orderNumber: null,
+      currentStatus: null,
     },
   });
 
-  // ===== 상세보기 모달 =====
+  // ===== 주문 상세 모달 열기 =====
   const openDetailModal = useCallback((orderNumber: string) => {
     setModals((prev) => ({
       ...prev,
@@ -47,17 +58,7 @@ export const useOrderModals = () => {
     }));
   }, []);
 
-  const closeDetailModal = useCallback(() => {
-    setModals((prev) => ({
-      ...prev,
-      detail: {
-        open: false,
-        orderNumber: "",
-      },
-    }));
-  }, []);
-
-  // ===== 상태 변경 모달 =====
+  // ===== 주문 상태 변경 모달 열기 =====
   const openStatusUpdateModal = useCallback(
     (orderNumber: string, currentStatus: OrderStatus) => {
       setModals((prev) => ({
@@ -72,13 +73,25 @@ export const useOrderModals = () => {
     []
   );
 
+  // ===== 주문 상세 모달 닫기 =====
+  const closeDetailModal = useCallback(() => {
+    setModals((prev) => ({
+      ...prev,
+      detail: {
+        open: false,
+        orderNumber: null,
+      },
+    }));
+  }, []);
+
+  // ===== 주문 상태 변경 모달 닫기 =====
   const closeStatusUpdateModal = useCallback(() => {
     setModals((prev) => ({
       ...prev,
       statusUpdate: {
         open: false,
-        orderNumber: "",
-        currentStatus: "PAYMENT_COMPLETED",
+        orderNumber: null,
+        currentStatus: null,
       },
     }));
   }, []);
@@ -88,12 +101,12 @@ export const useOrderModals = () => {
     setModals({
       detail: {
         open: false,
-        orderNumber: "",
+        orderNumber: null,
       },
       statusUpdate: {
         open: false,
-        orderNumber: "",
-        currentStatus: "PAYMENT_COMPLETED",
+        orderNumber: null,
+        currentStatus: null,
       },
     });
   }, []);
@@ -101,8 +114,8 @@ export const useOrderModals = () => {
   return {
     modals,
     openDetailModal,
-    closeDetailModal,
     openStatusUpdateModal,
+    closeDetailModal,
     closeStatusUpdateModal,
     closeAllModals,
   };
