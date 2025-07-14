@@ -192,7 +192,7 @@ export const sellerOrderApi = {
   syncShipmentStatus: async (): Promise<APIResponse<ShipmentSyncResponse>> => {
     try {
       const response = await axios.post<APIResponse<ShipmentSyncResponse>>(
-        `${API_BASE_URL}/v1/sellers/orders/sync`,
+        `${API_BASE_URL}/v1/sellers/orders/sync-shipment-status`,
         {},
         {
           headers: {

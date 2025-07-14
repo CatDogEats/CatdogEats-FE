@@ -224,6 +224,8 @@ const OrderShippingManagement: React.FC = () => {
     ordersError,
     updateOrderStatus,
     registerTrackingNumber,
+    syncShipmentStatus,
+    actionLoading,
   } = useSellerOrderManagement();
 
   // ===== 상태 관리 =====
@@ -267,7 +269,9 @@ const OrderShippingManagement: React.FC = () => {
   // 상태 변경 폼 상태들
   const [newStatus, setNewStatus] = useState<string>("payment_completed");
   const [trackingNumber, setTrackingNumber] = useState("");
-  const [shippingCompany, setShippingCompany] = useState("");
+  const [shippingCompany, setShippingCompany] = useState<CourierCompany | "">(
+    ""
+  );
   const [isDelayRequested, setIsDelayRequested] = useState(false);
   const [delayReason, setDelayReason] = useState("");
 
@@ -283,13 +287,13 @@ const OrderShippingManagement: React.FC = () => {
   const [endDate, setEndDate] = useState<Date | null>(null);
 
   // ===== 상수들 =====
-  const shippingCompanies = [
-    "CJ대한통운",
-    "우체국택배",
-    "롯데택배",
-    "한진택배",
-    "로젠택배",
-  ];
+  const COURIER_OPTIONS = [
+    { label: "CJ대한통운", value: "CJ_LOGISTICS" },
+    { label: "우체국택배", value: "KOREA_POST" },
+    { label: "롯데택배", value: "LOTTE_GLOBAL_LOGISTICS" },
+    { label: "한진택배", value: "HANJIN" },
+    { label: "로젠택배", value: "LOGEN" },
+  ] as const;
 
   // ===== 계산된 값들 =====
 
@@ -471,16 +475,32 @@ const OrderShippingManagement: React.FC = () => {
     setEndDate(null);
   };
 
+  /** 배송중 주문 최신화 -------------------------------------------------- */
+  const handleSyncShipmentStatus = async () => {
+    if (actionLoading) return; // 중복 호출 방지
+
+    try {
+      await syncShipmentStatus(); // ▶️ API 호출
+      setAlertMessage("배송중 주문 정보를 최신 상태로 동기화했습니다.");
+      setAlertSeverity("success");
+    } catch (e) {
+      setAlertMessage("배송중 주문 동기화에 실패했습니다.");
+      setAlertSeverity("error");
+    } finally {
+      setShowAlert(true);
+    }
+  };
+
   // 상태 변경 저장 핸들러
   const handleSaveStatusChange = async () => {
     if (!selectedOrder) return;
 
-    // ✅ 상태 변경 유효성 검증 (타입 안전성 확보)
+    /** 1) 상태 변경 유효성 검증 ------------------------------------------------ */
     const currentStatus =
       selectedOrder.shippingStatus as keyof typeof STATUS_FLOW;
     const availableStatuses = STATUS_FLOW[currentStatus] || [];
 
-    // ✅ 타입 안전한 includes 검사
+    // delay 요청이면 delay_requested, 아니면 사용자가 고른 newStatus
     const finalStatus = isDelayRequested ? "delay_requested" : newStatus;
     const validStatuses = availableStatuses as readonly string[];
 
@@ -491,41 +511,36 @@ const OrderShippingManagement: React.FC = () => {
       return;
     }
 
-    // 배송중 상태시 배송사/운송장 필수 검증
-    if (newStatus === "in_transit") {
-      // ① 운송장 등록
-      await registerTrackingNumber({
-        orderNumber: selectedOrder.orderNumber,
-        courierCompany: shippingCompany as CourierCompany,
-        trackingNumber: trackingNumber,
-      });
-      // 운송장 등록이 끝나면 서버 쪽에서 자동으로 '배송중' 상태가 됩니다.
-    } else {
-      // 일반 상태 변경(운송장 정보 넘기지 말 것!)
-      await updateOrderStatus({
-        orderNumber: selectedOrder.orderNumber,
-        newStatus: mapPrototypeStatusToAPI(
-          isDelayRequested ? "preparing" : newStatus // delay 처리
-        ),
-        reason: delayReason || undefined,
-        isDelayed: isDelayRequested,
-      });
-    }
-
+    /** 2) API 호출 ------------------------------------------------------------ */
     try {
-      await updateOrderStatus({
-        orderNumber: selectedOrder.orderNumber,
-        newStatus: mapPrototypeStatusToAPI(
-          isDelayRequested ? "delay_requested" : newStatus
-        ),
-        reason: delayReason || undefined,
-        isDelayed: isDelayRequested,
-        courierCompany: shippingCompany
-          ? (shippingCompany as CourierCompany)
-          : undefined,
-        trackingNumber: trackingNumber || undefined,
-      });
+      if (newStatus === "in_transit") {
+        /* ── 배송중: 운송장 등록만 호출 ─────────────────────────────────────── */
+        if (!shippingCompany || !trackingNumber) {
+          setAlertMessage("배송사와 운송장 번호를 모두 입력하세요.");
+          setAlertSeverity("error");
+          setShowAlert(true);
+          return;
+        }
 
+        await registerTrackingNumber({
+          orderNumber: selectedOrder.orderNumber,
+          courierCompany: shippingCompany as CourierCompany,
+          trackingNumber,
+        });
+        // 백엔드가 운송장 등록 → 상태를 자동으로 IN_DELIVERY 로 변경
+      } else {
+        /* ── 그 외: 일반 상태 변경 ─────────────────────────────────────────── */
+        await updateOrderStatus({
+          orderNumber: selectedOrder.orderNumber,
+          newStatus: mapPrototypeStatusToAPI(
+            isDelayRequested ? "preparing" : newStatus
+          ),
+          reason: delayReason || undefined,
+          isDelayed: isDelayRequested,
+        });
+      }
+
+      /** 3) 성공 후 UI 처리 --------------------------------------------------- */
       setAlertMessage("주문 상태가 성공적으로 변경되었습니다.");
       setAlertSeverity("success");
       setShowAlert(true);
@@ -874,6 +889,17 @@ const OrderShippingManagement: React.FC = () => {
               >
                 초기화
               </Button>
+              <Button
+                variant="outlined"
+                onClick={handleSyncShipmentStatus}
+                disabled={actionLoading} // 로딩 중엔 비활성
+                sx={{ textTransform: "none", height: 40 }}
+                startIcon={
+                  actionLoading ? <CircularProgress size={18} /> : null
+                }
+              >
+                배송중 주문 업데이트
+              </Button>
             </Box>
           </Box>
         </Paper>
@@ -1112,12 +1138,14 @@ const OrderShippingManagement: React.FC = () => {
                       <Select
                         value={shippingCompany}
                         label="배송사 *"
-                        onChange={(e) => setShippingCompany(e.target.value)}
+                        onChange={(e) =>
+                          setShippingCompany(e.target.value as CourierCompany)
+                        }
                         required
                       >
-                        {shippingCompanies.map((company) => (
-                          <MenuItem key={company} value={company}>
-                            {company}
+                        {COURIER_OPTIONS.map((opt) => (
+                          <MenuItem key={opt.value} value={opt.value}>
+                            {opt.label}
                           </MenuItem>
                         ))}
                       </Select>
@@ -1380,6 +1408,7 @@ const OrderShippingManagement: React.FC = () => {
           open={showAlert}
           autoHideDuration={6000}
           onClose={() => setShowAlert(false)}
+          anchorOrigin={{ vertical: "bottom", horizontal: "center" }} // ← 위치 지정
         >
           <Alert
             onClose={() => setShowAlert(false)}
