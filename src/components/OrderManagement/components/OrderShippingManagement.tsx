@@ -19,7 +19,6 @@ import {
   TableHead,
   TableRow,
   TablePagination,
-  Chip,
   Dialog,
   DialogTitle,
   DialogContent,
@@ -30,8 +29,13 @@ import {
   Checkbox,
   CircularProgress,
   Backdrop,
+  IconButton,
 } from "@mui/material";
-import { Warning as WarningIcon } from "@mui/icons-material";
+import {
+  Warning as WarningIcon,
+  Edit,
+  Info as InfoIcon,
+} from "@mui/icons-material";
 import { DatePicker } from "@mui/x-date-pickers/DatePicker";
 import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
 import { AdapterDateFns } from "@mui/x-date-pickers/AdapterDateFns";
@@ -46,14 +50,20 @@ import {
 } from "../types/order.types";
 
 // API 연동 imports
-import { useSellerOrderManagement } from "@/hooks/useSellerOrders";
+import {
+  useSellerOrderManagement,
+  useSellerOrderDetail,
+} from "@/hooks/useSellerOrders";
 import type {
   SellerOrderItem,
   OrderStatus as APIOrderStatus,
   CourierCompany,
 } from "@/types/sellerOrder.types";
 
-import { COURIER_INFO_MAP } from "@/types/sellerOrder.types";
+import {
+  COURIER_INFO_MAP,
+  ORDER_STATUS_INFO_MAP,
+} from "@/types/sellerOrder.types";
 
 // ===== 데이터 변환 함수들 =====
 
@@ -96,9 +106,9 @@ const transformToOrder = (sellerItem: SellerOrderItem): Order => ({
   orderNumber: sellerItem.orderNumber,
   orderDate: sellerItem.orderDate.split("T")[0], // ISO 날짜를 YYYY-MM-DD로 변환
   customerName: sellerItem.buyerName,
-  productName: `${sellerItem.orderSummary.itemCount}개 상품`, // ✅ 수정: orderSummary에서 접근
-  quantity: sellerItem.orderSummary.itemCount, // ✅ 수정: orderSummary에서 접근
-  amount: sellerItem.orderSummary.totalAmount, // ✅ 수정: orderSummary에서 접근
+  productName: `${sellerItem.orderSummary.itemCount}개 상품`,
+  quantity: sellerItem.orderSummary.itemCount,
+  amount: sellerItem.orderSummary.totalAmount,
   shippingStatus: mapAPIStatusToPrototype(sellerItem.orderStatus),
   customerPhone: sellerItem.recipientPhone,
   shippingAddress: sellerItem.shippingAddress,
@@ -108,7 +118,7 @@ const transformToOrder = (sellerItem: SellerOrderItem): Order => ({
   isDirect: false, // 기본값
 });
 
-//
+// 안전한 렌더링을 위한 헬퍼 함수
 const safeToLocaleString = (amount: number | undefined): string => {
   return (amount || 0).toLocaleString();
 };
@@ -156,51 +166,45 @@ const OrderShippingManagement: React.FC = () => {
     ordersError,
     actionLoading,
     updateOrderStatus,
-    deleteOrder,
     syncShipmentStatus,
     refreshOrders,
   } = useSellerOrderManagement(page, "createdAt,desc");
 
-  // 🚨 디버깅: Hook 상태 확인
+  // ===== 상세 정보 모달 관련 상태 =====
+  const [orderDetailDialog, setOrderDetailDialog] = useState(false);
+  const [selectedOrderNumber, setSelectedOrderNumber] = useState<string>("");
+
+  // 상세 정보 조회 Hook
+  const {
+    orderDetail,
+    loading: detailLoading,
+    error: detailError,
+  } = useSellerOrderDetail(selectedOrderNumber);
+
+  // 🚨 디버깅: Hook 상태 확인 (간단한 로그로 변경)
   React.useEffect(() => {
-    console.log("=== Hook 상태 디버깅 ===");
-    console.log("- page:", page);
-    console.log("- ordersLoading:", ordersLoading);
-    console.log("- ordersError:", ordersError);
-    console.log("- apiOrders:", apiOrders);
-  }, [page, ordersLoading, ordersError, apiOrders]);
+    if (ordersLoading) {
+      console.log("📥 주문 데이터 로딩 중...");
+    } else if (apiOrders) {
+      console.log(
+        `✅ 주문 데이터 로딩 완료: ${apiOrders.orders?.length || 0}개 주문`
+      );
+    } else if (ordersError) {
+      console.log("❌ 주문 데이터 로딩 실패");
+    }
+  }, [ordersLoading, ordersError, apiOrders]);
 
   // API 데이터를 프로토타입 Order 형태로 변환
   const orders = useMemo(() => {
-    // 🚨 디버깅: API 응답 원본 데이터 확인
-    console.log("=== API 상세 디버깅 ===");
-    console.log("1. apiOrders 전체 구조:", JSON.stringify(apiOrders, null, 2));
-
-    if (apiOrders) {
-      console.log("2. apiOrders.orders:", apiOrders.orders);
-      console.log("3. apiOrders.totalElements:", apiOrders.totalElements);
-      console.log("4. apiOrders.totalPages:", apiOrders.totalPages);
-      console.log("5. apiOrders.currentPage:", apiOrders.currentPage);
-      console.log("6. apiOrders.hasNext:", apiOrders.hasNext);
-      console.log("7. apiOrders.hasPrevious:", apiOrders.hasPrevious);
-    }
+    console.log("🔄 주문 데이터 변환 시작");
 
     if (!apiOrders?.orders) {
-      console.log("8. 데이터 없음 - 빈 배열 반환");
+      console.log("📭 변환할 주문 데이터 없음");
       return [];
     }
 
-    console.log("9. orders 배열 길이:", apiOrders.orders.length);
-
-    if (apiOrders.orders.length > 0) {
-      console.log(
-        "10. 첫 번째 주문 원본:",
-        JSON.stringify(apiOrders.orders[0], null, 2)
-      );
-    }
-
     const transformedOrders = apiOrders.orders.map(transformToOrder);
-    console.log("11. 변환된 주문 데이터 길이:", transformedOrders.length);
+    console.log(`🔄 주문 데이터 변환 완료: ${transformedOrders.length}개`);
 
     return transformedOrders;
   }, [apiOrders]);
@@ -213,8 +217,6 @@ const OrderShippingManagement: React.FC = () => {
   const [shippingCompany, setShippingCompany] = useState("");
   const [isDelayRequested, setIsDelayRequested] = useState(false);
   const [delayReason, setDelayReason] = useState("");
-
-  const [cancelConfirmDialog, setCancelConfirmDialog] = useState(false);
 
   const [showAlert, setShowAlert] = useState(false);
   const [alertMessage, setAlertMessage] = useState("");
@@ -283,130 +285,91 @@ const OrderShippingManagement: React.FC = () => {
       );
     return summary;
   }, [orders]);
+
   // 출고 지연 요청 개수 계산
   const delayRequestedCount = useMemo(() => {
+    if (!orders || orders.length === 0) return 0;
+
     return orders.filter((order) => order.shippingStatus === "delay_requested")
       .length;
   }, [orders]);
 
   // 필터링된 주문 계산 (프로토타입과 동일)
   const filteredOrders = useMemo(() => {
-    console.log("=== 필터링 디버깅 ===");
-    console.log("8. 원본 orders 길이:", orders.length);
-    console.log("9. appliedFilter:", appliedFilter);
+    console.log("🔍 주문 필터링 시작");
 
-    const filtered = orders.filter((order) => {
-      // 배송 상태 필터
-      if (!appliedFilter.shippingStatus.includes("all")) {
-        if (!appliedFilter.shippingStatus.includes(order.shippingStatus)) {
-          console.log(
-            "10. 상태 필터로 제외된 주문:",
-            order.orderNumber,
-            order.shippingStatus
-          );
-          return false;
-        }
-      }
+    let filtered = orders;
 
-      // 검색 키워드 필터
-      if (appliedFilter.searchKeyword) {
-        const keyword = appliedFilter.searchKeyword.toLowerCase();
+    // 상태 필터링
+    if (
+      appliedFilter.shippingStatus.length > 0 &&
+      !appliedFilter.shippingStatus.includes("all")
+    ) {
+      filtered = filtered.filter((order) =>
+        appliedFilter.shippingStatus.includes(order.shippingStatus)
+      );
+    }
+
+    // 검색어 필터링
+    if (appliedFilter.searchKeyword) {
+      const keyword = appliedFilter.searchKeyword.toLowerCase();
+      filtered = filtered.filter((order) => {
         switch (appliedFilter.searchCondition) {
           case "customer_name":
-            if (!order.customerName.toLowerCase().includes(keyword)) {
-              console.log("11. 검색어 필터로 제외된 주문:", order.orderNumber);
-              return false;
-            }
-            break;
+            return order.customerName.toLowerCase().includes(keyword);
           case "order_number":
-            if (!order.orderNumber.toLowerCase().includes(keyword)) {
-              return false;
-            }
-            break;
+            return order.orderNumber.toLowerCase().includes(keyword);
           case "product_name":
-            if (!order.productName.toLowerCase().includes(keyword)) {
-              return false;
-            }
-            break;
+            return order.productName.toLowerCase().includes(keyword);
+          default:
+            return true;
         }
-      }
+      });
+    }
 
-      return true;
-    });
-
-    console.log("12. 필터링 후 orders 길이:", filtered.length);
-    console.log("13. 필터링된 첫 번째 주문:", filtered[0]);
-
+    console.log(`🔍 필터링 완료: ${filtered.length}개 주문`);
     return filtered;
   }, [orders, appliedFilter]);
 
   // ===== 이벤트 핸들러들 =====
 
-  // 배송상태 체크박스 다중 선택 핸들러 (프로토타입과 동일)
-  const handleShippingStatusChange = (value: string) => {
-    setFilter((prev) => {
-      let newShippingStatus = [...prev.shippingStatus];
+  // 상태 편집 핸들러 (프로토타입과 동일)
+  const handleEditStatus = (order: Order) => {
+    console.log("✏️ 상태 변경 모달 열기:", order.orderNumber);
+    setSelectedOrder(order);
+    setNewStatus(order.shippingStatus);
+    setStatusEditDialog(true);
+  };
 
-      if (value === "all") {
-        newShippingStatus = ["all"];
-      } else {
-        if (newShippingStatus.includes("all")) {
-          newShippingStatus = newShippingStatus.filter((s) => s !== "all");
-        }
-
-        if (newShippingStatus.includes(value)) {
-          newShippingStatus = newShippingStatus.filter((s) => s !== value);
-        } else {
-          newShippingStatus.push(value);
-        }
-
-        if (newShippingStatus.length === 0) {
-          newShippingStatus = ["all"];
-        }
-      }
-
-      return {
-        ...prev,
-        shippingStatus: newShippingStatus,
-      };
-    });
+  // 상세 정보 모달 열기 핸들러 (신규 추가)
+  const handleShowOrderDetail = (orderNumber: string) => {
+    console.log("📋 상세 정보 모달 열기:", orderNumber);
+    setSelectedOrderNumber(orderNumber);
+    setOrderDetailDialog(true);
   };
 
   // 필터 적용 핸들러 (프로토타입과 동일)
   const handleApplyFilters = () => {
+    console.log("🔍 필터 적용");
     setAppliedFilter({ ...filter });
     setPage(0);
   };
 
   // 필터 초기화 핸들러 (프로토타입과 동일)
   const handleResetFilters = () => {
-    const resetFilter = {
-      dateRange: "30days" as const,
+    console.log("🔄 필터 초기화");
+    const resetFilter: OrderFilter = {
+      dateRange: "30days",
       startDate: "",
       endDate: "",
       shippingStatus: ["all"],
-      searchCondition: "customer_name" as SearchCondition,
+      searchCondition: "customer_name",
       searchKeyword: "",
       directShippingOnly: false,
     };
     setFilter(resetFilter);
     setAppliedFilter(resetFilter);
-    setStartDate(null);
-    setEndDate(null);
     setPage(0);
-  };
-
-  // ===== API 연동 핸들러들 =====
-
-  // 상태 편집 핸들러 (API 연동)
-  const handleEditStatus = (order: Order) => {
-    setSelectedOrder(order);
-    setNewStatus(order.shippingStatus);
-    setTrackingNumber(order.trackingNumber || "");
-    setShippingCompany(order.shippingCompany || "");
-    setIsDelayRequested(order.shippingStatus === "delay_requested");
-    setDelayReason(order.delayReason || "");
-    setStatusEditDialog(true);
   };
 
   // 상태 변경 저장 핸들러 (API 연동)
@@ -414,12 +377,17 @@ const OrderShippingManagement: React.FC = () => {
     if (!selectedOrder) return;
 
     try {
-      const apiStatus = mapPrototypeStatusToAPI(newStatus);
+      console.log(
+        "💾 주문 상태 변경 요청:",
+        selectedOrder.orderNumber,
+        "->",
+        newStatus
+      );
 
       await updateOrderStatus({
         orderNumber: selectedOrder.orderNumber,
-        newStatus: apiStatus,
-        reason: isDelayRequested ? delayReason : undefined,
+        newStatus: mapPrototypeStatusToAPI(newStatus),
+        reason: delayReason || undefined,
         isDelayed: isDelayRequested,
         courierCompany: shippingCompany
           ? (shippingCompany as CourierCompany)
@@ -440,26 +408,8 @@ const OrderShippingManagement: React.FC = () => {
       setIsDelayRequested(false);
       setDelayReason("");
     } catch (error) {
+      console.log("❌ 주문 상태 변경 실패");
       setAlertMessage("주문 상태 변경에 실패했습니다.");
-      setAlertSeverity("error");
-      setShowAlert(true);
-    }
-  };
-
-  // 주문 취소 핸들러 (API 연동)
-  const handleCancelOrder = async () => {
-    if (!selectedOrder) return;
-
-    try {
-      await deleteOrder(selectedOrder.orderNumber);
-
-      setAlertMessage("주문이 성공적으로 취소되었습니다.");
-      setAlertSeverity("success");
-      setShowAlert(true);
-      setCancelConfirmDialog(false);
-      setSelectedOrder(null);
-    } catch (error) {
-      setAlertMessage("주문 취소에 실패했습니다.");
       setAlertSeverity("error");
       setShowAlert(true);
     }
@@ -468,6 +418,7 @@ const OrderShippingManagement: React.FC = () => {
   // 배송 상태 동기화 핸들러 (API 연동)
   const handleSyncShipmentStatus = async () => {
     try {
+      console.log("🔄 배송 상태 동기화 시작");
       const result = await syncShipmentStatus();
       if (result) {
         setAlertMessage(
@@ -477,6 +428,7 @@ const OrderShippingManagement: React.FC = () => {
         setShowAlert(true);
       }
     } catch (error) {
+      console.log("❌ 배송 상태 동기화 실패");
       setAlertMessage("배송 상태 동기화에 실패했습니다.");
       setAlertSeverity("error");
       setShowAlert(true);
@@ -500,7 +452,10 @@ const OrderShippingManagement: React.FC = () => {
     <LocalizationProvider dateAdapter={AdapterDateFns} adapterLocale={ko}>
       <Box sx={{ p: 3 }}>
         {/* 로딩 백드롭 */}
-        <Backdrop open={ordersLoading || actionLoading} sx={{ zIndex: 1300 }}>
+        <Backdrop
+          open={ordersLoading || actionLoading || detailLoading}
+          sx={{ zIndex: 1300 }}
+        >
           <CircularProgress color="inherit" />
         </Backdrop>
 
@@ -622,144 +577,104 @@ const OrderShippingManagement: React.FC = () => {
           </Grid>
         </Paper>
 
-        {/* 주문 검색 섹션 - 프로토타입 방식 */}
-        <Paper sx={{ p: 3, mb: 3, borderRadius: 3 }}>
-          <Typography
-            variant="h6"
-            sx={{ fontWeight: 600, color: "#2d2a27", mb: 2 }}
-          >
-            주문 검색
+        {/* 필터 섹션 (프로토타입과 동일) */}
+        <Paper sx={{ p: 3, borderRadius: 3, mb: 3 }}>
+          <Typography variant="h6" sx={{ mb: 2, fontWeight: 600 }}>
+            검색 및 필터
           </Typography>
+          <Box sx={{ mb: 3 }}>
+            <Grid container spacing={2} alignItems="center">
+              <Grid size={{ xs: 12, sm: 6, md: 3 }}>
+                <FormControl fullWidth>
+                  <InputLabel>기간</InputLabel>
+                  <Select
+                    value={filter.dateRange}
+                    label="기간"
+                    onChange={(e) =>
+                      setFilter((prev) => ({
+                        ...prev,
+                        dateRange: e.target.value as any,
+                      }))
+                    }
+                  >
+                    <MenuItem value="today">오늘</MenuItem>
+                    <MenuItem value="7days">7일</MenuItem>
+                    <MenuItem value="30days">30일</MenuItem>
+                    <MenuItem value="custom">직접선택</MenuItem>
+                  </Select>
+                </FormControl>
+              </Grid>
 
-          {/* 첫째 줄: 주문일 */}
-          <Box sx={{ mb: 2 }}>
-            <Typography variant="body2" sx={{ mb: 1, fontWeight: 500 }}>
-              주문일
-            </Typography>
-            <Box
-              sx={{
-                display: "flex",
-                alignItems: "center",
-                gap: 2,
-                flexWrap: "wrap",
-              }}
-            >
-              <Button
-                variant={
-                  filter.dateRange === "today" ? "contained" : "outlined"
-                }
-                onClick={() =>
-                  setFilter((prev) => ({ ...prev, dateRange: "today" }))
-                }
-                size="small"
-              >
-                오늘
-              </Button>
-              <Button
-                variant={
-                  filter.dateRange === "7days" ? "contained" : "outlined"
-                }
-                onClick={() =>
-                  setFilter((prev) => ({ ...prev, dateRange: "7days" }))
-                }
-                size="small"
-              >
-                7일
-              </Button>
-              <Button
-                variant={
-                  filter.dateRange === "30days" ? "contained" : "outlined"
-                }
-                onClick={() =>
-                  setFilter((prev) => ({ ...prev, dateRange: "30days" }))
-                }
-                size="small"
-              >
-                30일
-              </Button>
-              <DatePicker
-                label="시작일"
-                value={startDate}
-                onChange={setStartDate}
-                slotProps={{ textField: { size: "small", sx: { width: 150 } } }}
-              />
-              <DatePicker
-                label="종료일"
-                value={endDate}
-                onChange={setEndDate}
-                slotProps={{ textField: { size: "small", sx: { width: 150 } } }}
-              />
-            </Box>
-          </Box>
+              <Grid size={{ xs: 12, sm: 6, md: 3 }}>
+                <FormControl fullWidth>
+                  <InputLabel>배송 상태</InputLabel>
+                  <Select
+                    value={filter.shippingStatus[0] || "all"}
+                    label="배송 상태"
+                    onChange={(e) =>
+                      setFilter((prev) => ({
+                        ...prev,
+                        shippingStatus: [e.target.value],
+                      }))
+                    }
+                  >
+                    <MenuItem value="all">전체</MenuItem>
+                    <MenuItem value="payment_completed">주문확인</MenuItem>
+                    <MenuItem value="preparing">상품준비중</MenuItem>
+                    <MenuItem value="ready_for_delivery">
+                      배송준비 완료
+                    </MenuItem>
+                    <MenuItem value="in_transit">배송중</MenuItem>
+                    <MenuItem value="delivered">배송완료</MenuItem>
+                    <MenuItem value="delay_requested">출고지연중</MenuItem>
+                  </Select>
+                </FormControl>
+              </Grid>
 
-          {/* 둘째 줄: 배송상태 */}
-          <Box sx={{ mb: 2 }}>
-            <Typography variant="body2" sx={{ mb: 1, fontWeight: 500 }}>
-              배송 상태
-            </Typography>
-            <Box
-              sx={{
-                display: "flex",
-                alignItems: "center",
-                gap: 2,
-                flexWrap: "wrap",
-              }}
-            >
-              {[
-                { value: "all", label: "전체" },
-                { value: "payment_completed", label: "주문확인" },
-                { value: "preparing", label: "상품준비중" },
-                { value: "delay_requested", label: "출고지연중" },
-                { value: "ready_for_delivery", label: "배송준비 완료" },
-                { value: "in_transit", label: "배송중" },
-                { value: "delivered", label: "배송완료" },
-                { value: "order_cancelled", label: "주문 취소" },
-              ].map(({ value, label }) => (
-                <FormControlLabel
-                  key={value}
-                  control={
-                    <Checkbox
-                      checked={filter.shippingStatus.includes(value)}
-                      onChange={() => handleShippingStatusChange(value)}
-                      value={value}
-                    />
-                  }
-                  label={label}
-                />
-              ))}
-            </Box>
-          </Box>
+              <Grid size={{ xs: 12, sm: 6, md: 2 }}>
+                <FormControl fullWidth>
+                  <InputLabel>검색 조건</InputLabel>
+                  <Select
+                    value={filter.searchCondition}
+                    label="검색 조건"
+                    onChange={(e) =>
+                      setFilter((prev) => ({
+                        ...prev,
+                        searchCondition: e.target.value as SearchCondition,
+                      }))
+                    }
+                  >
+                    <MenuItem value="customer_name">주문자명</MenuItem>
+                    <MenuItem value="order_number">주문번호</MenuItem>
+                    <MenuItem value="product_name">상품명</MenuItem>
+                  </Select>
+                </FormControl>
+              </Grid>
+            </Grid>
 
-          {/* 셋째 줄: 검색 조건 */}
-          <Box sx={{ mb: 2 }}>
-            <Typography variant="body2" sx={{ mb: 1, fontWeight: 500 }}>
-              검색 조건
-            </Typography>
-            <Box
-              sx={{
-                display: "flex",
-                alignItems: "center",
-                gap: 2,
-                flexWrap: "wrap",
-              }}
-            >
-              <FormControl size="small" sx={{ minWidth: 120 }}>
-                <Select
-                  value={filter.searchCondition}
-                  onChange={(e) =>
-                    setFilter((prev) => ({
-                      ...prev,
-                      searchCondition: e.target.value as SearchCondition,
-                    }))
-                  }
-                >
-                  <MenuItem value="customer_name">주문자명</MenuItem>
-                  <MenuItem value="order_number">주문번호</MenuItem>
-                  <MenuItem value="product_name">상품명</MenuItem>
-                </Select>
-              </FormControl>
+            {filter.dateRange === "custom" && (
+              <Grid container spacing={2} sx={{ mt: 2 }}>
+                <Grid size={{ xs: 12, sm: 6, md: 3 }}>
+                  <DatePicker
+                    label="시작일"
+                    value={startDate}
+                    onChange={setStartDate}
+                    slotProps={{ textField: { fullWidth: true } }}
+                  />
+                </Grid>
+                <Grid size={{ xs: 12, sm: 6, md: 3 }}>
+                  <DatePicker
+                    label="종료일"
+                    value={endDate}
+                    onChange={setEndDate}
+                    slotProps={{ textField: { fullWidth: true } }}
+                  />
+                </Grid>
+              </Grid>
+            )}
+
+            <Box sx={{ display: "flex", gap: 2, mt: 3, flexWrap: "wrap" }}>
               <TextField
-                size="small"
                 placeholder="검색어를 입력하세요"
                 value={filter.searchKeyword}
                 onChange={(e) =>
@@ -862,14 +777,12 @@ const OrderShippingManagement: React.FC = () => {
                     page * rowsPerPage,
                     page * rowsPerPage + rowsPerPage
                   );
-                  console.log("=== 테이블 렌더링 디버깅 ===");
-                  console.log("14. 현재 페이지:", page);
-                  console.log("15. 페이지당 행 수:", rowsPerPage);
-                  console.log("16. 테이블에 표시될 데이터:", tableData);
-                  console.log("17. 테이블 데이터 길이:", tableData.length);
+
+                  console.log(
+                    `📊 테이블 렌더링: ${tableData.length}개 행 표시`
+                  );
 
                   if (tableData.length === 0) {
-                    console.log("18. ⚠️ 테이블에 표시할 데이터가 없습니다!");
                     return (
                       <TableRow>
                         <TableCell
@@ -897,56 +810,53 @@ const OrderShippingManagement: React.FC = () => {
                         {safeToLocaleString(order.amount)}원
                       </TableCell>
                       <TableCell>
-                        <Chip
-                          label={
-                            SHIPPING_STATUS_LABELS[
-                              order.shippingStatus as keyof typeof SHIPPING_STATUS_LABELS
-                            ]?.label || order.shippingStatus
-                          }
+                        {/* ✅ 수정: Chip을 Button으로 변경 */}
+                        <Button
+                          variant="outlined"
+                          size="small"
                           color={
                             (SHIPPING_STATUS_LABELS[
                               order.shippingStatus as keyof typeof SHIPPING_STATUS_LABELS
-                            ]?.color as any) || "default"
+                            ]?.color as any) || "primary"
                           }
-                          size="small"
-                        />
+                          onClick={() =>
+                            handleShowOrderDetail(order.orderNumber)
+                          }
+                          sx={{
+                            textTransform: "none",
+                            minWidth: "auto",
+                            px: 1.5,
+                            py: 0.5,
+                            fontSize: "0.75rem",
+                          }}
+                        >
+                          {SHIPPING_STATUS_LABELS[
+                            order.shippingStatus as keyof typeof SHIPPING_STATUS_LABELS
+                          ]?.label || order.shippingStatus}
+                        </Button>
                         {order.shippingStatus === "delay_requested" &&
                           order.delayReason && (
                             <Typography
                               variant="caption"
                               display="block"
                               color="text.secondary"
+                              sx={{ mt: 0.5 }}
                             >
                               사유: {order.delayReason}
                             </Typography>
                           )}
                       </TableCell>
                       <TableCell>
+                        {/* ✅ 수정: 취소 버튼 제거, 상태 변경만 남김 */}
                         <Box sx={{ display: "flex", gap: 1 }}>
-                          <Button
+                          <IconButton
                             size="small"
-                            variant="outlined"
                             onClick={() => handleEditStatus(order)}
                             disabled={actionLoading}
-                            sx={{ textTransform: "none" }}
+                            sx={{ color: "primary.main" }}
                           >
-                            상태 변경
-                          </Button>
-                          {order.shippingStatus !== "order_cancelled" && (
-                            <Button
-                              size="small"
-                              variant="outlined"
-                              color="error"
-                              onClick={() => {
-                                setSelectedOrder(order);
-                                setCancelConfirmDialog(true);
-                              }}
-                              disabled={actionLoading}
-                              sx={{ textTransform: "none" }}
-                            >
-                              취소
-                            </Button>
-                          )}
+                            <Edit fontSize="small" />
+                          </IconButton>
                         </Box>
                       </TableCell>
                     </TableRow>
@@ -971,6 +881,169 @@ const OrderShippingManagement: React.FC = () => {
             }
           />
         </Paper>
+
+        {/*신규 추가: 주문 상세 정보 모달 */}
+        <Dialog
+          open={orderDetailDialog}
+          onClose={() => setOrderDetailDialog(false)}
+          maxWidth="md"
+          fullWidth
+        >
+          <DialogTitle>
+            <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+              <InfoIcon color="primary" />
+              주문 상세 정보
+            </Box>
+          </DialogTitle>
+          <DialogContent>
+            {detailError ? (
+              <Alert severity="error" sx={{ mt: 2 }}>
+                상세 정보를 불러오는데 실패했습니다: {detailError}
+              </Alert>
+            ) : orderDetail ? (
+              <Box sx={{ pt: 1 }}>
+                <Typography variant="h6" sx={{ mb: 2, fontWeight: 600 }}>
+                  주문번호: {orderDetail.orderNumber}
+                </Typography>
+
+                <Grid container spacing={3}>
+                  <Grid size={{ xs: 12, md: 6 }}>
+                    <Typography
+                      variant="subtitle1"
+                      sx={{ fontWeight: 600, mb: 1 }}
+                    >
+                      주문 정보
+                    </Typography>
+                    <Typography variant="body2" sx={{ mb: 1 }}>
+                      주문일: {orderDetail.orderDate.split("T")[0]}
+                    </Typography>
+                    <Typography variant="body2" sx={{ mb: 1 }}>
+                      주문 상태:{" "}
+                      {ORDER_STATUS_INFO_MAP[orderDetail.orderStatus]?.label ||
+                        orderDetail.orderStatus}
+                    </Typography>
+                  </Grid>
+
+                  <Grid size={{ xs: 12, md: 6 }}>
+                    <Typography
+                      variant="subtitle1"
+                      sx={{ fontWeight: 600, mb: 1 }}
+                    >
+                      배송지 정보
+                    </Typography>
+                    <Typography variant="body2" sx={{ mb: 1 }}>
+                      받는 사람: {orderDetail.shippingAddress.recipientName}
+                    </Typography>
+                    <Typography variant="body2" sx={{ mb: 1 }}>
+                      연락처: {orderDetail.shippingAddress.maskedPhone}
+                    </Typography>
+                    <Typography variant="body2" sx={{ mb: 1 }}>
+                      주소: {orderDetail.shippingAddress.fullAddress}
+                    </Typography>
+                    {orderDetail.shippingAddress.deliveryRequest && (
+                      <Typography variant="body2" sx={{ mb: 1 }}>
+                        배송 요청사항:{" "}
+                        {orderDetail.shippingAddress.deliveryRequest}
+                      </Typography>
+                    )}
+                  </Grid>
+
+                  <Grid size={{ xs: 12 }}>
+                    <Typography
+                      variant="subtitle1"
+                      sx={{ fontWeight: 600, mb: 1 }}
+                    >
+                      주문 상품
+                    </Typography>
+                    {orderDetail.orderItems.map((item, index) => (
+                      <Box
+                        key={index}
+                        sx={{
+                          mb: 2,
+                          p: 2,
+                          border: 1,
+                          borderColor: "grey.200",
+                          borderRadius: 1,
+                        }}
+                      >
+                        <Typography variant="body2" sx={{ fontWeight: 600 }}>
+                          {item.productName}
+                        </Typography>
+                        <Typography variant="body2" color="text.secondary">
+                          수량: {item.quantity}개 | 단가:{" "}
+                          {item.unitPrice.toLocaleString()}원 | 소계:{" "}
+                          {item.totalPrice.toLocaleString()}원
+                        </Typography>
+                      </Box>
+                    ))}
+                  </Grid>
+
+                  <Grid size={{ xs: 12 }}>
+                    <Typography
+                      variant="subtitle1"
+                      sx={{ fontWeight: 600, mb: 1 }}
+                    >
+                      결제 정보
+                    </Typography>
+                    <Typography variant="body2" sx={{ mb: 1 }}>
+                      상품 금액:{" "}
+                      {orderDetail.orderSummary.totalProductPrice.toLocaleString()}
+                      원
+                    </Typography>
+                    <Typography variant="body2" sx={{ mb: 1 }}>
+                      배송비:{" "}
+                      {orderDetail.orderSummary.deliveryFee.toLocaleString()}원
+                    </Typography>
+                    <Typography variant="body1" sx={{ fontWeight: 600 }}>
+                      총 결제 금액:{" "}
+                      {orderDetail.orderSummary.totalAmount.toLocaleString()}원
+                    </Typography>
+                  </Grid>
+
+                  {orderDetail.shipmentInfo && (
+                    <Grid size={{ xs: 12 }}>
+                      <Typography
+                        variant="subtitle1"
+                        sx={{ fontWeight: 600, mb: 1 }}
+                      >
+                        배송 정보
+                      </Typography>
+                      {orderDetail.shipmentInfo.courier && (
+                        <Typography variant="body2" sx={{ mb: 1 }}>
+                          택배사: {orderDetail.shipmentInfo.courier}
+                        </Typography>
+                      )}
+                      {orderDetail.shipmentInfo.trackingNumber && (
+                        <Typography variant="body2" sx={{ mb: 1 }}>
+                          운송장 번호: {orderDetail.shipmentInfo.trackingNumber}
+                        </Typography>
+                      )}
+                      {orderDetail.shipmentInfo.shippedAt && (
+                        <Typography variant="body2" sx={{ mb: 1 }}>
+                          배송 시작일:{" "}
+                          {orderDetail.shipmentInfo.shippedAt.split("T")[0]}
+                        </Typography>
+                      )}
+                      {orderDetail.shipmentInfo.deliveredAt && (
+                        <Typography variant="body2" sx={{ mb: 1 }}>
+                          배송 완료일:{" "}
+                          {orderDetail.shipmentInfo.deliveredAt.split("T")[0]}
+                        </Typography>
+                      )}
+                    </Grid>
+                  )}
+                </Grid>
+              </Box>
+            ) : (
+              <Box sx={{ display: "flex", justifyContent: "center", py: 4 }}>
+                <CircularProgress />
+              </Box>
+            )}
+          </DialogContent>
+          <DialogActions>
+            <Button onClick={() => setOrderDetailDialog(false)}>닫기</Button>
+          </DialogActions>
+        </Dialog>
 
         {/* 상태 변경 다이얼로그 (프로토타입과 동일) */}
         <Dialog
@@ -1075,36 +1148,6 @@ const OrderShippingManagement: React.FC = () => {
               disabled={actionLoading}
             >
               저장
-            </Button>
-          </DialogActions>
-        </Dialog>
-
-        {/* 주문 취소 확인 다이얼로그 (프로토타입과 동일) */}
-        <Dialog
-          open={cancelConfirmDialog}
-          onClose={() => setCancelConfirmDialog(false)}
-        >
-          <DialogTitle>주문 취소 확인</DialogTitle>
-          <DialogContent>
-            <Typography>
-              주문번호 <strong>{selectedOrder?.orderNumber}</strong>을(를) 정말
-              취소하시겠습니까?
-            </Typography>
-            <Alert severity="warning" sx={{ mt: 2 }}>
-              이 작업은 되돌릴 수 없습니다.
-            </Alert>
-          </DialogContent>
-          <DialogActions>
-            <Button onClick={() => setCancelConfirmDialog(false)}>
-              아니오
-            </Button>
-            <Button
-              variant="contained"
-              color="error"
-              onClick={handleCancelOrder}
-              disabled={actionLoading}
-            >
-              네, 취소합니다
             </Button>
           </DialogActions>
         </Dialog>
