@@ -36,7 +36,47 @@ import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
 import { AdapterDateFns } from "@mui/x-date-pickers/AdapterDateFns";
 import { ko } from "date-fns/locale";
 
-// ===== 타입 정의 =====
+// ===== 정확한 타입 정의 =====
+
+// ✅ 백엔드와 정확히 일치하는 타입 정의
+interface SellerOrderItem {
+  orderItemId: string;
+  productId: string;
+  productName: string;
+  productImage?: string;
+  quantity: number;
+  unitPrice: number;
+  totalPrice: number;
+}
+
+interface SellerOrderSummary {
+  orderNumber: string;
+  orderStatus: string;
+  orderDate: string;
+  buyerName: string;
+  maskedBuyerName: string;
+  orderItems: SellerOrderItem[]; // ✅ 이것이 핵심! orderItems 배열이 여기에 있음
+  orderSummary: {
+    itemCount: number;
+    totalAmount: number;
+  };
+  shipmentInfo: {
+    courier?: string;
+    trackingNumber?: string;
+    isShipped: boolean;
+    shippedAt?: string;
+  };
+}
+
+interface SellerOrderListResponse {
+  orders: SellerOrderSummary[]; // ✅ SellerOrderSummary 배열 (SellerOrderItem 배열이 아님!)
+  totalElements: number;
+  totalPages: number;
+  currentPage: number;
+  pageSize: number;
+  hasNext: boolean;
+  hasPrevious: boolean;
+}
 
 // 프로토타입 Order 타입
 interface Order {
@@ -88,7 +128,6 @@ import {
 import type {
   OrderStatus as APIOrderStatus,
   CourierCompany,
-  SellerOrderListResponse,
 } from "@/types/sellerOrder.types";
 
 import { ORDER_STATUS_INFO_MAP } from "@/types/sellerOrder.types";
@@ -122,13 +161,13 @@ const mapPrototypeStatusToAPI = (prototypeStatus: string): APIOrderStatus => {
   return statusMap[prototypeStatus] || "PAYMENT_COMPLETED";
 };
 
-// ✅ API 데이터를 프로토타입 형식으로 변환 (정확한 SellerOrderListResponse 타입 사용)
+// ✅ 정확한 API 데이터 변환 함수 (타입 에러 완전 해결)
 const convertAPIDataToPrototype = (
   apiResponse: SellerOrderListResponse
 ): Order[] => {
   if (!apiResponse?.orders) return [];
 
-  return apiResponse.orders.map((orderSummary) => ({
+  return apiResponse.orders.map((orderSummary: SellerOrderSummary) => ({
     id: orderSummary.orderNumber,
     orderNumber: orderSummary.orderNumber,
     orderDate: orderSummary.orderDate.split("T")[0],
@@ -137,17 +176,18 @@ const convertAPIDataToPrototype = (
       orderSummary.orderItems.length > 1
         ? `${orderSummary.orderItems[0]?.productName || "상품"} 외 ${orderSummary.orderItems.length - 1}건`
         : orderSummary.orderItems[0]?.productName || "상품 정보 없음",
-    // ✅ 수량 계산 로직 수정: 총 구매 개수
+    // ✅ 수량 계산: 총 구매 개수 (타입 완전 명시)
     quantity: orderSummary.orderItems.reduce(
-      (total, item) => total + item.quantity,
+      (total: number, item: SellerOrderItem) => total + item.quantity,
       0
     ),
     amount: orderSummary.orderSummary.totalAmount,
-    shippingStatus: mapAPIStatusToPrototype(orderSummary.orderStatus),
-    // ✅ shippingAddress 필수 속성 추가
+    shippingStatus: mapAPIStatusToPrototype(
+      orderSummary.orderStatus as APIOrderStatus
+    ),
     shippingAddress: `${orderSummary.buyerName} / 연락처`,
-    delayReason: undefined, // orderSummary에서 delayReason 제거
-    orderItems: orderSummary.orderItems.map((item) => ({
+    delayReason: undefined,
+    orderItems: orderSummary.orderItems.map((item: SellerOrderItem) => ({
       productName: item.productName,
       quantity: item.quantity,
       unitPrice: item.unitPrice,
@@ -177,7 +217,7 @@ const STATUS_FLOW = {
 
 // ===== 메인 컴포넌트 =====
 const OrderShippingManagement: React.FC = () => {
-  // ✅ API 연동 hooks (정확한 속성명 사용)
+  // ✅ API 연동 hooks
   const {
     orders: apiOrdersResponse,
     ordersLoading,
@@ -212,7 +252,6 @@ const OrderShippingManagement: React.FC = () => {
     orderDetail,
     loading: detailLoading,
     error: detailError,
-    refetch: refetchOrderDetail,
   } = useSellerOrderDetail(selectedOrderNumber);
 
   // 상태 변경 폼 상태들
@@ -348,11 +387,10 @@ const OrderShippingManagement: React.FC = () => {
     setStatusEditDialog(true);
   };
 
-  // ✅ 상세 정보 모달 열기 핸들러 (orderNumber 설정 후 hook이 자동으로 호출됨)
+  // ✅ 상세 정보 모달 열기 핸들러
   const handleShowOrderDetail = (orderNumber: string) => {
     setSelectedOrderNumber(orderNumber);
     setOrderDetailDialog(true);
-    // ✅ orderNumber가 설정되면 hook이 자동으로 데이터 조회
   };
 
   // 날짜 범위 클릭 핸들러
@@ -416,7 +454,11 @@ const OrderShippingManagement: React.FC = () => {
       selectedOrder.shippingStatus as keyof typeof STATUS_FLOW;
     const availableStatuses = STATUS_FLOW[currentStatus] || [];
 
-    if (!availableStatuses.includes(newStatus as any)) {
+    // ✅ 타입 안전한 includes 검사
+    const finalStatus = isDelayRequested ? "delay_requested" : newStatus;
+    const validStatuses = availableStatuses as readonly string[];
+
+    if (!validStatuses.includes(finalStatus)) {
       setAlertMessage("유효하지 않은 상태 변경입니다.");
       setAlertSeverity("error");
       setShowAlert(true);
@@ -1059,8 +1101,10 @@ const OrderShippingManagement: React.FC = () => {
                     const finalStatus = isDelayRequested
                       ? "delay_requested"
                       : newStatus;
+                    const validStatuses =
+                      availableStatuses as readonly string[];
 
-                    if (!availableStatuses.includes(finalStatus as any)) {
+                    if (!validStatuses.includes(finalStatus)) {
                       return (
                         <Alert severity="warning" sx={{ mb: 2 }}>
                           현재 상태(
@@ -1089,9 +1133,9 @@ const OrderShippingManagement: React.FC = () => {
                 const finalStatus = isDelayRequested
                   ? "delay_requested"
                   : newStatus;
+                const validStatuses = availableStatuses as readonly string[];
 
-                if (!availableStatuses.includes(finalStatus as any))
-                  return true;
+                if (!validStatuses.includes(finalStatus)) return true;
 
                 // 배송중 상태시 필수 필드 검증
                 if (

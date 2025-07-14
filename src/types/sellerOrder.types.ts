@@ -43,7 +43,7 @@ export interface APIResponse<T> {
  * API: GET /v1/sellers/orders/list
  */
 export interface SellerOrderListResponse {
-  orders: SellerOrderItem[];
+  orders: SellerOrderSummary[];
   totalElements: number;
   totalPages: number;
   currentPage: number;
@@ -51,30 +51,51 @@ export interface SellerOrderListResponse {
   hasNext: boolean;
   hasPrevious: boolean;
 }
-
 /**
- * 판매자용 주문 항목 (목록용)
+ * 판매자용 주문 요약 정보 (백엔드와 정확히 일치)
  */
-export interface SellerOrderItem {
+export interface SellerOrderSummary {
   orderNumber: string;
   orderStatus: OrderStatus;
-  orderDate: string; // ISO string
+  orderDate: string; // ISO string (ZonedDateTime에서 변환)
   buyerName: string;
-  orderSummary: {
-    itemCount: number;
-    totalAmount: number;
-  };
-  orderItemCount: number;
-  recipientName: string;
-  recipientPhone: string;
-  shippingAddress: string;
+  maskedBuyerName: string; //
+  orderItems: SellerOrderItem[];
+  orderSummary: OrderSummaryInfo;
+  shipmentInfo: ShipmentBasicInfo;
+}
+/**
+ * 판매자용 주문 상품 정보 (백엔드 중첩 구조와 일치)
+ * 기존 인터페이스를 백엔드 구조에 맞게 수정
+ */
+export interface SellerOrderItem {
+  orderItemId: string;
+  productId: string;
+  productName: string;
+  productImage?: string;
+  quantity: number;
+  unitPrice: number;
+  totalPrice: number;
+}
+
+/**
+ * 주문 요약 정보 (목록용)
+ * 새로 추가된 타입
+ */
+export interface OrderSummaryInfo {
+  itemCount: number;
+  totalAmount: number;
+}
+
+/**
+ * 배송 기본 정보 (목록용)
+ * 새로 추가된 타입
+ */
+export interface ShipmentBasicInfo {
+  courier?: string;
   trackingNumber?: string;
-  courierCompany?: CourierCompany;
-  shippedAt?: string; // ISO string
-  deliveredAt?: string; // ISO string
-  isDelayed?: boolean;
-  delayReason?: string;
-  expectedShipDate?: string; // ISO string
+  isShipped: boolean;
+  shippedAt?: string; // ISO string (ZonedDateTime에서 변환)
 }
 
 /**
