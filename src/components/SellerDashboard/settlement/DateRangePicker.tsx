@@ -11,14 +11,25 @@ import {
 } from '@mui/material';
 import { useState } from 'react';
 
-// 날짜 유틸리티 함수들
+// 날짜 유틸리티 함수들 (시간대 문제 해결)
 const formatDate = (date: Date): string => {
-    return date.toISOString().split('T')[0];
+    // 로컬 시간대를 기준으로 YYYY-MM-DD 형식 생성
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+
+    return `${year}-${month}-${day}`;
 };
 
 const parseDate = (dateString: string): Date | null => {
     if (!dateString) return null;
-    const date = new Date(dateString);
+
+    // YYYY-MM-DD 형식의 문자열을 로컬 날짜로 파싱
+    const [year, month, day] = dateString.split('-').map(Number);
+    if (!year || !month || !day) return null;
+
+    // 로컬 시간대로 Date 객체 생성 (UTC 변환 방지)
+    const date = new Date(year, month - 1, day);
     return isNaN(date.getTime()) ? null : date;
 };
 
@@ -115,7 +126,9 @@ const DateRangePicker = ({
     };
 
     const handleApply = () => {
+        console.log('📅 DateRangePicker - 적용 전:', { tempStartDate, tempEndDate });
         onDateChange(tempStartDate, tempEndDate);
+        console.log('📅 DateRangePicker - 적용 후 전달:', { startDate: tempStartDate, endDate: tempEndDate });
         onClose();
     };
 
@@ -127,8 +140,14 @@ const DateRangePicker = ({
     const handleQuickSelect = (days: number) => {
         const end = new Date();
         const start = addDays(end, -days);
-        setTempStartDate(formatDate(start));
-        setTempEndDate(formatDate(end));
+
+        const startDateStr = formatDate(start);
+        const endDateStr = formatDate(end);
+
+        console.log('📅 빠른 선택:', { days, start, end, startDateStr, endDateStr });
+
+        setTempStartDate(startDateStr);
+        setTempEndDate(endDateStr);
     };
 
     const navigateMonth = (direction: number) => {
