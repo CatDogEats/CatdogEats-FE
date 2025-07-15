@@ -429,7 +429,16 @@ const OrderShippingManagement: React.FC = () => {
   const handleEditStatus = (order: Order) => {
     resetFormData();
     setSelectedOrder(order);
-    setNewStatus(order.shippingStatus);
+
+    // 📍 추가: 출고지연중인 경우 원래 상태로 복원
+    if (order.shippingStatus === "delay_requested") {
+      setNewStatus("preparing"); // 드롭다운은 "상품준비중"
+      setIsDelayRequested(true); // 출고지연 체크박스 활성화
+      setDelayReason(order.delayReason || ""); // 기존 지연사유 복원
+    } else {
+      setNewStatus(order.shippingStatus);
+    }
+
     setStatusEditDialog(true);
   };
 
@@ -1050,13 +1059,27 @@ const OrderShippingManagement: React.FC = () => {
                           variant="contained"
                           size="small"
                           onClick={() => handleEditStatus(order)}
+                          disabled={order.shippingStatus === "delivered"} // 📍 추가: 배송완료시 비활성화
                           sx={{
-                            backgroundColor: "#ef9942",
-                            "&:hover": { backgroundColor: "#d6853c" },
+                            backgroundColor:
+                              order.shippingStatus === "delivered"
+                                ? "#cccccc" // 📍 추가: 비활성화 색상
+                                : "#ef9942",
+                            "&:hover": {
+                              backgroundColor:
+                                order.shippingStatus === "delivered"
+                                  ? "#cccccc" // 📍 추가: 비활성화 호버 색상
+                                  : "#d6853c",
+                            },
                             textTransform: "none",
                             fontSize: "0.75rem",
                             px: 2,
                             py: 0.5,
+                            // 📍 추가: 비활성화 상태 스타일
+                            "&.Mui-disabled": {
+                              backgroundColor: "#cccccc",
+                              color: "#666666",
+                            },
                           }}
                         >
                           상태 관리
