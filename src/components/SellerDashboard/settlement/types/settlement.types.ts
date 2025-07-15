@@ -4,7 +4,7 @@ export interface SettlementItem {
     orderAmount: number;
     commission: number;
     settlementAmount: number;
-    status: '대기중' | '처리중' | '정산완료';
+    status: '처리중' | '정산완료'; // '대기중' 제거
     orderDate: string;
     paymentDate?: string;
     deliveryDate?: string;
@@ -37,7 +37,7 @@ export interface ProductSalesData {
     percentage: number;
     color: string;
     totalSales?: number;
-    salesCount: number; // ? 제거하여 필수 속성으로 변경
+    salesCount: number;
 }
 
 // Props 타입들
@@ -71,8 +71,6 @@ export interface EnhancedSalesChartProps extends SalesChartProps {
     onYearChange?: (year: number) => void;
 }
 
-
-
 // 날짜 범위 피커 컴포넌트 Props
 export interface DateRangePickerProps {
     startDate: string;
@@ -82,4 +80,3 @@ export interface DateRangePickerProps {
     anchorEl: HTMLElement | null;
     onClose: () => void;
 }
-

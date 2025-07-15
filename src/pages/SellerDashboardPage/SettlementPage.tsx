@@ -1,10 +1,13 @@
 // src/pages/SellerDashboardPage/SettlementPage.tsx
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect, useCallback } from 'react';
 import {
     Box,
     Typography,
     Container,
-    useTheme
+    useTheme,
+    Alert,
+    Snackbar,
+    CircularProgress
 } from '@mui/material';
 
 // 컴포넌트 임포트
@@ -20,194 +23,23 @@ import {
     ProductSalesData
 } from '@/components/SellerDashboard/settlement/types/settlement.types';
 
-// 🚀 정산 프로세스를 반영한 더미 데이터 생성 함수
-const generateSettlementData = (): SettlementItem[] => {
-    // 🎯 간단한 상품명 배열로 변경
-    const products = [
-        '닭가슴살 간식',
-        '고단백 면역 간식',
-        '강아지 소고기 젤리',
-        '고양이 참치 간식',
-        '강아지 치킨 스낵',
-        '연어 큐브',
-        '야채 믹스 간식',
-        '프리미엄 덴탈 츄',
-        '고양이 연어 파우치',
-        '유기농 쌀 과자',
-        '소고기 육포 스틱',
-        '참치 캔 간식',
-        '치즈 큐브',
-        '닭고기 져키',
-        '고양이 우유',
-        '감자 과자',
-        '오리고기 간식',
-        '고등어 간식'
-    ];
-
-    const data: SettlementItem[] = [];
-    const now = new Date();
-
-    const twoYearsAgo = new Date();
-    twoYearsAgo.setFullYear(twoYearsAgo.getFullYear() - 2);
-    const totalDays = Math.floor((now.getTime() - twoYearsAgo.getTime()) / (1000 * 60 * 60 * 24));
-
-    // 🔧 데이터 개수 증가 & 랜덤 선택으로 변경
-    for (let i = 0; i < 3000; i++) {
-        // 🎲 랜덤하게 상품 선택
-        const randomIndex = Math.floor(Math.random() * products.length);
-        const selectedProduct = products[randomIndex];
-
-        const orderAmount = Math.floor(Math.random() * 40000) + 10000;
-        const commission = Math.floor(orderAmount * 0.1);
-        const settlementAmount = orderAmount - commission;
-
-        const randomDaysFromTwoYearsAgo = Math.floor(Math.random() * totalDays);
-        const orderDate = new Date(twoYearsAgo);
-        orderDate.setDate(orderDate.getDate() + randomDaysFromTwoYearsAgo);
-
-        const status = determineSettlementStatus(orderDate, now);
-
-        data.push({
-            id: `#${12345 + i}`,
-            productName: selectedProduct, // ✅ 숫자 없이 순수 상품명만
-            orderAmount,
-            commission,
-            settlementAmount,
-            status,
-            orderDate: orderDate.toISOString().split('T')[0]
-        });
-    }
-
-    return data.sort((a, b) => new Date(b.orderDate).getTime() - new Date(a.orderDate).getTime());
-};
-
-// 정산 프로세스에 따른 상태 결정 함수
-const determineSettlementStatus = (orderDate: Date, currentDate: Date): '대기중' | '처리중' | '정산완료' => {
-    const daysDiff = Math.floor((currentDate.getTime() - orderDate.getTime()) / (1000 * 60 * 60 * 24));
-    const orderMonth = orderDate.getMonth();
-    const orderYear = orderDate.getFullYear();
-    const currentMonth = currentDate.getMonth();
-    const currentYear = currentDate.getFullYear();
-
-    // 1. 지난달 주문은 무조건 정산완료 (매월 1일 스케줄러가 돌았다고 가정)
-    if (orderYear < currentYear || (orderYear === currentYear && orderMonth < currentMonth)) {
-        return '정산완료';
-    }
-
-    // 2. 이번달 주문의 경우
-    if (orderYear === currentYear && orderMonth === currentMonth) {
-        if (daysDiff >= 7) {
-            // 주문 후 일주일이 지났으면 처리중 (반품/교환 기간 지남)
-            return '처리중';
-        } else {
-            // 주문 후 일주일이 안 지났으면 대기중
-            return '대기중';
-        }
-    }
-
-    // 기본값 (미래 주문은 없다고 가정하지만 안전장치)
-    return '대기중';
-};
-
-// 🎯 정산 데이터를 기반으로 년도별 월별 매출 데이터 생성 함수
-const generateYearlyDataFromSettlement = (settlementData: SettlementItem[]): YearlyMonthData[] => {
-    const yearlyMap = new Map<number, Map<number, number>>();
-
-    // 정산 데이터를 기반으로 년도별/월별 매출 집계
-    settlementData.forEach(item => {
-        const date = new Date(item.orderDate);
-        const year = date.getFullYear();
-        const month = date.getMonth();
-
-        if (!yearlyMap.has(year)) {
-            yearlyMap.set(year, new Map());
-        }
-
-        const monthlyMap = yearlyMap.get(year)!;
-        const currentAmount = monthlyMap.get(month) || 0;
-        monthlyMap.set(month, currentAmount + item.settlementAmount);
-    });
-
-    // Map을 배열로 변환
-    const result: YearlyMonthData[] = [];
-    yearlyMap.forEach((monthlyMap, year) => {
-        const monthlyData = [];
-        for (let month = 0; month < 12; month++) {
-            const monthName = `${month + 1}월`;
-            const amount = Math.floor((monthlyMap.get(month) || 0) / 1000); // 천원 단위로 변환
-            monthlyData.push({ month: monthName, amount });
-        }
-        result.push({ year, monthlyData });
-    });
-
-    return result.sort((a, b) => a.year - b.year);
-};
-
-// 🔧 수정: 상품별 매출 데이터 생성 함수 - 매출 총액 정확히 계산
-const generateProductSalesDataFromSettlement = (
-    settlementData: SettlementItem[],
-    year: number,
-    month: number,
-    viewMode: 'monthly' | 'yearly'
-): ProductSalesData[] => {
-    const productMap = new Map<string, { totalAmount: number; salesCount: number }>();
-
-    // viewMode에 따른 정확한 필터링
-    const filteredData = settlementData.filter(item => {
-        const date = new Date(item.orderDate);
-        const itemYear = date.getFullYear();
-        const itemMonth = date.getMonth() + 1;
-
-        if (viewMode === 'monthly') {
-            // 월별 모드: 특정 년도의 특정 월 데이터만
-            return itemYear === year && itemMonth === month;
-        } else {
-            // 년도별 모드: 특정 년도의 전체 데이터
-            return itemYear === year;
-        }
-    });
-
-    // 🔧 수정: 각 상품별로 매출 총액과 판매 횟수 집계
-    filteredData.forEach(item => {
-        const current = productMap.get(item.productName) || { totalAmount: 0, salesCount: 0 };
-        productMap.set(item.productName, {
-            totalAmount: current.totalAmount + item.settlementAmount, // ✅ 매출 총액 누적
-            salesCount: current.salesCount + 1 // ✅ 판매 횟수 증가
-        });
-    });
-
-    // 색상 배열
-    const colors = [
-        '#e8984b', '#48bb78', '#3182ce', '#ed8936',
-        '#9f7aea', '#38b2ac', '#f56565', '#805ad5',
-        '#4fd1c7', '#f093fb', '#63b3ed', '#68d391'
-    ];
-
-    // Map을 배열로 변환
-    const productArray = Array.from(productMap.entries()).map(([productName, data], index) => ({
-        productName,
-        amount: data.totalAmount, // ✅ 매출 총액 (여러 번 판매된 경우 합계)
-        percentage: 0, // 나중에 계산
-        color: colors[index % colors.length],
-        salesCount: data.salesCount, // ✅ 판매 횟수
-        totalSales: 0 // 나중에 계산
-    }));
-
-    // 매출액 기준으로 정렬
-    productArray.sort((a, b) => b.amount - a.amount);
-
-    // 총 매출액 계산 및 퍼센티지 설정
-    const totalAmount = productArray.reduce((sum, item) => sum + item.amount, 0);
-
-    return productArray.map(item => ({
-        ...item,
-        percentage: totalAmount > 0 ? (item.amount / totalAmount) * 100 : 0,
-        totalSales: totalAmount
-    }));
-};
+// API 임포트
+import { settlementApi, SettlementPeriodRequest } from '@/service/SettlementAPI';
+import {
+    transformSettlementList,
+    downloadBlob,
+    generateCsvFileName
+} from '@/service/SettlementTransformer';
 
 const SettlementPage = () => {
     const theme = useTheme();
+
+    // ===== 상태 관리 =====
+    const [settlementData, setSettlementData] = useState<SettlementItem[]>([]);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
+    const [snackbarOpen, setSnackbarOpen] = useState(false);
+    const [snackbarMessage, setSnackbarMessage] = useState('');
 
     // 정산 현황 필터 상태
     const [settlementFilters, setSettlementFilters] = useState<SettlementFilters>({
@@ -218,46 +50,193 @@ const SettlementPage = () => {
         endDate: ''
     });
 
-    // 🔧 수정: 매출 분석 필터 상태 - viewMode 상위에서 관리
+    // 페이지네이션 상태
+    const [currentPage, setCurrentPage] = useState(0); // 백엔드는 0부터 시작
+    const [totalElements, setTotalElements] = useState(0);
+    const [summary, setSummary] = useState<any>(null);
+
+    // 매출 분석 필터 상태 (더미데이터용 - 추후 API 연동 예정)
     const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
     const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth() + 1);
     const [viewMode, setViewMode] = useState<'monthly' | 'yearly'>('monthly');
 
-    // 🚀 메모이제이션을 통한 데이터 생성 최적화
-    const settlementData = useMemo(() => generateSettlementData(), []);
+    // ===== API 호출 함수 =====
 
-    const yearlyData = useMemo(() =>
-            generateYearlyDataFromSettlement(settlementData),
-        [settlementData]
-    );
+    /**
+     * 정산 리스트 조회 (필터 조건에 따라 전체 또는 기간별 조회)
+     */
+    const fetchSettlementData = useCallback(async (page: number = 0) => {
+        try {
+            setLoading(true);
+            setError(null);
 
-    // 🔧 수정: viewMode를 매개변수로 전달
-    const currentProductData = useMemo(() => {
-        const result = generateProductSalesDataFromSettlement(
-            settlementData,
-            selectedYear,
-            selectedMonth,
-            viewMode // 🔧 viewMode 전달
-        );
+            let response;
 
-        // 🔧 디버깅 로그
-        console.log(`📊 상품 데이터 생성 완료:`, {
-            viewMode,
-            selectedYear,
-            selectedMonth,
-            상품수: result.length,
-            총매출: result.reduce((sum, item) => sum + item.amount, 0)
+            // 필터 조건이 있으면 기간별 조회, 없으면 전체 조회
+            if (settlementFilters.startDate || settlementFilters.endDate) {
+                const periodRequest: SettlementPeriodRequest = {
+                    startDate: settlementFilters.startDate || new Date().toISOString().split('T')[0],
+                    endDate: settlementFilters.endDate || new Date().toISOString().split('T')[0]
+                };
+                response = await settlementApi.getSettlementListByPeriod(periodRequest, page, 10);
+            } else {
+                response = await settlementApi.getSettlementList(page, 10);
+            }
+
+            const transformedData = transformSettlementList(response);
+
+            console.log('🔍 API 응답 디버깅:', response);
+            console.log('🔍 변환된 데이터:', transformedData);
+
+            setSettlementData(transformedData.items);
+            setTotalElements(transformedData.pagination.totalElements);
+            setCurrentPage(page);
+            setSummary(transformedData.summary);
+
+            console.log('🔍 Summary 데이터 설정:', transformedData.summary);
+
+        } catch (error: any) {
+            console.error('정산 데이터 조회 오류:', error);
+            setError('정산 데이터를 불러오는 중 오류가 발생했습니다.');
+            setSnackbarMessage('정산 데이터를 불러오는 중 오류가 발생했습니다.');
+            setSnackbarOpen(true);
+        } finally {
+            setLoading(false);
+        }
+    }, [settlementFilters.startDate, settlementFilters.endDate]);
+
+    /**
+     * CSV 다운로드 함수
+     */
+    const handleDownloadReport = useCallback(async () => {
+        try {
+            const currentMonth = new Date();
+            const targetMonth = `${currentMonth.getFullYear()}-${String(currentMonth.getMonth() + 1).padStart(2, '0')}`;
+
+            const blob = await settlementApi.downloadMonthlySettlementCsv(targetMonth);
+            const fileName = generateCsvFileName(targetMonth);
+            downloadBlob(blob, fileName);
+
+            setSnackbarMessage('정산내역 CSV 파일이 다운로드되었습니다.');
+            setSnackbarOpen(true);
+        } catch (error) {
+            console.error('CSV 다운로드 오류:', error);
+            setSnackbarMessage('CSV 다운로드 중 오류가 발생했습니다.');
+            setSnackbarOpen(true);
+        }
+    }, []);
+
+    // ===== 초기 데이터 로딩 =====
+    useEffect(() => {
+        fetchSettlementData(0);
+    }, [fetchSettlementData]);
+
+    // ===== 더미 데이터 생성 함수들 (매출 분석용 - 추후 API 연동 예정) =====
+
+    // 🎯 년도별 월별 매출 데이터 생성 함수
+    const generateYearlyDataFromSettlement = useMemo((): YearlyMonthData[] => {
+        const yearlyMap = new Map<number, Map<number, number>>();
+
+        // 정산 데이터를 기반으로 년도별/월별 매출 집계
+        settlementData.forEach(item => {
+            const date = new Date(item.orderDate);
+            const year = date.getFullYear();
+            const month = date.getMonth();
+
+            if (!yearlyMap.has(year)) {
+                yearlyMap.set(year, new Map());
+            }
+
+            const monthlyMap = yearlyMap.get(year)!;
+            const currentAmount = monthlyMap.get(month) || 0;
+            monthlyMap.set(month, currentAmount + item.settlementAmount);
         });
 
-        return result;
-    }, [settlementData, selectedYear, selectedMonth, viewMode]); // 🔧 viewMode 의존성 추가
+        // Map을 배열로 변환
+        const result: YearlyMonthData[] = [];
+        yearlyMap.forEach((monthlyMap, year) => {
+            const monthlyData = [];
+            for (let month = 0; month < 12; month++) {
+                const monthName = `${month + 1}월`;
+                const amount = Math.floor((monthlyMap.get(month) || 0) / 1000); // 천원 단위로 변환
+                monthlyData.push({ month: monthName, amount });
+            }
+            result.push({ year, monthlyData });
+        });
+
+        return result.sort((a, b) => a.year - b.year);
+    }, [settlementData]);
+
+    // 🔧 상품별 매출 데이터 생성 함수
+    const generateProductSalesData = useMemo((): ProductSalesData[] => {
+        const productMap = new Map<string, { totalAmount: number; salesCount: number }>();
+
+        // viewMode에 따른 정확한 필터링
+        const filteredData = settlementData.filter(item => {
+            const date = new Date(item.orderDate);
+            const itemYear = date.getFullYear();
+            const itemMonth = date.getMonth() + 1;
+
+            if (viewMode === 'monthly') {
+                return itemYear === selectedYear && itemMonth === selectedMonth;
+            } else {
+                return itemYear === selectedYear;
+            }
+        });
+
+        // 각 상품별로 매출 총액과 판매 횟수 집계
+        filteredData.forEach(item => {
+            const current = productMap.get(item.productName) || { totalAmount: 0, salesCount: 0 };
+            productMap.set(item.productName, {
+                totalAmount: current.totalAmount + item.settlementAmount,
+                salesCount: current.salesCount + 1
+            });
+        });
+
+        // 색상 배열
+        const colors = [
+            '#e8984b', '#48bb78', '#3182ce', '#ed8936',
+            '#9f7aea', '#38b2ac', '#f56565', '#805ad5',
+            '#4fd1c7', '#f093fb', '#63b3ed', '#68d391'
+        ];
+
+        // Map을 배열로 변환
+        const productArray = Array.from(productMap.entries()).map(([productName, data], index) => ({
+            productName,
+            amount: data.totalAmount,
+            percentage: 0, // 나중에 계산
+            color: colors[index % colors.length],
+            salesCount: data.salesCount,
+            totalSales: 0 // 나중에 계산
+        }));
+
+        // 매출액 기준으로 정렬
+        productArray.sort((a, b) => b.amount - a.amount);
+
+        // 총 매출액 계산 및 퍼센티지 설정
+        const totalAmount = productArray.reduce((sum, item) => sum + item.amount, 0);
+
+        return productArray.map(item => ({
+            ...item,
+            percentage: totalAmount > 0 ? (item.amount / totalAmount) * 100 : 0,
+            totalSales: totalAmount
+        }));
+    }, [settlementData, selectedYear, selectedMonth, viewMode]);
+
+    // ===== 이벤트 핸들러 =====
 
     // 정산 현황 필터 변경 핸들러
     const handleSettlementFiltersChange = (newFilters: Partial<SettlementFilters>) => {
         setSettlementFilters(prev => ({ ...prev, ...newFilters }));
+        setCurrentPage(0); // 필터 변경 시 첫 페이지로 이동
     };
 
-    // 🔧 수정: 핸들러 함수들 개선
+    // 페이지 변경 핸들러
+    const handlePageChange = (page: number) => {
+        fetchSettlementData(page - 1); // 프론트엔드는 1부터, 백엔드는 0부터 시작
+    };
+
+    // 매출 분석 핸들러들 (더미데이터용)
     const handleYearChange = (year: number) => {
         console.log('🔄 년도 변경:', year);
         setSelectedYear(year);
@@ -268,11 +247,40 @@ const SettlementPage = () => {
         setSelectedMonth(month);
     };
 
-    // 🔧 수정: viewMode 변경 핸들러 추가
     const handleViewModeChange = (mode: 'monthly' | 'yearly') => {
         console.log('🔄 보기 모드 변경:', mode);
         setViewMode(mode);
     };
+
+    // 스낵바 닫기
+    const handleCloseSnackbar = () => {
+        setSnackbarOpen(false);
+    };
+
+    // ===== 로딩 상태 =====
+    if (loading && settlementData.length === 0) {
+        return (
+            <Container maxWidth="xl" sx={{ py: 3, display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '400px' }}>
+                <Box sx={{ textAlign: 'center' }}>
+                    <CircularProgress size={60} sx={{ mb: 2 }} />
+                    <Typography variant="h6" color="text.secondary">
+                        정산 데이터를 불러오는 중입니다...
+                    </Typography>
+                </Box>
+            </Container>
+        );
+    }
+
+    // ===== 에러 상태 =====
+    if (error && settlementData.length === 0) {
+        return (
+            <Container maxWidth="xl" sx={{ py: 3 }}>
+                <Alert severity="error" sx={{ mb: 3 }}>
+                    {error}
+                </Alert>
+            </Container>
+        );
+    }
 
     return (
         <Container maxWidth="xl" sx={{ py: 3 }}>
@@ -282,10 +290,17 @@ const SettlementPage = () => {
                     data={settlementData}
                     filters={settlementFilters}
                     onFiltersChange={handleSettlementFiltersChange}
+                    totalCount={totalElements}
+                    currentPage={currentPage + 1} // 프론트엔드는 1부터 시작
+                    pageSize={10}
+                    onPageChange={handlePageChange}
+                    loading={loading}
+                    onDownloadReport={handleDownloadReport}
+                    summary={summary}
                 />
             </Box>
 
-            {/* 매출 분석 섹션 - 전체 너비 사용 */}
+            {/* 매출 분석 섹션 - 전체 너비 사용 (더미데이터 - 추후 API 연동 예정) */}
             <Box sx={{ mb: 6 }}>
                 <Typography
                     variant="h5"
@@ -295,32 +310,51 @@ const SettlementPage = () => {
                         color: theme.palette.text.primary
                     }}
                 >
-                    매출 분석
+                    매출 분석 (준비 중)
                 </Typography>
 
-                {/* 🔧 수정: SalesChart에 viewMode와 핸들러 전달 */}
+                <Alert severity="info" sx={{ mb: 3 }}>
+                    매출 분석 기능은 현재 더미 데이터로 표시되며, 추후 매출 분석 API와 연동될 예정입니다.
+                </Alert>
+
                 <SalesChart
                     data={[]}
                     title="매출 분석"
-                    yearlyData={yearlyData}
-                    productData={currentProductData}
+                    yearlyData={generateYearlyDataFromSettlement}
+                    productData={generateProductSalesData}
                     selectedYear={selectedYear}
                     selectedMonth={selectedMonth}
-                    viewMode={viewMode} // 🔧 viewMode 전달
+                    viewMode={viewMode}
                     onYearChange={handleYearChange}
                     onMonthChange={handleMonthChange}
-                    onViewModeChange={handleViewModeChange} // 🔧 viewMode 변경 핸들러 전달
+                    onViewModeChange={handleViewModeChange}
                 />
             </Box>
 
-            {/* 매출 성장 인사이트 섹션 */}
+            {/* 매출 성장 인사이트 섹션 (더미데이터 - 추후 API 연동 예정) */}
             <SalesInsight
-                productData={currentProductData}
+                productData={generateProductSalesData}
                 selectedYear={selectedYear}
                 selectedMonth={selectedMonth}
                 viewMode={viewMode}
                 allSettlementData={settlementData}
             />
+
+            {/* 스낵바 */}
+            <Snackbar
+                open={snackbarOpen}
+                autoHideDuration={6000}
+                onClose={handleCloseSnackbar}
+                anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+            >
+                <Alert
+                    onClose={handleCloseSnackbar}
+                    severity={snackbarMessage.includes('성공') || snackbarMessage.includes('다운로드') ? 'success' : 'error'}
+                    sx={{ width: '100%' }}
+                >
+                    {snackbarMessage}
+                </Alert>
+            </Snackbar>
         </Container>
     );
 };
