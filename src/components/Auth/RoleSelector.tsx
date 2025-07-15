@@ -1,12 +1,14 @@
 import { Grid, Paper, Box, Typography } from '@mui/material';
-import { ROLE_INFO } from '@/components/Auth/constants/auth.constants.ts';
+import {ROLE, ROLE_INFO} from '@/components/Auth/constants/auth.constants.ts';
 import { RoleSelectorProps, UserRole } from '@/components/Auth/types/auth.types.ts';
 
 const RoleSelector = ({ selectedRole, onRoleSelect }: RoleSelectorProps) => {
-    const roles = Object.entries(ROLE_INFO).map(([key, info]) => ({
-        id: key as UserRole,
-        ...info,
-    }));
+    const roles = Object.entries(ROLE_INFO)
+        .filter(([key]) => key !== ROLE.TEMP)   // ← 여기를 추가!
+        .map(([key, info]) => ({
+            id: key as UserRole,
+            ...info,
+        }));
 
     return (
         <Grid container spacing={3}>
