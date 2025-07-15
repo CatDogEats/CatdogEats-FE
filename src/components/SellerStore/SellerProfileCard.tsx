@@ -37,20 +37,22 @@ import {
 import { mockCoupons } from '@/data';
 import { type Coupon } from "@/components/Account";
 
-// SellerProfile 타입 정의 (업데이트됨)
+// SellerProfile 타입 정의
 export interface SellerProfile {
     id: string;
     name: string;
     profileImage: string;
-    establishedDate: string; // establishedYear에서 변경
+    establishedDate: string;
     rating: number;
     reviewCount: number;
     salesCount: number;
     tags: string[];
     operatingHours: string;
-    closedDays: string; // 새로 추가
-    location: string; // 주소 정보
-    shippingInfo: string;
+    closedDays: string;
+    address: string;
+    deliveryDays: string;
+    deliveryFee: string;
+    freeShippingInfo: string;
     isVerified: boolean;
     isSafetyChecked: boolean;
 }
@@ -234,16 +236,11 @@ const SellerProfileCard: React.FC<SellerProfileCardProps> = ({
 
                     <Divider sx={{ my: { xs: 2, sm: 3 } }} />
 
-                    {/* 상세 정보 - 레이아웃 변경됨 */}
+                    {/* 상세 정보 - 배송 정보 추가 (6개 행으로 확장) */}
                     <Grid container spacing={{ xs: 2, sm: 3 }} sx={{ fontSize: '0.875rem' }}>
                         <Grid size={{ xs: 12, sm: 6 }}>
                             <Typography variant="body2" color="text.secondary">
                                 <strong>운영 시간:</strong> {seller.operatingHours}
-                            </Typography>
-                        </Grid>
-                        <Grid size={{ xs: 12, sm: 6 }}>
-                            <Typography variant="body2" color="text.secondary">
-                                <strong>위치:</strong> {seller.location}
                             </Typography>
                         </Grid>
                         <Grid size={{ xs: 12, sm: 6 }}>
@@ -253,7 +250,22 @@ const SellerProfileCard: React.FC<SellerProfileCardProps> = ({
                         </Grid>
                         <Grid size={{ xs: 12, sm: 6 }}>
                             <Typography variant="body2" color="text.secondary">
-                                <strong>배송 정보:</strong> {seller.shippingInfo}
+                                <strong>주소:</strong> {seller.address}
+                            </Typography>
+                        </Grid>
+                        <Grid size={{ xs: 12, sm: 6 }}>
+                            <Typography variant="body2" color="text.secondary">
+                                <strong>배송 소요일:</strong> {seller.deliveryDays}
+                            </Typography>
+                        </Grid>
+                        <Grid size={{ xs: 12, sm: 6 }}>
+                            <Typography variant="body2" color="text.secondary">
+                                <strong>배송비:</strong> {seller.deliveryFee}
+                            </Typography>
+                        </Grid>
+                        <Grid size={{ xs: 12, sm: 6 }}>
+                            <Typography variant="body2" color="text.secondary">
+                                <strong>무료배송:</strong> {seller.freeShippingInfo}
                             </Typography>
                         </Grid>
                     </Grid>

@@ -9,7 +9,7 @@ export interface StoreAddress {
     phoneNumber: string;
 }
 
-// 백엔드 응답 타입 정의 (업데이트됨)
+// 백엔드 응답 타입 정의
 export interface SellerInfoResponse {
     sellerId: string;
     vendorName: string;
@@ -18,6 +18,8 @@ export interface SellerInfoResponse {
     operatingStartTime: string;
     operatingEndTime: string;
     closedDays: string;
+    deliveryFee: number;
+    freeShippingThreshold: number;
     storeAddress: StoreAddress;
     operationStartDate: string;
     totalProducts: number;

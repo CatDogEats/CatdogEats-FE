@@ -38,9 +38,9 @@ const SellerStorePage: React.FC = () => {
     const [totalProducts, setTotalProducts] = useState(0);
     const [currentPage, setCurrentPage] = useState(1);
     const [totalPages, setTotalPages] = useState(1);
-    const [similarSellers] = useState<SimilarSeller[]>([]); // 임시로 빈 배열 (추후 API 추가 시 구현)
+    const [similarSellers] = useState<SimilarSeller[]>([]);
     const [loading, setLoading] = useState(true);
-    const [productsLoading, setProductsLoading] = useState(false); // 상품만 로딩하는 상태
+    const [productsLoading, setProductsLoading] = useState(false);
     const [isSellerLiked, setIsSellerLiked] = useState(false);
     const [snackbarOpen, setSnackbarOpen] = useState(false);
     const [snackbarMessage, setSnackbarMessage] = useState('');
@@ -72,7 +72,9 @@ const SellerStorePage: React.FC = () => {
         return activeFilters[0] || undefined;
     }, [filters]);
 
-    // API 데이터 로딩 함수
+
+
+// API 데이터 로딩 함수
     const loadSellerData = useCallback(async (params: SellerStoreParams = {}, isInitialLoad = false) => {
         if (!sellerId) return;
 
@@ -102,8 +104,10 @@ const SellerStorePage: React.FC = () => {
                 setSeller(transformedSeller);
             }
 
-            // 상품 목록 변환
-            const transformedProducts = response.products.content.map(transformProduct);
+            // 상품 목록 변환 - sellerId 파라미터 추가
+            const transformedProducts = response.products.content.map(product =>
+                transformProduct(product, response.sellerInfo.sellerId)
+            );
             setProducts(transformedProducts);
             setTotalProducts(response.products.totalElements);
             setTotalPages(response.products.totalPages);
@@ -126,7 +130,6 @@ const SellerStorePage: React.FC = () => {
             setProductsLoading(false);
         }
     }, [sellerId, activeFilter, categoryFilters, seller]);
-
     // 초기 데이터 로딩 (sellerId 변경 시에만)
     useEffect(() => {
         setCurrentPage(1); // 새로운 판매자 페이지 진입 시 1페이지로 초기화
