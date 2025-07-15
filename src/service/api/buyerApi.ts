@@ -115,11 +115,14 @@ export const buyerApi = {
 
       return extractApiData(response.data);
     } catch (error) {
-      // 기본 주소가 없는 경우 null 반환
-      if (axios.isAxiosError(error) && error.response?.status === 404) {
+      // 404(없음) 또는 500(서버 에러) 모두 null 로 처리
+      if (
+        axios.isAxiosError(error) &&
+        [404, 500].includes(error.response?.status ?? 0)
+      ) {
         return null;
       }
-      console.error("기본 주소 조회 실패:", error);
+      // 그 외 클라이언트단 치명적 오류만 상위로 throw
       throw handleApiError(error);
     }
   },
@@ -145,7 +148,16 @@ export const buyerApi = {
 
       return extractApiData(response.data);
     } catch (error) {
-      console.error("쿠폰 목록 조회 실패:", error);
+      if (axios.isAxiosError(error) && error.response?.status === 500) {
+        // 서버 오류(500)만 무시
+        return {
+          selected: [],
+          count: {
+            availableCount: 0,
+            expiringSoonCount: 0,
+          },
+        };
+      }
       throw handleApiError(error);
     }
   },
