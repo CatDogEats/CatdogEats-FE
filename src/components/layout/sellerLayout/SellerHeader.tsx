@@ -1,45 +1,65 @@
-import {
-    AppBar,
-    Toolbar,
-    Typography,
-    Box,
-    Button,
-    useTheme
-} from '@mui/material';
+import { AppBar, Toolbar, Box, useTheme } from '@mui/material';
 import { useNavigate } from 'react-router-dom';
-import { SellerHeaderProps } from '@/components/layout/sellerLayout/types/seller.types.ts';
-import { NotificationMenu, ProfileMenu } from '@/components/common';
+import { Notification } from '@/components/layout/sellerLayout/types/seller.types';
+import { useAuthStore } from "@/service/auth/AuthStore.ts";
+import { authApi } from "@/service/auth/AuthAPI";
+import { SellerLogoAndBrand } from './Logo';
+import { SellerAuthenticatedNav } from './AuthenticationMenue';
+import { SellerUnauthenticatedButtons } from './UnAuthentication';
+import { useCallback, useEffect }from 'react';
 
-interface ExtendedSellerHeaderProps extends SellerHeaderProps {
-      isAuthenticated: boolean;
+interface SellerHeaderProps {
+    notifications: Notification[];
+    onNotificationClick: (notification: Notification) => void;
+    onAnnouncementClick: () => void;
+    onFaqClick: () => void;
+    onInquiryClick: () => void;
+    onProfileEdit?: () => void; // Make optional as it's handled internally
 }
 
 const SellerHeader = ({
-                          sellerInfo,
                           notifications,
                           onNotificationClick,
                           onAnnouncementClick,
                           onFaqClick,
                           onInquiryClick,
-                          onLogout,
                           onProfileEdit,
-                          isAuthenticated,
-                      }: ExtendedSellerHeaderProps) => {
+                      }: SellerHeaderProps) => {
     const theme = useTheme();
     const navigate = useNavigate();
+    const { isAuthenticated, name, loading, clearAuth, setLoading } = useAuthStore();
 
-    // 마이페이지로 이동하는 함수
+    useEffect(() => {
+        console.log("SellerHeader 상태:", { isAuthenticated, name, loading });
+    }, [isAuthenticated, name, loading]);
+
     const handleProfileEdit = () => {
         navigate('/seller/info');
-        // 기존 onProfileEdit 콜백이 있다면 함께 실행
         if (onProfileEdit) {
             onProfileEdit();
         }
     };
 
-    // 로그인 핸들러
+    // 로그아웃 핸들러
+    const handleLogout = useCallback(async () => {
+        try {
+            setLoading(true);
+            await authApi.logout();
+            clearAuth();
+            navigate("/");
+        } catch (error) {
+            console.error("로그아웃 실패:", error);
+        } finally {
+            setLoading(false);
+        }
+    }, [clearAuth, navigate, setLoading]);
+
     const handleLogin = () => {
         navigate('/login');
+    };
+
+    const handleSellerSignup = () => {
+        navigate('/login'); // Assuming seller signup also goes to login page or a specific signup page
     };
 
     return (
@@ -53,179 +73,25 @@ const SellerHeader = ({
             }}
         >
             <Toolbar sx={{ justifyContent: 'space-between', py: 1 }}>
-                {/* 로고 및 브랜드 */}
-                <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                    <Box
-                        sx={{
-                            width: 32,
-                            height: 32,
-                            borderRadius: '50%',
-                            background: theme.palette.primary.main,
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            mr: 1.5,
-                            cursor: 'pointer'
-                        }}
-                        onClick={() => navigate('/seller')}
-                    >
-                        <span className="material-icons" style={{ color: 'white', fontSize: '20px' }}>
-                            pets
-                        </span>
-                    </Box>
-                    <Box>
-                        <Typography
-                            variant="h6"
-                            component="div"
-                            sx={{
-                                fontWeight: 700,
-                                color: 'text.primary',
-                                cursor: 'pointer',
-                                fontSize: { xs: '1.1rem', sm: '1.25rem' },
-                                lineHeight: 1
-                            }}
-                            onClick={() => navigate('/seller')}
-                        >
-                            CatDogEats
-                        </Typography>
-                        <Typography
-                            variant="caption"
-                            sx={{
-                                color: theme.palette.text.secondary,
-                                fontSize: '0.75rem'
-                            }}
-                        >
-                            판매자 대시보드
-                        </Typography>
-                    </Box>
-                </Box>
+                <SellerLogoAndBrand onClick={() => navigate('/seller')} />
 
-                {/* 우측 메뉴 */}
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                     {isAuthenticated ? (
-                        <>
-                            {/* 로그인된 상태: 네비게이션 메뉴 + 알림 + 프로필 */}
-                            <Box sx={{
-                                display: { xs: 'none', md: 'flex' },
-                                alignItems: 'center',
-                                gap: 0.5,
-                                mr: 2
-                            }}>
-                                <Button
-                                    color="inherit"
-                                    startIcon={<span className="material-icons">campaign</span>}
-                                    onClick={onAnnouncementClick}
-                                    sx={{
-                                        textTransform: 'none',
-                                        color: theme.palette.text.secondary,
-                                        fontWeight: 400,
-                                        fontSize: '0.875rem',
-                                        minWidth: 'auto',
-                                        px: 1,
-                                        '&:hover': {
-                                            color: theme.palette.text.primary,
-                                            backgroundColor: 'transparent'
-                                        }
-                                    }}
-                                >
-                                    공지사항
-                                </Button>
-
-                                <Button
-                                    color="inherit"
-                                    startIcon={<span className="material-icons">help</span>}
-                                    onClick={onFaqClick}
-                                    sx={{
-                                        textTransform: 'none',
-                                        color: theme.palette.text.secondary,
-                                        fontWeight: 400,
-                                        fontSize: '0.875rem',
-                                        minWidth: 'auto',
-                                        px: 1,
-                                        '&:hover': {
-                                            color: theme.palette.text.primary,
-                                            backgroundColor: 'transparent'
-                                        }
-                                    }}
-                                >
-                                    FAQ
-                                </Button>
-
-                                <Button
-                                    color="inherit"
-                                    startIcon={<span className="material-icons">support_agent</span>}
-                                    onClick={onInquiryClick}
-                                    sx={{
-                                        textTransform: 'none',
-                                        color: theme.palette.text.secondary,
-                                        fontWeight: 400,
-                                        fontSize: '0.875rem',
-                                        minWidth: 'auto',
-                                        px: 1,
-                                        '&:hover': {
-                                            color: theme.palette.text.primary,
-                                            backgroundColor: 'transparent'
-                                        }
-                                    }}
-                                >
-                                    1:1 문의
-                                </Button>
-                            </Box>
-
-                            {/* 알림 메뉴 */}
-                            <NotificationMenu
-                                notifications={notifications}
-                                onNotificationClick={onNotificationClick}
-                            />
-
-                            {/* 프로필 메뉴 */}
-                            <ProfileMenu
-                                userInfo={sellerInfo}
-                                onProfileEdit={handleProfileEdit}
-                                onLogout={onLogout}
-                            />
-                        </>
+                        <SellerAuthenticatedNav
+                            notifications={notifications}
+                            onNotificationClick={onNotificationClick}
+                            onAnnouncementClick={onAnnouncementClick}
+                            onFaqClick={onFaqClick}
+                            onInquiryClick={onInquiryClick}
+                            onLogout={handleLogout}
+                            onProfileEdit={handleProfileEdit}
+                            nameFromAuthStore={name}
+                        />
                     ) : (
-                        <>
-                            {/* 로그인되지 않은 상태: 로그인 버튼 */}
-                            <Button
-                                variant="text"
-                                onClick={handleLogin}
-                                sx={{
-                                    fontSize: '0.875rem',
-                                    fontWeight: 400,
-                                    color: theme.palette.text.secondary,
-                                    textTransform: 'none',
-                                    minWidth: 'auto',
-                                    px: 2,
-                                    '&:hover': {
-                                        color: theme.palette.text.primary,
-                                        backgroundColor: 'transparent',
-                                    }
-                                }}
-                            >
-                                로그인
-                            </Button>
-                            <Button
-                                variant="contained"
-                                onClick={handleLogin}
-                                sx={{
-                                    fontSize: '0.875rem',
-                                    fontWeight: 500,
-                                    backgroundColor: theme.palette.primary.main,
-                                    color: 'white',
-                                    textTransform: 'none',
-                                    borderRadius: '20px',
-                                    px: 3,
-                                    py: 1,
-                                    '&:hover': {
-                                        backgroundColor: theme.palette.primary.dark,
-                                    }
-                                }}
-                            >
-                                판매자 가입
-                            </Button>
-                        </>
+                        <SellerUnauthenticatedButtons
+                            onLogin={handleLogin}
+                            onSellerSignup={handleSellerSignup}
+                        />
                     )}
                 </Box>
             </Toolbar>
