@@ -14,6 +14,7 @@ interface AuthState {
     // Actions
     setAuth: (auth: boolean) => void
     setUserInfo: (name: string, role: UserRole) => void
+    setRole: (role: UserRole) => void
     clearAuth: () => void
     setHasChecked: (checked: boolean) => void
     setLoading: (loading: boolean) => void
@@ -46,6 +47,12 @@ export const useAuthStore = create<AuthState>()(
                     role,
                     isAuthenticated: true,
                     hasChecked: true,
+                })
+            },
+            setRole: (role) => {
+                console.log("AuthStore, setRole 호출", { role})
+                set({
+                    role: role
                 })
             },
 
