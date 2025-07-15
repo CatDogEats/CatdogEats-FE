@@ -1,26 +1,72 @@
-import { useEffect, useState } from "react";
-import { Navigate, Outlet } from "react-router-dom";
-import axios from "axios";
+"use client"
 
-const AuthGuard = () => {
-    const [auth, setAuth] = useState<null | boolean>(null);
+import { Navigate, Outlet, useLocation } from "react-router-dom"
+import { useEffect, useState } from "react"
+import { Box, CircularProgress } from "@mui/material"
 
-    useEffect(() => {
+import { useAuthStore } from "@/service/auth/AuthStore.ts"
+
+interface AuthGuardProps {
+    allowedRoles: string
+}
+
+const AuthGuard = ({ allowedRoles }: AuthGuardProps) => {
+    const location = useLocation()
+    const { isAuthenticated, role, hasChecked, loading, isInitializing, initializeAuth } = useAuthStore()
+    const [localLoading, setLocalLoading] = useState(true)
+
+    useEffect( () => {
         const checkAuth = async () => {
-            try {
-                const { data } = await axios.get("/auth/check");
-                setAuth(data.authenticated);
-            } catch {
-                setAuth(false);
+            // 아직 초기화되지 않았다면 초기화 실행
+            if (!hasChecked && !isInitializing) {
+                console.log("AuthGuard: 인증 초기화 필요")
+                await initializeAuth() // initializeAuth가 완료될 때까지 기다림
             }
-        };
-        checkAuth();
-    }, []);
+            setLocalLoading(false) // initializeAuth 완료 후 localLoading 해제
+        }
 
-    if (auth === null) return <div>로딩 중...</div>;
-    if (!auth) return <Navigate to="/login" replace />;
+        checkAuth()
+    }, [hasChecked, isInitializing, initializeAuth])
 
-    return <Outlet />;
-};
+    // 로딩 중이면 로딩 표시
+    if (loading || isInitializing || localLoading || !hasChecked) {
+        return (
+            <Box
+                sx={{
+                    display: "flex",
+                    justifyContent: "center",
+                    alignItems: "center",
+                    minHeight: "200px",
+                }}
+            >
+                <CircularProgress />
+            </Box>
+        )
+    }
 
-export default AuthGuard;
+    // 인증되지 않았으면 로그인 페이지로
+    if (!isAuthenticated) {
+        console.log("AuthGuard: 인증되지 않음, 로그인 페이지로 이동")
+        return <Navigate to="/login" replace state={{ from: location }} />
+    }
+
+    if (role === 'ROLE_TEMP') {
+        console.log("권한 부여 페이지로 이동")
+        return <Navigate to="/role-selection"></Navigate>
+    }
+
+    // 권한이 없으면 로그인 페이지로
+    if (allowedRoles !== role) {
+        if (role === "ROLE_BUYER") {
+            return <Navigate to="/" replace />
+        } else if(role === "ROLE_SELLER") {
+            return <Navigate to="/seller" replace />
+        }
+    }
+
+
+    console.log("AuthGuard: 인증 및 권한 확인 완료")
+    return <Outlet />
+}
+
+export default AuthGuard
