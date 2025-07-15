@@ -132,6 +132,12 @@ const SettlementTable = ({
         }
     };
 
+    // 날짜 표시 형식 (배송대기 처리 포함)
+    const formatDateDisplay = (dateString: string): string => {
+        if (!dateString || dateString === '배송대기') return dateString;
+        return dateString; // 이미 YYYY-MM-DD 형식으로 변환되어 있음
+    };
+
     return (
         <Box>
             <Typography
@@ -265,31 +271,38 @@ const SettlementTable = ({
                         mb: 3,
                         borderRadius: 3,
                         boxShadow: '0 4px 12px rgba(0,0,0,0.08)',
-                        border: `1px solid ${theme.palette.grey[200]}`
+                        border: `1px solid ${theme.palette.grey[200]}`,
+                        overflowX: 'auto' // 가로 스크롤 추가 (컬럼이 많아진 경우 대비)
                     }}
                 >
                     <Table>
                         <TableHead>
                             <TableRow sx={{ backgroundColor: theme.palette.grey[100] }}>
-                                <TableCell sx={{ fontWeight: 600, color: theme.palette.text.primary }}>
+                                <TableCell sx={{ fontWeight: 600, color: theme.palette.text.primary, minWidth: 120 }}>
                                     주문번호
                                 </TableCell>
-                                <TableCell sx={{ fontWeight: 600, color: theme.palette.text.primary }}>
+                                <TableCell sx={{ fontWeight: 600, color: theme.palette.text.primary, minWidth: 200 }}>
                                     상품명
                                 </TableCell>
-                                <TableCell sx={{ fontWeight: 600, color: theme.palette.text.primary }}>
+                                <TableCell sx={{ fontWeight: 600, color: theme.palette.text.primary, minWidth: 100 }}>
                                     주문금액
                                 </TableCell>
-                                <TableCell sx={{ fontWeight: 600, color: theme.palette.text.primary }}>
+                                <TableCell sx={{ fontWeight: 600, color: theme.palette.text.primary, minWidth: 80 }}>
                                     수수료
                                 </TableCell>
-                                <TableCell sx={{ fontWeight: 600, color: theme.palette.text.primary }}>
+                                <TableCell sx={{ fontWeight: 600, color: theme.palette.text.primary, minWidth: 100 }}>
                                     정산금액
                                 </TableCell>
-                                <TableCell sx={{ fontWeight: 600, color: theme.palette.text.primary }}>
+                                <TableCell sx={{ fontWeight: 600, color: theme.palette.text.primary, minWidth: 110 }}>
                                     주문일
                                 </TableCell>
-                                <TableCell sx={{ fontWeight: 600, color: theme.palette.text.primary }}>
+                                <TableCell sx={{ fontWeight: 600, color: theme.palette.text.primary, minWidth: 110 }}>
+                                    배송완료일
+                                </TableCell>
+                                <TableCell sx={{ fontWeight: 600, color: theme.palette.text.primary, minWidth: 110 }}>
+                                    정산생성일
+                                </TableCell>
+                                <TableCell sx={{ fontWeight: 600, color: theme.palette.text.primary, minWidth: 80 }}>
                                     상태
                                 </TableCell>
                             </TableRow>
@@ -313,28 +326,40 @@ const SettlementTable = ({
                                             <TableCell sx={{
                                                 fontFamily: 'monospace',
                                                 fontWeight: 500,
-                                                color: theme.palette.text.primary
+                                                color: theme.palette.text.primary,
+                                                fontSize: '0.875rem'
                                             }}>
                                                 {item.id}
                                             </TableCell>
                                             <TableCell sx={{
                                                 fontWeight: 500,
-                                                color: theme.palette.text.primary
-                                            }}>
+                                                color: theme.palette.text.primary,
+                                                maxWidth: 200,
+                                                overflow: 'hidden',
+                                                textOverflow: 'ellipsis',
+                                                whiteSpace: 'nowrap'
+                                            }}
+                                                       title={item.productName} // 전체 상품명을 툴팁으로 표시
+                                            >
                                                 {item.productName}
                                             </TableCell>
                                             <TableCell sx={{
                                                 fontWeight: 600,
-                                                color: theme.palette.text.primary
+                                                color: theme.palette.text.primary,
+                                                fontSize: '0.875rem'
                                             }}>
                                                 ₩{item.orderAmount.toLocaleString()}
                                             </TableCell>
-                                            <TableCell sx={{ color: theme.palette.text.secondary }}>
+                                            <TableCell sx={{
+                                                color: theme.palette.text.secondary,
+                                                fontSize: '0.875rem'
+                                            }}>
                                                 ₩{item.commission.toLocaleString()}
                                             </TableCell>
                                             <TableCell sx={{
                                                 fontWeight: 600,
-                                                color: theme.palette.primary.main
+                                                color: theme.palette.primary.main,
+                                                fontSize: '0.875rem'
                                             }}>
                                                 ₩{item.settlementAmount.toLocaleString()}
                                             </TableCell>
@@ -342,7 +367,22 @@ const SettlementTable = ({
                                                 color: theme.palette.text.secondary,
                                                 fontSize: '0.875rem'
                                             }}>
-                                                {item.orderDate}
+                                                {formatDateDisplay(item.orderDate)}
+                                            </TableCell>
+                                            <TableCell sx={{
+                                                color: item.deliveryDate === '배송대기'
+                                                    ? theme.palette.warning.main
+                                                    : theme.palette.text.secondary,
+                                                fontSize: '0.875rem',
+                                                fontWeight: item.deliveryDate === '배송대기' ? 500 : 400
+                                            }}>
+                                                {formatDateDisplay(item.deliveryDate)}
+                                            </TableCell>
+                                            <TableCell sx={{
+                                                color: theme.palette.text.secondary,
+                                                fontSize: '0.875rem'
+                                            }}>
+                                                {formatDateDisplay(item.settlementDate)}
                                             </TableCell>
                                             <TableCell>
                                                 <Chip
@@ -351,7 +391,8 @@ const SettlementTable = ({
                                                     size="small"
                                                     sx={{
                                                         fontWeight: 500,
-                                                        minWidth: 70
+                                                        minWidth: 70,
+                                                        fontSize: '0.75rem'
                                                     }}
                                                 />
                                             </TableCell>
@@ -360,7 +401,7 @@ const SettlementTable = ({
                                 })
                             ) : (
                                 <TableRow>
-                                    <TableCell colSpan={7} sx={{ textAlign: 'center', py: 4 }}>
+                                    <TableCell colSpan={9} sx={{ textAlign: 'center', py: 4 }}>
                                         <Typography
                                             variant="body2"
                                             sx={{ color: theme.palette.text.secondary }}
@@ -380,7 +421,7 @@ const SettlementTable = ({
                             <TableFooter>
                                 <TableRow>
                                     <TableCell
-                                        colSpan={7}
+                                        colSpan={9}
                                         sx={{
                                             backgroundColor: theme.palette.grey[50],
                                             borderTop: `1px solid ${theme.palette.grey[200]}`
@@ -390,7 +431,9 @@ const SettlementTable = ({
                                             display: 'flex',
                                             justifyContent: 'space-between',
                                             alignItems: 'center',
-                                            py: 1
+                                            py: 1,
+                                            flexWrap: 'wrap',
+                                            gap: 1
                                         }}>
                                             <Typography variant="body2" sx={{ color: theme.palette.text.secondary }}>
                                                 {((currentPage - 1) * pageSize) + 1} - {Math.min(currentPage * pageSize, totalCount)}번째 항목 (전체 {totalCount}개 중)

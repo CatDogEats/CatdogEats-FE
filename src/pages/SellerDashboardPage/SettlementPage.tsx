@@ -28,14 +28,17 @@ import { settlementApi, SettlementPeriodRequest } from '@/service/SettlementAPI'
 import {
     transformSettlementList,
     downloadBlob,
-    generateCsvFileName
+    generateCsvFileName,
+    filterSettlementsByStatus,
+    calculateFilteredPagination,
+    recalculateFilteredSummary
 } from '@/service/SettlementTransformer';
 
 const SettlementPage = () => {
     const theme = useTheme();
 
     // ===== 상태 관리 =====
-    const [settlementData, setSettlementData] = useState<SettlementItem[]>([]);
+    const [allSettlementData, setAllSettlementData] = useState<SettlementItem[]>([]); // 전체 데이터 저장
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [snackbarOpen, setSnackbarOpen] = useState(false);
@@ -52,48 +55,96 @@ const SettlementPage = () => {
 
     // 페이지네이션 상태
     const [currentPage, setCurrentPage] = useState(0); // 백엔드는 0부터 시작
-    const [totalElements, setTotalElements] = useState(0);
-    const [summary, setSummary] = useState<any>(null);
+    const pageSize = 10;
 
     // 매출 분석 필터 상태 (더미데이터용 - 추후 API 연동 예정)
     const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
     const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth() + 1);
     const [viewMode, setViewMode] = useState<'monthly' | 'yearly'>('monthly');
 
+    // ===== 필터링된 데이터 계산 (useMemo 사용) =====
+    const filteredData = useMemo(() => {
+        console.log('🔍 필터 적용 중:', {
+            전체데이터수: allSettlementData.length,
+            상태필터: settlementFilters.settlementFilter,
+            현재페이지: currentPage
+        });
+
+        // 1. 상태 필터 적용
+        const statusFiltered = filterSettlementsByStatus(allSettlementData, settlementFilters.settlementFilter);
+
+        // 2. 페이지네이션 계산
+        const paginationResult = calculateFilteredPagination(statusFiltered, currentPage, pageSize);
+
+        // 3. 요약 정보 재계산
+        const summary = recalculateFilteredSummary(statusFiltered);
+
+        console.log('🔍 필터 결과:', {
+            상태필터적용후: statusFiltered.length,
+            현재페이지데이터: paginationResult.items.length,
+            총페이지수: paginationResult.totalPages,
+            요약정보: summary
+        });
+
+        return {
+            items: paginationResult.items,
+            totalElements: paginationResult.totalElements,
+            totalPages: paginationResult.totalPages,
+            summary
+        };
+    }, [allSettlementData, settlementFilters.settlementFilter, currentPage]);
+
     // ===== API 호출 함수 =====
 
     /**
-     * 정산 리스트 조회 (필터 조건에 따라 전체 또는 기간별 조회)
+     * 정산 리스트 조회 (전체 데이터를 한 번에 로드)
      */
-    const fetchSettlementData = useCallback(async (page: number = 0) => {
+    const fetchAllSettlementData = useCallback(async () => {
         try {
             setLoading(true);
             setError(null);
 
-            let response;
+            // 전체 데이터를 로드하기 위해 큰 페이지 크기로 요청
+            const largePageSize = 1000; // 충분히 큰 값
+            let allData: SettlementItem[] = [];
+            let currentApiPage = 0;
+            let hasMore = true;
 
-            // 필터 조건이 있으면 기간별 조회, 없으면 전체 조회
-            if (settlementFilters.startDate || settlementFilters.endDate) {
-                const periodRequest: SettlementPeriodRequest = {
-                    startDate: settlementFilters.startDate || new Date().toISOString().split('T')[0],
-                    endDate: settlementFilters.endDate || new Date().toISOString().split('T')[0]
-                };
-                response = await settlementApi.getSettlementListByPeriod(periodRequest, page, 10);
-            } else {
-                response = await settlementApi.getSettlementList(page, 10);
+            while (hasMore) {
+                let response;
+
+                // 필터 조건이 있으면 기간별 조회, 없으면 전체 조회
+                if (settlementFilters.startDate || settlementFilters.endDate) {
+                    const periodRequest: SettlementPeriodRequest = {
+                        startDate: settlementFilters.startDate || new Date().toISOString().split('T')[0],
+                        endDate: settlementFilters.endDate || new Date().toISOString().split('T')[0]
+                    };
+                    response = await settlementApi.getSettlementListByPeriod(periodRequest, currentApiPage, largePageSize);
+                } else {
+                    response = await settlementApi.getSettlementList(currentApiPage, largePageSize);
+                }
+
+                const transformedData = transformSettlementList(response);
+                allData = [...allData, ...transformedData.items];
+
+                // 더 가져올 데이터가 있는지 확인
+                hasMore = transformedData.pagination.hasNext;
+                currentApiPage++;
+
+                // 안전장치: 무한 루프 방지
+                if (currentApiPage > 10) {
+                    console.warn('⚠️ API 호출 횟수 제한 도달');
+                    break;
+                }
             }
 
-            const transformedData = transformSettlementList(response);
+            console.log('📊 전체 데이터 로드 완료:', {
+                총데이터수: allData.length,
+                API호출횟수: currentApiPage
+            });
 
-            console.log('🔍 API 응답 디버깅:', response);
-            console.log('🔍 변환된 데이터:', transformedData);
-
-            setSettlementData(transformedData.items);
-            setTotalElements(transformedData.pagination.totalElements);
-            setCurrentPage(page);
-            setSummary(transformedData.summary);
-
-            console.log('🔍 Summary 데이터 설정:', transformedData.summary);
+            setAllSettlementData(allData);
+            setCurrentPage(0); // 첫 페이지로 리셋
 
         } catch (error: any) {
             console.error('정산 데이터 조회 오류:', error);
@@ -126,10 +177,10 @@ const SettlementPage = () => {
         }
     }, []);
 
-    // ===== 초기 데이터 로딩 =====
+    // ===== 초기 데이터 로딩 및 날짜 필터 변경 감지 =====
     useEffect(() => {
-        fetchSettlementData(0);
-    }, [fetchSettlementData]);
+        fetchAllSettlementData();
+    }, [fetchAllSettlementData]);
 
     // ===== 더미 데이터 생성 함수들 (매출 분석용 - 추후 API 연동 예정) =====
 
@@ -137,8 +188,8 @@ const SettlementPage = () => {
     const generateYearlyDataFromSettlement = useMemo((): YearlyMonthData[] => {
         const yearlyMap = new Map<number, Map<number, number>>();
 
-        // 정산 데이터를 기반으로 년도별/월별 매출 집계
-        settlementData.forEach(item => {
+        // 전체 정산 데이터를 기반으로 년도별/월별 매출 집계
+        allSettlementData.forEach(item => {
             const date = new Date(item.orderDate);
             const year = date.getFullYear();
             const month = date.getMonth();
@@ -165,14 +216,14 @@ const SettlementPage = () => {
         });
 
         return result.sort((a, b) => a.year - b.year);
-    }, [settlementData]);
+    }, [allSettlementData]);
 
     // 🔧 상품별 매출 데이터 생성 함수
     const generateProductSalesData = useMemo((): ProductSalesData[] => {
         const productMap = new Map<string, { totalAmount: number; salesCount: number }>();
 
         // viewMode에 따른 정확한 필터링
-        const filteredData = settlementData.filter(item => {
+        const filteredDataForChart = allSettlementData.filter(item => {
             const date = new Date(item.orderDate);
             const itemYear = date.getFullYear();
             const itemMonth = date.getMonth() + 1;
@@ -185,7 +236,7 @@ const SettlementPage = () => {
         });
 
         // 각 상품별로 매출 총액과 판매 횟수 집계
-        filteredData.forEach(item => {
+        filteredDataForChart.forEach(item => {
             const current = productMap.get(item.productName) || { totalAmount: 0, salesCount: 0 };
             productMap.set(item.productName, {
                 totalAmount: current.totalAmount + item.settlementAmount,
@@ -221,19 +272,27 @@ const SettlementPage = () => {
             percentage: totalAmount > 0 ? (item.amount / totalAmount) * 100 : 0,
             totalSales: totalAmount
         }));
-    }, [settlementData, selectedYear, selectedMonth, viewMode]);
+    }, [allSettlementData, selectedYear, selectedMonth, viewMode]);
 
     // ===== 이벤트 핸들러 =====
 
     // 정산 현황 필터 변경 핸들러
     const handleSettlementFiltersChange = (newFilters: Partial<SettlementFilters>) => {
+        console.log('📝 필터 변경:', newFilters);
         setSettlementFilters(prev => ({ ...prev, ...newFilters }));
-        setCurrentPage(0); // 필터 변경 시 첫 페이지로 이동
+
+        // 상태 필터 변경 시에는 첫 페이지로 이동
+        if (newFilters.settlementFilter !== undefined) {
+            setCurrentPage(0);
+        }
+
+        // 날짜 필터 변경 시에는 전체 데이터 다시 로드 (useEffect에서 처리됨)
     };
 
     // 페이지 변경 핸들러
     const handlePageChange = (page: number) => {
-        fetchSettlementData(page - 1); // 프론트엔드는 1부터, 백엔드는 0부터 시작
+        console.log('📄 페이지 변경:', currentPage + 1, '->', page);
+        setCurrentPage(page - 1); // 프론트엔드는 1부터, 백엔드는 0부터 시작
     };
 
     // 매출 분석 핸들러들 (더미데이터용)
@@ -258,7 +317,7 @@ const SettlementPage = () => {
     };
 
     // ===== 로딩 상태 =====
-    if (loading && settlementData.length === 0) {
+    if (loading && allSettlementData.length === 0) {
         return (
             <Container maxWidth="xl" sx={{ py: 3, display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '400px' }}>
                 <Box sx={{ textAlign: 'center' }}>
@@ -272,7 +331,7 @@ const SettlementPage = () => {
     }
 
     // ===== 에러 상태 =====
-    if (error && settlementData.length === 0) {
+    if (error && allSettlementData.length === 0) {
         return (
             <Container maxWidth="xl" sx={{ py: 3 }}>
                 <Alert severity="error" sx={{ mb: 3 }}>
@@ -287,16 +346,16 @@ const SettlementPage = () => {
             {/* 정산 현황 섹션 */}
             <Box sx={{ mb: 6 }}>
                 <SettlementTable
-                    data={settlementData}
+                    data={filteredData.items}
                     filters={settlementFilters}
                     onFiltersChange={handleSettlementFiltersChange}
-                    totalCount={totalElements}
+                    totalCount={filteredData.totalElements}
                     currentPage={currentPage + 1} // 프론트엔드는 1부터 시작
-                    pageSize={10}
+                    pageSize={pageSize}
                     onPageChange={handlePageChange}
                     loading={loading}
                     onDownloadReport={handleDownloadReport}
-                    summary={summary}
+                    summary={filteredData.summary}
                 />
             </Box>
 
@@ -337,7 +396,7 @@ const SettlementPage = () => {
                 selectedYear={selectedYear}
                 selectedMonth={selectedMonth}
                 viewMode={viewMode}
-                allSettlementData={settlementData}
+                allSettlementData={allSettlementData} // 전체 데이터 전달
             />
 
             {/* 스낵바 */}

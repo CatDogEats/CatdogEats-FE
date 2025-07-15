@@ -1,18 +1,45 @@
 // src/service/SettlementTransformer.ts
 import {
-    SettlementItemResponse,
-    SettlementListResponse,
+    mapBackendStatusToFrontend,
     MonthlySettlementStatusResponse,
-    formatDateToString,
-    mapBackendStatusToFrontend
+    SettlementItemResponse,
+    SettlementListResponse
 } from '@/service/SettlementAPI';
-import { SettlementItem } from '@/components/SellerDashboard/settlement/types/settlement.types';
+import {SettlementItem} from '@/components/SellerDashboard/settlement/types/settlement.types';
+
+/**
+ * ISO 날짜 문자열을 YYYY-MM-DD 형식으로 변환 (시간대 문제 해결)
+ */
+export const formatDateToString = (isoString: string): string => {
+    if (!isoString) return '';
+
+    try {
+        // ISO 문자열을 Date 객체로 변환
+        const date = new Date(isoString);
+
+        // 유효한 날짜인지 확인
+        if (isNaN(date.getTime())) {
+            console.warn('Invalid date string:', isoString);
+            return '';
+        }
+
+        // 로컬 시간대 기준으로 YYYY-MM-DD 형식 반환
+        const year = date.getFullYear();
+        const month = String(date.getMonth() + 1).padStart(2, '0');
+        const day = String(date.getDate()).padStart(2, '0');
+
+        return `${year}-${month}-${day}`;
+    } catch (error) {
+        console.error('Date formatting error:', error, 'Input:', isoString);
+        return '';
+    }
+};
 
 /**
  * 백엔드 SettlementItemResponse를 프론트엔드 SettlementItem으로 변환
  */
 export const transformSettlementItem = (backendItem: SettlementItemResponse): SettlementItem => {
-    return {
+    return <SettlementItem>{
         id: backendItem.orderNumber, // 주문번호를 ID로 사용
         productName: backendItem.productName,
         orderAmount: backendItem.orderAmount,
@@ -20,9 +47,10 @@ export const transformSettlementItem = (backendItem: SettlementItemResponse): Se
         settlementAmount: backendItem.settlementAmount,
         status: mapBackendStatusToFrontend(backendItem.status),
         orderDate: formatDateToString(backendItem.orderDate),
-        // 선택적 필드들
-        deliveryDate: backendItem.deliveryDate ? formatDateToString(backendItem.deliveryDate) : undefined,
-        settlementDate: backendItem.settlementCreatedAt ? formatDateToString(backendItem.settlementCreatedAt) : undefined,
+        deliveryDate: backendItem.deliveryDate
+            ? formatDateToString(backendItem.deliveryDate)
+            : '배송대기', // null인 경우 "배송대기"로 표시
+        settlementDate: formatDateToString(backendItem.settlementCreatedAt),
     };
 };
 
@@ -77,50 +105,74 @@ export const transformMonthlyStatus = (backendResponse: MonthlySettlementStatusR
 };
 
 /**
- * 날짜 문자열을 프론트엔드에서 사용하는 형식으로 변환
- * YYYY-MM-DD → MM/DD 형식으로 축약
+ * 프론트엔드에서 상태별 필터링을 수행하는 함수
  */
-export const formatDateForTable = (dateString: string): string => {
-    if (!dateString) return '';
-    const date = new Date(dateString);
-    const month = String(date.getMonth() + 1).padStart(2, '0');
-    const day = String(date.getDate()).padStart(2, '0');
-    return `${month}/${day}`;
+export const filterSettlementsByStatus = (
+    items: SettlementItem[],
+    statusFilter: string
+): SettlementItem[] => {
+    if (statusFilter === '전체') {
+        return items;
+    }
+
+    return items.filter(item => item.status === statusFilter);
 };
 
 /**
- * 프론트엔드에서 사용하는 필터를 백엔드 API 파라미터로 변환
+ * 필터링된 데이터의 페이지네이션 정보 계산
  */
-export const transformFiltersToApiParams = (filters: {
-    startDate?: string;
-    endDate?: string;
-    settlementFilter?: string;
-}) => {
-    const params: any = {};
+export const calculateFilteredPagination = (
+    filteredItems: SettlementItem[],
+    currentPage: number,
+    pageSize: number
+) => {
+    const totalElements = filteredItems.length;
+    const totalPages = Math.ceil(totalElements / pageSize);
+    const startIndex = currentPage * pageSize;
+    const endIndex = Math.min(startIndex + pageSize, totalElements);
+    const currentPageItems = filteredItems.slice(startIndex, endIndex);
 
-    if (filters.startDate) {
-        params.startDate = filters.startDate;
-    }
+    return {
+        items: currentPageItems,
+        totalElements,
+        totalPages,
+        hasNext: currentPage < totalPages - 1,
+        hasPrevious: currentPage > 0,
+        numberOfElements: currentPageItems.length,
+        isEmpty: currentPageItems.length === 0
+    };
+};
 
-    if (filters.endDate) {
-        params.endDate = filters.endDate;
-    }
+/**
+ * 필터링된 데이터의 요약 정보 재계산
+ */
+export const recalculateFilteredSummary = (filteredItems: SettlementItem[]) => {
+    const totalCount = filteredItems.length;
+    const totalSettlementAmount = filteredItems.reduce((sum, item) => sum + item.settlementAmount, 0);
+    const completedItems = filteredItems.filter(item => item.status === '정산완료');
+    const inProgressItems = filteredItems.filter(item => item.status === '처리중');
 
-    // 백엔드에서는 상태 필터를 별도로 처리하지 않고 전체 데이터를 가져온 후 프론트에서 필터링
-    // 만약 백엔드에서 상태 필터를 지원한다면 여기서 추가 처리
+    const completedAmount = completedItems.reduce((sum, item) => sum + item.settlementAmount, 0);
+    const inProgressAmount = inProgressItems.reduce((sum, item) => sum + item.settlementAmount, 0);
 
-    return params;
+    const completionRate = totalCount > 0 ? (completedItems.length / totalCount) * 100 : 0;
+
+    return {
+        totalCount,
+        totalSettlementAmount,
+        completedAmount,
+        inProgressAmount,
+        completionRate
+    };
 };
 
 /**
  * CSV 다운로드를 위한 파일명 생성
  */
 export const generateCsvFileName = (targetMonth: string, vendorName?: string): string => {
-    const fileName = vendorName
+    return vendorName
         ? `정산내역_${vendorName}_${targetMonth}.csv`
         : `정산내역_${targetMonth}.csv`;
-
-    return fileName;
 };
 
 /**

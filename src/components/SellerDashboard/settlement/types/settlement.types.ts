@@ -1,3 +1,4 @@
+// src/components/SellerDashboard/settlement/types/settlement.types.ts
 export interface SettlementItem {
     id: string;
     productName: string;
@@ -6,10 +7,11 @@ export interface SettlementItem {
     settlementAmount: number;
     status: '처리중' | '정산완료'; // '대기중' 제거
     orderDate: string;
+    deliveryDate: string; // null 가능성 제거, 항상 문자열로 처리
+    settlementDate: string; // settlementCreatedAt을 settlementDate로 명명
+    // 선택적 필드들 (기존 호환성 유지)
     paymentDate?: string;
-    deliveryDate?: string;
     confirmDate?: string;
-    settlementDate?: string;
 }
 
 export interface SettlementFilters {
