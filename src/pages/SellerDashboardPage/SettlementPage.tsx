@@ -25,13 +25,13 @@ import {
 } from '@/components/SellerDashboard/settlement/types/settlement.types';
 
 // API 임포트
-import { settlementApi, SettlementPeriodRequest } from '@/service/SettlementAPI';
+import { settlementApi, SettlementPeriodRequest } from '@/service/settlement/SettlementAPI.ts';
 import {
     transformSettlementList,
     filterSettlementsByStatus,
     calculateFilteredPagination,
     recalculateFilteredSummary
-} from '@/service/SettlementTransformer';
+} from '@/service/settlement/SettlementTransformer.ts';
 
 // 🔧 수정: 매출 분석 API 임포트
 import {
@@ -41,7 +41,7 @@ import {
     createProductSalesParams,
     PeriodSalesAnalyticsResponse,
     ProductSalesAnalyticsResponse
-} from '@/service/SalesAnalyticsAPI';
+} from '@/service/settlement/SalesAnalyticsAPI.ts';
 
 const SettlementPage = () => {
     const theme = useTheme();

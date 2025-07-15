@@ -1,5 +1,5 @@
 // src/service/SalesAnalyticsAPI.ts
-import { apiClient } from '@/service/auth/AuthAPI';
+import { apiClient } from '@/service/auth/AuthAPI.ts';
 
 // ===== 백엔드 응답 타입 정의 =====
 

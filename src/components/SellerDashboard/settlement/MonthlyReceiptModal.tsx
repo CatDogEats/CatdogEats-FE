@@ -24,8 +24,8 @@ import {
     useTheme,
     Divider
 } from '@mui/material';
-import { settlementApi } from '@/service/SettlementAPI';
-import { transformSettlementItem, downloadBlob, generateCsvFileName } from '@/service/SettlementTransformer';
+import { settlementApi } from '@/service/settlement/SettlementAPI.ts';
+import { transformSettlementItem, downloadBlob, generateCsvFileName } from '@/service/settlement/SettlementTransformer.ts';
 import { SettlementItem } from '@/components/SellerDashboard/settlement/types/settlement.types';
 import TableSkeleton from './TableSkeleton';
 

@@ -1,8 +1,8 @@
 // src/components/SellerDashboard/settlement/components/MonthlySettlementStatus.tsx
 import { Box, Typography, useTheme, CircularProgress, Alert, Card, CardContent, Grid } from '@mui/material';
 import { useState, useEffect, useCallback } from 'react';
-import { settlementApi } from '@/service/SettlementAPI';
-import { transformMonthlyStatus } from '@/service/SettlementTransformer';
+import { settlementApi } from '@/service/settlement/SettlementAPI.ts';
+import { transformMonthlyStatus } from '@/service/settlement/SettlementTransformer.ts';
 
 // Props 인터페이스에서 onDownloadReport 제거
 interface MonthlySettlementStatusProps {

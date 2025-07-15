@@ -16,8 +16,8 @@ import {
     Snackbar
 } from '@mui/material';
 import MonthlyReceiptModal from './MonthlyReceiptModal';
-import { settlementApi } from '@/service/SettlementAPI';
-import { downloadBlob, generateCsvFileName } from '@/service/SettlementTransformer';
+import { settlementApi } from '@/service/settlement/SettlementAPI.ts';
+import { downloadBlob, generateCsvFileName } from '@/service/settlement/SettlementTransformer.ts';
 
 const MonthlyReceiptManager: React.FC = () => {
     const theme = useTheme();

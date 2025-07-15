@@ -4,8 +4,8 @@ import {
     MonthlySettlementStatusResponse,
     SettlementItemResponse,
     SettlementListResponse
-} from '@/service/SettlementAPI';
-import {SettlementItem} from '@/components/SellerDashboard/settlement/types/settlement.types';
+} from '@/service/settlement/SettlementAPI.ts';
+import {SettlementItem} from '@/components/SellerDashboard/settlement/types/settlement.types.ts';
 
 /**
  * ISO 날짜 문자열을 YYYY-MM-DD 형식으로 변환 (시간대 문제 해결)
