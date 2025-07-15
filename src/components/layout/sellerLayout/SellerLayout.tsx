@@ -2,29 +2,20 @@ import { useState } from 'react';
 import { Outlet, useLocation, useNavigate } from 'react-router-dom';
 import {
     Box,
-    List,
-    ListItem,
-    ListItemIcon,
-    ListItemText,
     Drawer,
     useTheme,
     useMediaQuery,
     IconButton,
     Typography
 } from '@mui/material';
-import SellerHeader from './SellerHeader.tsx';
-import { SellerInfo, Notification } from '@/components/layout/sellerLayout/types/seller.types.ts';
-import { useAuth } from '@/service/auth/AuthAPI';
+import SellerHeader from './SellerHeader'; // Updated import path
+import { Notification, MenuItem } from '@/components/layout/sellerLayout/types/seller.types'; // Updated import path
+import { useAuthStore } from '@/service/auth/AuthStore'; // Using AuthStore directly
+import { SellerSidebarMenu } from './Sidebar';
+import { SellerLoginRequiredMessage } from './LoginRequire';
 
 // 더미 데이터 (추후 전역 상태 관리로 이동)
-const mockSellerInfo: SellerInfo = {
-    id: 'seller-001',
-    name: '김판매',
-    email: 'seller@catdogeats.com',
-    shopName: '사랑가득 엄마손길',
-    shopDescription: '유기농 재료로 만드는 건강 간식 전문',
-    joinDate: '2023-01-15'
-};
+
 
 const mockNotifications: Notification[] = [
     {
@@ -55,26 +46,64 @@ const mockNotifications: Notification[] = [
 
 const DRAWER_WIDTH = 240;
 
+const menuItems: MenuItem[] = [
+    {
+        id: 'dashboard',
+        label: '대시보드',
+        icon: 'analytics',
+        path: '/seller'
+    },
+    {
+        id: 'products',
+        label: '상품관리',
+        icon: 'inventory',
+        path: '/seller/products'
+    },
+    {
+        id: 'orders',
+        label: '주문/배송',
+        icon: 'local_shipping',
+        path: '/seller/orders'
+    },
+    {
+        id: 'settlement',
+        label: '정산관리',
+        icon: 'account_balance_wallet',
+        path: '/seller/settlement'
+    },
+    {
+        id: 'customers',
+        label: '고객관리',
+        icon: 'people',
+        path: '/seller/customers'
+    },
+    {
+        id: 'info',
+        label: '판매자 정보',
+        icon: 'store',
+        path: '/seller/info'
+    }
+];
+
 const SellerLayout = () => {
     const theme = useTheme();
     const isMobile = useMediaQuery(theme.breakpoints.down('md'));
     const [mobileOpen, setMobileOpen] = useState(false);
-    const location = useLocation(); // 현재 위치 감지
-    const navigate = useNavigate(); // 네비게이션 함수
-    const { loading, isAuthenticated, logout } = useAuth();
+    const location = useLocation();
+    const navigate = useNavigate();
+    const { loading, isAuthenticated } = useAuthStore();
 
     const handleDrawerToggle = () => {
         setMobileOpen(!mobileOpen);
     };
 
-
     if (loading) {
-            return (
-                  <Box sx={{ display:'flex', alignItems:'center', justifyContent:'center', minHeight:'100vh' }}>
-                        <Typography>Loading...</Typography>
+        return (
+            <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '100vh' }}>
+                <Typography>Loading...</Typography>
             </Box>
-             );
-        }
+        );
+    }
 
     const handleNotificationClick = (notification: Notification) => {
         console.log('알림 클릭:', notification);
@@ -92,77 +121,19 @@ const SellerLayout = () => {
         console.log('1:1 문의 클릭');
     };
 
-    const handleLogout = async () => {
-        try {
-            await logout();
-            console.log('로그아웃 완료');
-            // 로그아웃 후 로그인 페이지로 이동할 수도 있음
-            navigate('/login');
-        } catch (error) {
-            console.error('로그아웃 중 오류 발생:', error);
-        }
-    };
 
-    const menuItems = [
-        {
-            id: 'dashboard',
-            label: '대시보드',
-            icon: 'analytics',
-            path: '/seller'
-        },
-        {
-            id: 'products',
-            label: '상품관리',
-            icon: 'inventory',
-            path: '/seller/products'
-        },
-        {
-            id: 'orders',
-            label: '주문/배송',
-            icon: 'local_shipping',
-            path: '/seller/orders'
-        },
-        {
-            id: 'settlement',
-            label: '정산관리',
-            icon: 'account_balance_wallet',
-            path: '/seller/settlement'
-        },
-        {
-            id: 'customers',
-            label: '고객관리',
-            icon: 'people',
-            path: '/seller/customers'
-        },
-        {
-            id: 'info',
-            label: '판매자 정보',
-            icon: 'store',
-            path: '/seller/info'
-        }
-    ];
-
-    // 현재 활성화된 메뉴 항목 확인
     const isActive = (path: string) => {
-        // 정확한 경로 매칭
         if (location.pathname === path) return true;
-
-        // 하위 경로도 고려 (예: /seller/products/add도 products 활성화)
         if (path !== '/seller' && location.pathname.startsWith(path + '/')) return true;
-
-        // /seller 루트 경로는 dashboard로 처리
-        if (path === '/seller/dashboard' && location.pathname === '/seller') return true;
-
+        if (path === '/seller' && location.pathname === '/seller') return true;
         return false;
     };
 
-    // 현재 페이지 제목 가져오기
     const getCurrentPageTitle = () => {
         const currentItem = menuItems.find(item => isActive(item.path));
         return currentItem?.label || '판매자 대시보드';
     };
 
-    // 메뉴 클릭 핸들러
     const handleMenuClick = (path: string) => {
         navigate(path);
         if (isMobile) {
@@ -170,128 +141,9 @@ const SellerLayout = () => {
         }
     };
 
-    // 로그인되지 않은 상태에서는 로그인 페이지로 리다이렉트하거나 로그인 폼 표시
     if (!isAuthenticated) {
-        return (
-            <Box sx={{
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                minHeight: '100vh',
-                backgroundColor: theme.palette.background.default
-            }}>
-                <Box sx={{
-                    textAlign: 'center',
-                    p: 4,
-                    backgroundColor: theme.palette.background.paper,
-                    borderRadius: 2,
-                    boxShadow: '0 4px 12px rgba(0,0,0,0.1)'
-                }}>
-                    <Typography variant="h5" sx={{ mb: 2, color: theme.palette.text.primary }}>
-                        판매자 로그인이 필요합니다
-                    </Typography>
-                    <Typography variant="body1" sx={{ mb: 3, color: theme.palette.text.secondary }}>
-                        판매자 대시보드에 접근하려면 로그인하세요.
-                    </Typography>
-                    <Box sx={{ display: 'flex', gap: 2, justifyContent: 'center' }}>
-                        <button
-                            onClick={() => navigate('/login')}
-                            style={{
-                                padding: '12px 24px',
-                                backgroundColor: theme.palette.primary.main,
-                                color: 'white',
-                                border: 'none',
-                                borderRadius: '8px',
-                                cursor: 'pointer',
-                                fontSize: '1rem'
-                            }}
-                        >
-                            로그인하기
-                        </button>
-                    </Box>
-                </Box>
-            </Box>
-        );
+        return <SellerLoginRequiredMessage onLoginClick={() => navigate('/login')} />;
     }
-
-    const drawer = (
-        <Box sx={{
-            height: '100%',
-            backgroundColor: '#f8f9fa',
-            pt: 0
-        }}>
-            <List sx={{ p: 0 }}>
-                {menuItems.map((item) => {
-                    const active = isActive(item.path);
-
-                    return (
-                        <ListItem
-                            key={item.id}
-                            onClick={() => handleMenuClick(item.path)}
-                            sx={{
-                                py: 2,
-                                px: 3,
-                                cursor: 'pointer',
-                                // 활성 상태 스타일링
-                                backgroundColor: active
-                                    ? 'rgba(232, 152, 48, 0.1)' // 연한 오렌지 배경
-                                    : 'transparent',
-                                borderRight: active
-                                    ? `3px solid ${theme.palette.primary.main}` // 오른쪽 테두리
-                                    : 'none',
-                                transition: 'all 0.2s ease',
-                                '&:hover': {
-                                    backgroundColor: active
-                                        ? 'rgba(232, 152, 48, 0.15)'
-                                        : 'rgba(0, 0, 0, 0.04)'
-                                }
-                            }}
-                        >
-                            <ListItemIcon
-                                sx={{
-                                    minWidth: 40,
-                                    color: active
-                                        ? theme.palette.primary.main
-                                        : theme.palette.text.secondary,
-                                    transition: 'color 0.2s ease'
-                                }}
-                            >
-                                <span className="material-icons">
-                                    {item.icon}
-                                </span>
-                            </ListItemIcon>
-                            <ListItemText
-                                primary={item.label}
-                                sx={{
-                                    '& .MuiListItemText-primary': {
-                                        fontSize: '0.95rem',
-                                        fontWeight: active ? 600 : 400, // 활성 시 굵게
-                                        color: active
-                                            ? theme.palette.primary.main
-                                            : theme.palette.text.primary,
-                                        transition: 'all 0.2s ease'
-                                    }
-                                }}
-                            />
-
-                            {/* 활성 상태 표시 점 (선택사항) */}
-                            {active && (
-                                <Box
-                                    sx={{
-                                        width: 6,
-                                        height: 6,
-                                        borderRadius: '50%',
-                                        backgroundColor: theme.palette.primary.main,
-                                        ml: 1
-                                    }}
-                                />
-                            )}
-                        </ListItem>
-                    );
-                })}
-            </List>
-        </Box>
-    );
 
     return (
         <Box sx={{
@@ -299,7 +151,6 @@ const SellerLayout = () => {
             backgroundColor: theme.palette.background.default,
             overflow: 'hidden'
         }}>
-            {/* 헤더 - 고정 위치 */}
             <Box
                 sx={{
                     position: 'fixed',
@@ -311,18 +162,14 @@ const SellerLayout = () => {
                 }}
             >
                 <SellerHeader
-                    sellerInfo={mockSellerInfo}
                     notifications={mockNotifications}
                     onNotificationClick={handleNotificationClick}
                     onAnnouncementClick={handleAnnouncementClick}
                     onFaqClick={handleFaqClick}
                     onInquiryClick={handleInquiryClick}
-                    onLogout={handleLogout}
-                    isAuthenticated={isAuthenticated}
                 />
             </Box>
 
-            {/* 모바일 메뉴 버튼 */}
             {isMobile && (
                 <Box
                     sx={{
@@ -356,13 +203,12 @@ const SellerLayout = () => {
                                 fontSize: '1rem'
                             }}
                         >
-                            {getCurrentPageTitle()} {/* 동적으로 현재 페이지 제목 표시 */}
+                            {getCurrentPageTitle()}
                         </Typography>
                     </Box>
                 </Box>
             )}
 
-            {/* 사이드바 - 데스크톱 */}
             <Box
                 sx={{
                     display: { xs: 'none', md: 'block' },
@@ -377,10 +223,13 @@ const SellerLayout = () => {
                     zIndex: theme.zIndex.drawer
                 }}
             >
-                {drawer}
+                <SellerSidebarMenu
+                    menuItems={menuItems}
+                    isActive={isActive}
+                    onMenuClick={handleMenuClick}
+                />
             </Box>
 
-            {/* 사이드바 - 모바일 */}
             <Drawer
                 variant="temporary"
                 open={mobileOpen}
@@ -399,10 +248,13 @@ const SellerLayout = () => {
                     },
                 }}
             >
-                {drawer}
+                <SellerSidebarMenu
+                    menuItems={menuItems}
+                    isActive={isActive}
+                    onMenuClick={handleMenuClick}
+                />
             </Drawer>
 
-            {/* 메인 콘텐츠 - Outlet 사용 */}
             <Box
                 component="main"
                 sx={{

@@ -54,7 +54,7 @@ const ProfileMenu: React.FC<ProfileMenuProps> = ({
             <IconButton onClick={handleProfileClick} sx={{ p: 0.5 ,  fontSize: '1rem'}}  >
                 <span style={{ textDecoration: 'underline'}}>
                     {getDisplayName(userInfo.name)}
-                  </span>                {/*</Avatar>*/}
+                  </span>
             </IconButton>
 
             <Menu
