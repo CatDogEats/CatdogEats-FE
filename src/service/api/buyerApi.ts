@@ -76,7 +76,7 @@ export const buyerApi = {
       });
 
       const pageData = extractApiData(response.data);
-      return pageData.content; // ← 핵심: content 배열만 반환
+      return pageData.content; // ✅ 수정: content 배열만 반환
     } catch (error) {
       console.error("반려동물 정보 조회 실패:", error);
       throw handleApiError(error);

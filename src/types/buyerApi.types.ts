@@ -12,13 +12,14 @@ export interface APIResponse<T> {
 export interface PetResponse {
   id: string;
   name: string;
-  category: "dogs" | "cats";
+  petCategory: "DOG" | "CAT";
   breed: string;
-  age: string;
-  gender: "male" | "female";
-  hasAllergies: boolean;
-  healthCondition: string;
-  specialRequests: string;
+  age: number;
+  gender: "M" | "F";
+  isAllergy: boolean;
+  healthState: string;
+  requestion: string | null;
+  updatedAt: string;
 }
 
 // ===== 주소 관련 타입 =====

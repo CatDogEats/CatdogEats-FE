@@ -40,8 +40,19 @@ export default function PetModal({
     onClose();
   };
 
-  const formatBreed = (category: string) => {
-    return category.replace("_", " ").replace(/\b\w/g, (l) => l.toUpperCase());
+  const formatCategory = (category: string) => {
+    // ✅ 수정: formatBreed → formatCategory로 이름 변경
+    if (!category) return "";
+    if (category === "DOG") return "강아지";
+    if (category === "CAT") return "고양이";
+    return category;
+  };
+
+  const formatGender = (gender: string) => {
+    if (!gender) return "";
+    if (gender === "M") return "수컷";
+    if (gender === "F") return "암컷";
+    return gender;
   };
 
   return (
@@ -83,28 +94,41 @@ export default function PetModal({
                     </Avatar>
                   </ListItemAvatar>
                   <ListItemText
+                    // 이름
                     primary={
-                      <Typography variant="body1" sx={{ fontWeight: 500 }}>
+                      <Typography
+                        variant="body1"
+                        sx={{ fontWeight: 500 }}
+                        component="span"
+                      >
                         {pet.name}
                       </Typography>
                     }
+                    primaryTypographyProps={{ component: "span" }}
+                    // 상세 (카테고리, 품종, 나이, 성별, 알레르기)
                     secondary={
-                      <Box>
-                        <Typography variant="body2" color="text.secondary">
-                          {formatBreed(pet.category)} {pet.breed} • {pet.age}{" "}
-                          years • {pet.gender}
+                      <Box component="span">
+                        <Typography
+                          variant="body2"
+                          color="text.secondary"
+                          component="span"
+                        >
+                          {formatCategory(pet.category)} {pet.breed || ""} •{" "}
+                          {pet.age || ""}세 • {formatGender(pet.gender)}
                         </Typography>
                         {pet.hasAllergies && (
                           <Chip
-                            label="Has Allergies"
+                            component="span"
+                            label="알레르기 있음"
                             size="small"
                             color="warning"
                             variant="outlined"
-                            sx={{ mt: 0.5, fontSize: "0.75rem" }}
+                            sx={{ mt: 0.5, fontSize: "0.75rem", ml: 1 }}
                           />
                         )}
                       </Box>
                     }
+                    secondaryTypographyProps={{ component: "span" }}
                   />
                 </ListItemButton>
               </ListItem>

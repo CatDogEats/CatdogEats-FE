@@ -25,13 +25,13 @@ export const useBuyerOrderData = () => {
       return pets.map((pet) => ({
         id: pet.id,
         name: pet.name,
-        category: pet.category,
+        category: pet.petCategory,
         breed: pet.breed,
-        age: pet.age,
+        age: pet.age.toString(),
         gender: pet.gender,
-        hasAllergies: pet.hasAllergies,
-        healthCondition: pet.healthCondition,
-        specialRequests: pet.specialRequests,
+        hasAllergies: pet.isAllergy,
+        healthCondition: pet.healthState,
+        specialRequests: pet.requestion || "",
         avatar: "/placeholder.svg?height=40&width=40",
       }));
     } catch (err) {
