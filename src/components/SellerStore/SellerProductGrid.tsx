@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React from 'react';
 import {
     Box,
     Card,
@@ -22,37 +22,23 @@ interface SellerProductGridProps {
     products: SellerProduct[];
     onProductClick: (productId: string) => void;
     onToggleLike: (productId: string) => void;
+    currentPage: number;
+    totalPages: number;
+    onPageChange: (event: unknown, page: number) => void;
 }
-
-const ITEMS_PER_PAGE = 10;
 
 const SellerProductGrid: React.FC<SellerProductGridProps> = ({
                                                                  products,
                                                                  onProductClick,
                                                                  onToggleLike,
+                                                                 currentPage,
+                                                                 totalPages,
+                                                                 onPageChange,
                                                              }) => {
-    const [currentPage, setCurrentPage] = useState(1);
-
-    // 페이징 계산
-    const { totalPages, currentProducts } = useMemo(() => {
-        const totalPages = Math.ceil(products.length / ITEMS_PER_PAGE);
-        const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
-        const endIndex = startIndex + ITEMS_PER_PAGE;
-        const currentProducts = products.slice(startIndex, endIndex);
-
-        return { totalPages, currentProducts };
-    }, [products, currentPage]);
-
-    const handlePageChange = (_: unknown, page: number) => {
-        setCurrentPage(page);
-        // 페이지 변경 시 스크롤을 맨 위로 이동
-        // window.scrollTo({ top: 0, behavior: 'smooth' });
-    };
-
     return (
         <Box>
             <Grid container spacing={{ xs: 1.5, sm: 2 }}>
-                {currentProducts.map((product) => (
+                {products.map((product) => (
                     <Grid
                         key={product.id}
                         size={{ xs: 6, sm: 4, md: 3, lg: 2.4 }}
@@ -83,6 +69,7 @@ const SellerProductGrid: React.FC<SellerProductGridProps> = ({
                                         backgroundSize: 'cover',
                                         backgroundPosition: 'center',
                                         transition: 'transform 0.3s ease',
+                                        backgroundColor: 'grey.100', // 이미지 로딩 실패 시 기본 배경
                                         '&:hover': {
                                             transform: 'scale(1.05)',
                                         },
@@ -123,6 +110,23 @@ const SellerProductGrid: React.FC<SellerProductGridProps> = ({
                                             top: 8,
                                             left: 8,
                                             bgcolor: 'error.main',
+                                            color: 'white',
+                                            fontWeight: 600,
+                                            fontSize: '0.75rem',
+                                        }}
+                                    />
+                                )}
+
+                                {/* 할인율 표시 */}
+                                {product.discountPercentage && product.discountPercentage > 0 && (
+                                    <Chip
+                                        label={`${product.discountPercentage}%`}
+                                        size="small"
+                                        sx={{
+                                            position: 'absolute',
+                                            top: product.isOutOfStock ? 48 : 8,
+                                            left: 8,
+                                            bgcolor: '#e37d11',
                                             color: 'white',
                                             fontWeight: 600,
                                             fontSize: '0.75rem',
@@ -187,7 +191,7 @@ const SellerProductGrid: React.FC<SellerProductGridProps> = ({
                                     <Stack direction="row" alignItems="center" spacing={0.5}>
                                         <Star sx={{ color: '#ffc107', fontSize: 14 }} />
                                         <Typography variant="caption" color="text.secondary" sx={{ fontSize: '0.75rem' }}>
-                                            {product.rating}
+                                            {product.rating > 0 ? product.rating.toFixed(1) : '0.0'}
                                         </Typography>
                                         <Typography variant="caption" color="text.secondary" sx={{ fontSize: '0.75rem' }}>
                                             | 리뷰 {product.reviewCount}+
@@ -211,7 +215,7 @@ const SellerProductGrid: React.FC<SellerProductGridProps> = ({
                     <Pagination
                         count={totalPages}
                         page={currentPage}
-                        onChange={handlePageChange}
+                        onChange={onPageChange}
                         color="primary"
                         size="large"
                         showFirstButton
