@@ -7,6 +7,7 @@ export const SOCIAL_PROVIDERS = {
 export const ROLE = {
     BUYER: 'ROLE_BUYER',
     SELLER: 'ROLE_SELLER',
+    TEMP: 'ROLE_TEMP'
 } as const;
 
 export const ROUTES = {
@@ -75,5 +76,12 @@ export const ROLE_INFO = {
             '매출을 통해 자신의 역량을 향상시킬 수 있습니다'
         ],
         redirectPath: ROUTES.SELLER_DASHBOARD,
+    },
+    [ROLE.TEMP]: {
+        title: "임시 역할",
+        description: "",
+        icon: "",
+        features: [],
+        redirectPath: "/role-selection",
     },
 } as const;
