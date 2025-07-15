@@ -66,6 +66,8 @@ interface SellerOrderSummary {
     isShipped: boolean;
     shippedAt?: string;
   };
+  isDelayed?: boolean; // 📍 추가
+  delayReason?: string; // 📍 추가
 }
 
 interface SellerOrderListResponse {
@@ -135,7 +137,16 @@ import { ORDER_STATUS_INFO_MAP } from "@/types/sellerOrder.types";
 // ===== 데이터 변환 함수들 =====
 
 // API 상태를 프로토타입 상태로 변환
-const mapAPIStatusToPrototype = (apiStatus: APIOrderStatus): string => {
+const mapAPIStatusToPrototype = (
+  apiStatus: APIOrderStatus,
+  isDelayed?: boolean,
+  delayReason?: string
+): string => {
+  // 출고 지연 상태 처리
+  if (apiStatus === "PREPARING" && isDelayed && delayReason) {
+    return "delay_requested"; // 출고지연중
+  }
+
   const statusMap: Record<APIOrderStatus, string> = {
     PAYMENT_COMPLETED: "payment_completed",
     PREPARING: "preparing",
@@ -176,17 +187,22 @@ const convertAPIDataToPrototype = (
       orderSummary.orderItems.length > 1
         ? `${orderSummary.orderItems[0]?.productName || "상품"} 외 ${orderSummary.orderItems.length - 1}건`
         : orderSummary.orderItems[0]?.productName || "상품 정보 없음",
-    // ✅ 수량 계산: 총 구매 개수 (타입 완전 명시)
     quantity: orderSummary.orderItems.reduce(
       (total: number, item: SellerOrderItem) => total + item.quantity,
       0
     ),
     amount: orderSummary.orderSummary.totalAmount,
+    // 📍 수정: 지연 상태 고려한 상태 매핑
     shippingStatus: mapAPIStatusToPrototype(
-      orderSummary.orderStatus as APIOrderStatus
+      orderSummary.orderStatus as APIOrderStatus,
+      orderSummary.isDelayed,
+      orderSummary.delayReason
     ),
     shippingAddress: `${orderSummary.buyerName} / 연락처`,
-    delayReason: undefined,
+    // 📍 수정: 실제 지연 사유 매핑
+    delayReason: orderSummary.delayReason,
+    // 📍 추가: 지연 여부 필드
+    isDelayed: orderSummary.isDelayed || false,
     orderItems: orderSummary.orderItems.map((item: SellerOrderItem) => ({
       productName: item.productName,
       quantity: item.quantity,
@@ -545,6 +561,10 @@ const OrderShippingManagement: React.FC = () => {
       setAlertSeverity("success");
       setShowAlert(true);
       setStatusEditDialog(false);
+
+      // 📍 추가: 주문 목록 새로고침하여 최신 상태 반영
+      // 지연 정보가 포함된 최신 데이터를 가져오기 위함
+      window.location.reload(); // 또는 refetch() 함수 호출
 
       // 폼 초기화
       setSelectedOrder(null);
@@ -1362,6 +1382,40 @@ const OrderShippingManagement: React.FC = () => {
                       >
                         배송 정보
                       </Typography>
+
+                      {/* 📍 추가: 배송 상태 표시 */}
+                      <Typography variant="body2" sx={{ mb: 1 }}>
+                        배송 상태:{" "}
+                        <span
+                          style={{
+                            color:
+                              orderDetail.orderStatus === "PREPARING" &&
+                              orderDetail.isDelayed
+                                ? "#ff9800"
+                                : "#1976d2",
+                            fontWeight: 600,
+                          }}
+                        >
+                          {orderDetail.orderStatus === "PREPARING" &&
+                          orderDetail.isDelayed
+                            ? "출고지연중"
+                            : ORDER_STATUS_INFO_MAP[orderDetail.orderStatus]
+                                ?.label || orderDetail.orderStatus}
+                        </span>
+                      </Typography>
+
+                      {/* 📍 추가: 출고 지연 사유 표시 (지연중일 때만) */}
+                      {orderDetail.orderStatus === "PREPARING" &&
+                        orderDetail.isDelayed &&
+                        orderDetail.delayReason && (
+                          <Typography
+                            variant="body2"
+                            sx={{ mb: 1, color: "warning.main" }}
+                          >
+                            지연 사유: {orderDetail.delayReason}
+                          </Typography>
+                        )}
+
                       {orderDetail.shipmentInfo.courier && (
                         <Typography variant="body2" sx={{ mb: 1 }}>
                           택배사: {orderDetail.shipmentInfo.courier}

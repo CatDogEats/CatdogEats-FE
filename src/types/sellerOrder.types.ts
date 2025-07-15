@@ -63,6 +63,8 @@ export interface SellerOrderSummary {
   orderItems: SellerOrderItem[];
   orderSummary: OrderSummaryInfo;
   shipmentInfo: ShipmentBasicInfo;
+  isDelayed?: boolean;
+  delayReason?: string;
 }
 /**
  * 판매자용 주문 상품 정보 (백엔드 중첩 구조와 일치)
@@ -111,6 +113,8 @@ export interface SellerOrderDetailResponse {
   orderSummary: OrderSummary;
   shipmentInfo?: ShipmentInfo;
   statusManagement?: StatusManagement;
+  isDelayed?: boolean;
+  delayReason?: string;
 }
 
 /**
