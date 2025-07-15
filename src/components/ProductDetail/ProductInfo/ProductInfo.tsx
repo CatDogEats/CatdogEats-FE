@@ -22,11 +22,11 @@ const ProductInfo: React.FC<ProductInfoProps> = ({ product }) => {
             {/* 상품 정보 테이블 */}
             <ProductSpecTable product={product} />
 
+            {/* 추천 정보 */}
+            <ProductSuggestions product={product} />
+
             {/* 제조사 정보 */}
             <ProductMakerInfo product={product} />
-
-            {/* 추천 정보 */}
-            <ProductSuggestions />
 
             <Divider sx={{ borderColor: "grey.100" }} />
 

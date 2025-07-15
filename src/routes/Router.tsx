@@ -40,7 +40,7 @@ const router = createBrowserRouter([
 
             // 상품 상세 페이지
             {
-                path: 'product-detail',
+                path: 'products/:productNumber',
                 element: <ProductDetailPage />,
             },
 
