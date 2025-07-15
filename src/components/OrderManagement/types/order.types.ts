@@ -16,6 +16,7 @@ export interface Order {
   notes?: string;
   isDirect?: boolean;
   delayReason?: string; // 출고 지연 사유
+  isDelayed?: boolean; // 출고 지연 여부
 }
 
 export interface OrderSummary {
