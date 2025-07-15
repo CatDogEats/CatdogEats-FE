@@ -4,37 +4,31 @@ export interface UserInfo {
     email: string;
     profileImage?: string;
 }
+export interface SellerInfo {
+    id: string
+    name: string
+    email: string
+    shopName: string
+    shopDescription: string
+    joinDate: string
+}
 
-// // types/seller.types.ts
-//
-// export interface SellerInfo {
-//     id: string;
-//     name: string;
-//     email: string;
-//     shopName: string;
-//     joinDate: string;
-// }
-//
-// export interface Notification {
-//     id: string;
-//     title: string;
-//     message: string;
-//     timestamp: string;
-//     isRead: boolean;
-//     type: 'order' | 'delivery' | 'inquiry' | 'system';
-// }
-//
-// export interface SellerHeaderProps {
-//     sellerInfo: SellerInfo;
-//     notifications: Notification[];
-//     onNotificationClick: (notification: Notification) => void;
-//     onAnnouncementClick: () => void;
-//     onFaqClick: () => void;
-//     onInquiryClick: () => void;
-//     onProfileEdit?: () => void;
-//     onLogout: () => void;
-//     isLoggedIn?: boolean; // 로그인 상태 추가
-// }
+export interface Notification {
+    id: string
+    title: string
+    message: string
+    timestamp: string
+    isRead: boolean
+    type: "order" | "delivery" | "inquiry" | "system"
+}
+
+export interface MenuItem {
+    id: string
+    label: string
+    icon: string // Corresponds to Lucide icon name
+    path: string
+}
+
 
 export interface Notification {
     id: string;
@@ -46,12 +40,12 @@ export interface Notification {
 }
 
 // SellerInfo는 UserInfo를 확장
-export interface SellerInfo extends UserInfo {
-    id: string;
-    shopName: string;
-    shopDescription?: string;
-    joinDate: string;
-}
+// export interface SellerInfo extends UserInfo {
+//     id: string;
+//     shopName: string;
+//     shopDescription?: string;
+//     joinDate: string;
+// }
 
 // SellerHeader Props 타입
 export interface SellerHeaderProps {
