@@ -60,16 +60,23 @@ export const buyerApi = {
    */
   getPetInfo: async (): Promise<PetResponse[]> => {
     try {
-      const response = await axios.get<APIResponse<PetResponse[]>>(
-        `${API_BASE_URL}/v1/buyers/pet`,
-        {
-          headers: {
-            "Content-Type": "application/json",
-          },
-        }
-      );
+      const response = await axios.get<
+        APIResponse<{
+          content: PetResponse[];
+          page: number;
+          size: number;
+          totalElements: number;
+          totalPages: number;
+          last: boolean;
+        }>
+      >(`${API_BASE_URL}/v1/buyers/pet`, {
+        headers: {
+          "Content-Type": "application/json",
+        },
+      });
 
-      return extractApiData(response.data);
+      const pageData = extractApiData(response.data);
+      return pageData.content; // ← 핵심: content 배열만 반환
     } catch (error) {
       console.error("반려동물 정보 조회 실패:", error);
       throw handleApiError(error);

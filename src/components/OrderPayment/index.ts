@@ -37,6 +37,7 @@ export type {
   OrderCreateRequest,
   OrderCreateResponse,
 } from "./types/orderPayment.types";
+export type { AddressSearchResult } from "./components/AddressSearchDialog";
 
 // ==================== API Service exports ====================
 export { buyerApi, handleApiError } from "@/service/api/buyerApi";
