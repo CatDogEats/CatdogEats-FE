@@ -70,6 +70,7 @@ export interface MonthlySettlementStatusResponse {
     inProgressAmount: number;
 }
 
+// 🔧 수정: MonthlyReceiptResponse의 summary 타입 정정
 export interface MonthlyReceiptResponse {
     targetMonth: string;
     vendorName: string;
@@ -77,8 +78,10 @@ export interface MonthlyReceiptResponse {
     items: PageableResponse<SettlementItemResponse>;
     summary?: {
         totalCount: number;
-        totalAmount: number;
+        totalMonthlyAmount: number; // 🔧 totalAmount → totalMonthlyAmount로 수정
+        completedCount: number;
         completedAmount: number;
+        inProgressCount: number;
         inProgressAmount: number;
     };
 }

@@ -14,6 +14,8 @@ import {
 import SettlementTable from '@/components/SellerDashboard/settlement/SettlementTable';
 import SalesChart from '@/components/SellerDashboard/settlement/SalesChart';
 import SalesInsight from '@/components/SellerDashboard/settlement/SalesInsight';
+import MonthlySettlementStatus from '@/components/SellerDashboard/settlement/MonthlySettlementStatus'; // 수정된 버전
+import MonthlyReceiptManager from '@/components/SellerDashboard/settlement/MonthlyReceiptManager'; // 신규 추가
 
 // 타입 임포트
 import {
@@ -27,8 +29,6 @@ import {
 import { settlementApi, SettlementPeriodRequest } from '@/service/SettlementAPI';
 import {
     transformSettlementList,
-    downloadBlob,
-    generateCsvFileName,
     filterSettlementsByStatus,
     calculateFilteredPagination,
     recalculateFilteredSummary
@@ -155,27 +155,6 @@ const SettlementPage = () => {
             setLoading(false);
         }
     }, [settlementFilters.startDate, settlementFilters.endDate]);
-
-    /**
-     * CSV 다운로드 함수
-     */
-    const handleDownloadReport = useCallback(async () => {
-        try {
-            const currentMonth = new Date();
-            const targetMonth = `${currentMonth.getFullYear()}-${String(currentMonth.getMonth() + 1).padStart(2, '0')}`;
-
-            const blob = await settlementApi.downloadMonthlySettlementCsv(targetMonth);
-            const fileName = generateCsvFileName(targetMonth);
-            downloadBlob(blob, fileName);
-
-            setSnackbarMessage('정산내역 CSV 파일이 다운로드되었습니다.');
-            setSnackbarOpen(true);
-        } catch (error) {
-            console.error('CSV 다운로드 오류:', error);
-            setSnackbarMessage('CSV 다운로드 중 오류가 발생했습니다.');
-            setSnackbarOpen(true);
-        }
-    }, []);
 
     // ===== 초기 데이터 로딩 및 날짜 필터 변경 감지 =====
     useEffect(() => {
@@ -354,10 +333,15 @@ const SettlementPage = () => {
                     pageSize={pageSize}
                     onPageChange={handlePageChange}
                     loading={loading}
-                    onDownloadReport={handleDownloadReport}
                     summary={filteredData.summary}
                 />
             </Box>
+
+            {/* 이번달 정산 현황 (수정된 버전 - 단순화) */}
+            <MonthlySettlementStatus />
+
+            {/* 월별 영수증 조회 및 다운로드 (신규 추가) */}
+            <MonthlyReceiptManager />
 
             {/* 매출 분석 섹션 - 전체 너비 사용 (더미데이터 - 추후 API 연동 예정) */}
             <Box sx={{ mb: 6 }}>

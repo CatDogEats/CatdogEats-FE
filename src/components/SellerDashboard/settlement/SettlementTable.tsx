@@ -29,7 +29,6 @@ import { SettlementTableProps, SettlementFilters, SettlementItem } from './types
 // 컴포넌트 임포트
 import DateRangePicker from './DateRangePicker';
 import SettlementSummary from './SettlementSummary';
-import MonthlySettlementStatus from './MonthlySettlementStatus';
 
 interface SettlementTablePropsExtended extends SettlementTableProps {
     totalCount?: number;
@@ -38,7 +37,7 @@ interface SettlementTablePropsExtended extends SettlementTableProps {
     onPageChange?: (page: number) => void;
     onPageSizeChange?: (pageSize: number) => void;
     loading?: boolean;
-    onDownloadReport?: () => void;
+    // onDownloadReport 제거됨
     summary?: {
         totalCount: number;
         totalSettlementAmount: number;
@@ -57,7 +56,7 @@ const SettlementTable = ({
                              pageSize = 10,
                              onPageChange,
                              loading = false,
-                             onDownloadReport,
+                             // onDownloadReport 제거됨
                              summary
                          }: SettlementTablePropsExtended) => {
     const theme = useTheme();
@@ -535,13 +534,6 @@ const SettlementTable = ({
                         </Typography>
                     </Box>
                 </Box>
-            )}
-
-            {/* 이번달 정산 현황 */}
-            {onDownloadReport && (
-                <MonthlySettlementStatus
-                    onDownloadReport={onDownloadReport}
-                />
             )}
 
             {/* 정산 분석 요약 */}

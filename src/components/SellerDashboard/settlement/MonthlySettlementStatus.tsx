@@ -1,11 +1,12 @@
 // src/components/SellerDashboard/settlement/components/MonthlySettlementStatus.tsx
-import { Box, Typography, Button, useTheme, CircularProgress, Alert } from '@mui/material';
+import { Box, Typography, useTheme, CircularProgress, Alert, Card, CardContent, Grid } from '@mui/material';
 import { useState, useEffect, useCallback } from 'react';
 import { settlementApi } from '@/service/SettlementAPI';
 import { transformMonthlyStatus } from '@/service/SettlementTransformer';
 
+// Props 인터페이스에서 onDownloadReport 제거
 interface MonthlySettlementStatusProps {
-    onDownloadReport: () => void;
+    // onDownloadReport 제거됨
 }
 
 interface MonthlyStatusData {
@@ -18,7 +19,7 @@ interface MonthlyStatusData {
     completionRate: number;
 }
 
-const MonthlySettlementStatus = ({ onDownloadReport }: MonthlySettlementStatusProps) => {
+const MonthlySettlementStatus = ({}: MonthlySettlementStatusProps) => {
     const theme = useTheme();
 
     // 상태 관리
@@ -57,7 +58,7 @@ const MonthlySettlementStatus = ({ onDownloadReport }: MonthlySettlementStatusPr
                 display: 'flex',
                 justifyContent: 'center',
                 alignItems: 'center',
-                minHeight: '200px'
+                minHeight: '120px'
             }}>
                 <Box sx={{ textAlign: 'center' }}>
                     <CircularProgress size={40} sx={{ mb: 2 }} />
@@ -76,13 +77,6 @@ const MonthlySettlementStatus = ({ onDownloadReport }: MonthlySettlementStatusPr
                 <Alert severity="error" sx={{ mb: 2 }}>
                     {error}
                 </Alert>
-                <Button
-                    variant="outlined"
-                    onClick={fetchMonthlyStatus}
-                    sx={{ mt: 1 }}
-                >
-                    다시 시도
-                </Button>
             </Box>
         );
     }
@@ -100,256 +94,186 @@ const MonthlySettlementStatus = ({ onDownloadReport }: MonthlySettlementStatusPr
 
     const {
         totalCount,
-        totalMonthlyAmount,
-        completedCount,
-        completedAmount,
-        inProgressCount,
-        inProgressAmount,
-        completionRate
+        totalMonthlyAmount
     } = monthlyData;
-
-    // 정산 확정 금액 (완료 + 처리중)
-    const confirmedAmount = completedAmount + inProgressAmount;
-
-    // 각 상태별 건수 계산
-    const statusCounts = {
-        confirmed: completedCount + inProgressCount,
-        completed: completedCount,
-        processing: inProgressCount
-    };
 
     return (
         <Box sx={{ mb: 3 }}>
-            <Box sx={{
-                backgroundColor: 'rgba(232, 152, 48, 0.08)',
-                p: 3,
-                borderRadius: 2,
-                border: `1px solid rgba(232, 152, 48, 0.2)`,
-                mb: 2
-            }}>
-                <Typography
-                    variant="h6"
-                    sx={{
-                        fontWeight: 700,
-                        color: theme.palette.text.primary,
-                        mb: 2,
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: 1
-                    }}
-                >
-                    <span className="material-icons" style={{ fontSize: '20px', color: theme.palette.primary.main }}>
-                        calendar_month
-                    </span>
-                    이번달 정산 현황 ({new Date().getMonth() + 1}월)
-                </Typography>
-
-                <Box sx={{
-                    display: 'flex',
-                    justifyContent: 'space-between',
-                    alignItems: 'center',
-                    flexWrap: 'wrap',
-                    gap: 2
-                }}>
-                    <Box sx={{ display: 'flex', gap: 4, flexWrap: 'wrap' }}>
-                        {/* 이번달 총 정산금액 */}
-                        <Box>
+            <Grid container spacing={3}>
+                {/* 이번달 정산 현황 카드 */}
+                <Grid size={{ xs: 12, md: 6 }}>
+                    <Card sx={{
+                        borderRadius: 3,
+                        border: `1px solid rgba(232, 152, 48, 0.2)`,
+                        background: 'linear-gradient(135deg, rgba(232, 152, 48, 0.05) 0%, rgba(232, 152, 48, 0.1) 100%)',
+                        transition: 'all 0.3s ease',
+                        height: '100%',
+                        '&:hover': {
+                            transform: 'translateY(-2px)',
+                            boxShadow: '0 4px 12px rgba(232, 152, 48, 0.2)'
+                        }
+                    }}>
+                        <CardContent sx={{ p: 3 }}>
                             <Typography
-                                variant="body2"
-                                sx={{
-                                    color: theme.palette.text.secondary,
-                                    fontSize: '0.875rem'
-                                }}
-                            >
-                                이번달 총 정산금액
-                            </Typography>
-                            <Typography
-                                variant="h5"
+                                variant="h6"
                                 sx={{
                                     fontWeight: 700,
-                                    color: theme.palette.primary.main
-                                }}
-                            >
-                                ₩{totalMonthlyAmount.toLocaleString()}
-                            </Typography>
-                            <Typography
-                                variant="caption"
-                                sx={{
-                                    color: theme.palette.text.secondary,
-                                    fontSize: '0.75rem'
-                                }}
-                            >
-                                총 {totalCount}건
-                            </Typography>
-                        </Box>
-
-                        {/* 정산 확정 금액 */}
-                        <Box>
-                            <Typography
-                                variant="body2"
-                                sx={{
-                                    color: theme.palette.text.secondary,
-                                    fontSize: '0.875rem',
+                                    color: theme.palette.text.primary,
+                                    mb: 2,
                                     display: 'flex',
                                     alignItems: 'center',
-                                    gap: 0.5
+                                    gap: 1,
+                                    fontSize: '1.125rem'
                                 }}
                             >
-                                <span className="material-icons" style={{ fontSize: '14px', color: '#48bb78' }}>
-                                    verified
+                                <span className="material-icons" style={{ fontSize: '20px', color: theme.palette.primary.main }}>
+                                    calendar_month
                                 </span>
-                                정산 확정 금액
+                                이번달 정산 현황 ({new Date().getMonth() + 1}월)
                             </Typography>
+
+                            <Box sx={{ textAlign: 'center' }}>
+                                <Typography
+                                    variant="body2"
+                                    sx={{
+                                        color: theme.palette.text.secondary,
+                                        fontSize: '0.875rem',
+                                        mb: 1
+                                    }}
+                                >
+                                    이번달 총 정산금액
+                                </Typography>
+                                <Typography
+                                    variant="h4"
+                                    sx={{
+                                        fontWeight: 700,
+                                        color: theme.palette.primary.main,
+                                        mb: 0.5,
+                                        fontSize: { xs: '1.75rem', sm: '2rem' }
+                                    }}
+                                >
+                                    ₩{totalMonthlyAmount.toLocaleString()}
+                                </Typography>
+                                <Typography
+                                    variant="body2"
+                                    sx={{
+                                        color: theme.palette.text.secondary,
+                                        fontSize: '0.875rem'
+                                    }}
+                                >
+                                    총 {totalCount}건
+                                </Typography>
+                            </Box>
+                        </CardContent>
+                    </Card>
+                </Grid>
+
+                {/* 정산 프로세스 안내 카드 */}
+                <Grid size={{ xs: 12, md: 6 }}>
+                    <Card sx={{
+                        borderRadius: 3,
+                        border: `1px solid ${theme.palette.grey[200]}`,
+                        background: 'linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%)',
+                        transition: 'all 0.3s ease',
+                        height: '100%',
+                        '&:hover': {
+                            transform: 'translateY(-2px)',
+                            boxShadow: '0 4px 12px rgba(0,0,0,0.1)'
+                        }
+                    }}>
+                        <CardContent sx={{ p: 3 }}>
                             <Typography
-                                variant="h5"
+                                variant="h6"
                                 sx={{
                                     fontWeight: 700,
-                                    color: '#48bb78'
+                                    color: theme.palette.text.primary,
+                                    mb: 2,
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: 1,
+                                    fontSize: '1.125rem'
                                 }}
                             >
-                                ₩{confirmedAmount.toLocaleString()}
+                                <span className="material-icons" style={{ fontSize: '20px', color: theme.palette.primary.main }}>
+                                    info
+                                </span>
+                                정산 프로세스 안내
                             </Typography>
-                            <Typography
-                                variant="caption"
-                                sx={{
-                                    color: '#48bb78',
-                                    fontSize: '0.75rem',
-                                    fontWeight: 500
-                                }}
-                            >
-                                {statusCounts.confirmed}건 (완료 {statusCounts.completed}건 + 처리중 {statusCounts.processing}건)
-                            </Typography>
-                        </Box>
-                    </Box>
 
-                    {/* 이번달 정산내역 영수증 다운로드 버튼 */}
-                    <Button
-                        variant="contained"
-                        size="large"
-                        onClick={onDownloadReport}
-                        sx={{
-                            borderRadius: 6,
-                            textTransform: 'none',
-                            fontWeight: 600,
-                            px: 4,
-                            py: 1.5,
-                            backgroundColor: theme.palette.primary.main,
-                            '&:hover': {
-                                backgroundColor: theme.palette.primary.dark,
-                                transform: 'translateY(-2px)'
-                            }
-                        }}
-                        startIcon={
-                            <span className="material-icons" style={{ fontSize: '18px' }}>
-                                receipt
-                            </span>
-                        }
-                    >
-                        이번달 정산내역 영수증
-                    </Button>
-                </Box>
+                            <Box sx={{ space: 1.5 }}>
+                                <Box sx={{
+                                    display: 'flex',
+                                    alignItems: 'flex-start',
+                                    gap: 1,
+                                    mb: 1.5
+                                }}>
+                                    <Box sx={{
+                                        width: 6,
+                                        height: 6,
+                                        borderRadius: '50%',
+                                        backgroundColor: '#ed8936',
+                                        mt: 0.75,
+                                        flexShrink: 0
+                                    }} />
+                                    <Typography
+                                        variant="body2"
+                                        sx={{
+                                            color: theme.palette.text.secondary,
+                                            fontSize: '0.875rem',
+                                            lineHeight: 1.5
+                                        }}
+                                    >
+                                        <strong style={{ color: theme.palette.text.primary }}>처리중:</strong> 배송완료 후 7일 경과 시 정산 확정
+                                    </Typography>
+                                </Box>
 
-                {/* 정산 확정률 표시 */}
-                <Box sx={{
-                    mt: 2,
-                    pt: 2,
-                    borderTop: `1px solid rgba(232, 152, 48, 0.2)`,
-                    display: 'flex',
-                    justifyContent: 'space-between',
-                    alignItems: 'center',
-                    flexWrap: 'wrap',
-                    gap: 2
-                }}>
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-                        <Typography
-                            variant="body2"
-                            sx={{
-                                color: theme.palette.text.secondary,
-                                fontSize: '0.875rem'
-                            }}
-                        >
-                            정산 확정률:
-                        </Typography>
-                        <Typography
-                            variant="body1"
-                            sx={{
-                                fontWeight: 600,
-                                color: theme.palette.primary.main
-                            }}
-                        >
-                            {completionRate.toFixed(1)}%
-                        </Typography>
-                    </Box>
+                                <Box sx={{
+                                    display: 'flex',
+                                    alignItems: 'flex-start',
+                                    gap: 1,
+                                    mb: 1.5
+                                }}>
+                                    <Box sx={{
+                                        width: 6,
+                                        height: 6,
+                                        borderRadius: '50%',
+                                        backgroundColor: '#48bb78',
+                                        mt: 0.75,
+                                        flexShrink: 0
+                                    }} />
+                                    <Typography
+                                        variant="body2"
+                                        sx={{
+                                            color: theme.palette.text.secondary,
+                                            fontSize: '0.875rem',
+                                            lineHeight: 1.5
+                                        }}
+                                    >
+                                        <strong style={{ color: theme.palette.text.primary }}>정산완료:</strong> 매월 1일 자동 정산 처리
+                                    </Typography>
+                                </Box>
 
-                    {/* 프로그레스 바 */}
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, minWidth: 200 }}>
-                        <Box sx={{
-                            flex: 1,
-                            height: 8,
-                            backgroundColor: theme.palette.grey[200],
-                            borderRadius: 4,
-                            overflow: 'hidden'
-                        }}>
-                            <Box
-                                sx={{
-                                    width: `${completionRate}%`,
-                                    height: '100%',
-                                    backgroundColor: '#48bb78',
-                                    borderRadius: 4,
-                                    transition: 'width 0.3s ease'
-                                }}
-                            />
-                        </Box>
-                        <Typography
-                            variant="caption"
-                            sx={{
-                                color: theme.palette.text.secondary,
-                                fontSize: '0.75rem',
-                                minWidth: 'fit-content'
-                            }}
-                        >
-                            {statusCounts.confirmed}/{totalCount}건
-                        </Typography>
-                    </Box>
-                </Box>
-            </Box>
-
-            {/* 정산 프로세스 안내 */}
-            <Box sx={{
-                p: 2,
-                backgroundColor: theme.palette.grey[50],
-                borderRadius: 2,
-                border: `1px solid ${theme.palette.grey[200]}`
-            }}>
-                <Typography
-                    variant="body2"
-                    sx={{
-                        fontWeight: 600,
-                        color: theme.palette.text.primary,
-                        mb: 1,
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: 1
-                    }}
-                >
-                    <span className="material-icons" style={{ fontSize: '16px', color: theme.palette.primary.main }}>
-                        info
-                    </span>
-                    정산 프로세스 안내
-                </Typography>
-                <Typography
-                    variant="body2"
-                    sx={{
-                        color: theme.palette.text.secondary,
-                        fontSize: '0.875rem',
-                        lineHeight: 1.5
-                    }}
-                >
-                    • <strong>처리중:</strong> 주문 후 7일 경과 - 정산 확정됨<br/>
-                    • <strong>정산완료:</strong> 매월 1일 자동 정산 처리됨<br/>
-                    • 현재 시스템에서는 배송완료 후 7일이 지난 주문만 정산 대상입니다.
-                </Typography>
-            </Box>
+                                <Box sx={{
+                                    mt: 2,
+                                    pt: 2,
+                                    borderTop: `1px solid ${theme.palette.grey[200]}`
+                                }}>
+                                    <Typography
+                                        variant="caption"
+                                        sx={{
+                                            color: theme.palette.text.secondary,
+                                            fontSize: '0.75rem',
+                                            fontStyle: 'italic'
+                                        }}
+                                    >
+                                        💡 배송완료 후 7일이 지난 주문만 정산 대상입니다.
+                                    </Typography>
+                                </Box>
+                            </Box>
+                        </CardContent>
+                    </Card>
+                </Grid>
+            </Grid>
         </Box>
     );
 };
