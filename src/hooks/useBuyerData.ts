@@ -15,6 +15,29 @@ export const useBuyerOrderData = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  // ✅ 추가: 백엔드 데이터를 프론트엔드 형식으로 변환하는 헬퍼 함수들
+  const mapPetCategoryToFrontend = (backendCategory: string): string => {
+    switch (backendCategory) {
+      case "DOG":
+        return "dogs";
+      case "CAT":
+        return "cats";
+      default:
+        return "";
+    }
+  };
+
+  const mapPetGenderToFrontend = (backendGender: string): string => {
+    switch (backendGender) {
+      case "M":
+        return "male";
+      case "F":
+        return "female";
+      default:
+        return "";
+    }
+  };
+
   /**
    * 1) 저장된 반려동물 불러오기 (모달 버튼 클릭 시)
    */
@@ -25,10 +48,10 @@ export const useBuyerOrderData = () => {
       return pets.map((pet) => ({
         id: pet.id,
         name: pet.name,
-        category: pet.petCategory,
+        category: mapPetCategoryToFrontend(pet.petCategory),
         breed: pet.breed,
         age: pet.age.toString(),
-        gender: pet.gender,
+        gender: mapPetGenderToFrontend(pet.gender),
         hasAllergies: pet.isAllergy,
         healthCondition: pet.healthState,
         specialRequests: pet.requestion || "",
