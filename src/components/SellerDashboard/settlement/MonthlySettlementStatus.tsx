@@ -266,7 +266,7 @@ const MonthlySettlementStatus = ({}: MonthlySettlementStatusProps) => {
                                             fontStyle: 'italic'
                                         }}
                                     >
-                                        💡 배송완료 후 7일이 지난 주문만 정산 대상입니다.
+                                        배송완료 후 7일이 지난 주문만 정산 대상입니다.
                                     </Typography>
                                 </Box>
                             </Box>

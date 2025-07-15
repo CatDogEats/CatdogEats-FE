@@ -5,11 +5,11 @@ export interface SettlementItem {
     orderAmount: number;
     commission: number;
     settlementAmount: number;
-    status: '처리중' | '정산완료'; // '대기중' 제거
+    status: '처리중' | '정산완료'; 
     orderDate: string;
-    deliveryDate: string; // null 가능성 제거, 항상 문자열로 처리
-    settlementDate: string; // settlementCreatedAt을 settlementDate로 명명
-    // 선택적 필드들 (기존 호환성 유지)
+    deliveryDate: string; 
+    settlementDate: string; 
+    // 선택적 필드들
     paymentDate?: string;
     confirmDate?: string;
 }
@@ -22,15 +22,22 @@ export interface SettlementFilters {
     endDate?: string;
 }
 
+//  MonthlyChartData 타입과 SalesData 타입 통합
 export interface SalesData {
     month: string;
     amount: number;
+    originalAmount?: number; // 실제 금액 (툴팁용)
+    orderCount?: number; // 주문수
+    totalQuantity?: number; // 판매수량
 }
 
-// 새로 추가된 타입들
+// MonthlyChartData 타입을 SalesData로 통합 
+export type MonthlyChartData = SalesData;
+
+// 새로 된 타입들
 export interface YearlyMonthData {
     year: number;
-    monthlyData: { month: string; amount: number; }[];
+    monthlyData: SalesData[]; //  MonthlyChartData 대신 SalesData 사용
 }
 
 export interface ProductSalesData {
@@ -40,6 +47,7 @@ export interface ProductSalesData {
     color: string;
     totalSales?: number;
     salesCount: number;
+    productId?: string; //  : 상품 ID
 }
 
 // Props 타입들
@@ -70,7 +78,15 @@ export interface EnhancedSalesChartProps extends SalesChartProps {
     yearlyData?: YearlyMonthData[];
     productData?: ProductSalesData[];
     selectedYear?: number;
+    selectedMonth?: number;
+    viewMode?: 'monthly' | 'yearly';
     onYearChange?: (year: number) => void;
+    onMonthChange?: (month: number) => void;
+    onViewModeChange?: (mode: 'monthly' | 'yearly') => void;
+    loading?: boolean; //  : 로딩 상태
+    yearTotalAmount?: number; //  : 년도 총 매출
+    yearTotalQuantity?: number; //  : 년도 총 판매수량
+    availableYears?: number[]; //  : 사용 가능한 년도 목록
 }
 
 // 날짜 범위 피커 컴포넌트 Props

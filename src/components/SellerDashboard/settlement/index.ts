@@ -7,10 +7,9 @@ export { default as MonthlyChart } from './MonthlyChart';
 export { default as ProductChart } from './ProductChart';
 export { default as YearSelector } from './YearSelector';
 export { default as SettlementSummary } from './SettlementSummary';
-export { default as SalesInsight } from './SalesInsight';
 export { default as SalesChart } from './SalesChart';
 export { default as SettlementTable } from './SettlementTable';
-// 수정된 컴포넌트
+
 export { default as MonthlySettlementStatus } from './MonthlySettlementStatus';
 export { default as MonthlyReceiptModal } from './MonthlyReceiptModal';
 export { default as MonthlyReceiptManager } from './MonthlyReceiptManager';
