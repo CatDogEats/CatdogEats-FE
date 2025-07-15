@@ -1,7 +1,7 @@
+// src/pages/OrderPaymentPage/OrderPaymentPage.tsx
 "use client";
 
 import type React from "react";
-import { useState } from "react";
 import {
   Container,
   Breadcrumbs,
@@ -9,158 +9,31 @@ import {
   Typography,
   Box,
   Chip,
-  Button,
-  FormControlLabel,
-  Checkbox,
 } from "@mui/material";
-import {
-  Schedule,
-  ShoppingCartCheckout,
-  NavigateNext,
-} from "@mui/icons-material";
+import { Schedule, NavigateNext } from "@mui/icons-material";
 import { ThemeProvider } from "@mui/material/styles";
 
-// Component imports
-// import PaymentHeader from "@/components/OrderPayment/PaymentHeader"
-import OrderSummary from "@/components/OrderPayment/components/OrderSummary";
-import PetInformationForm from "@/components/OrderPayment/components/PetInformationForm";
-import ShippingInformationForm from "@/components/OrderPayment/ShippingInformationForm";
-import OrderTotal from "@/components/OrderPayment/components/OrderTotal";
-import PetModal from "@/components/OrderPayment/components/PetModal";
-import AddressModal from "@/components/OrderPayment/components/AddressModal";
-import type { Coupon } from "@/components/OrderPayment";
+// 메인 컴포넌트 import
+import { OrderPaymentManagement } from "@/components/OrderPayment";
 
-// Data imports
-import {
-  savedPets,
-  savedAddresses,
-  type SavedPet,
-  type SavedAddress,
-  orderItems,
-} from "@/data/mock-data";
+// 테마 import
 import { theme } from "@/theme";
-import type { PetInfo, ShippingInfo } from "@/components/OrderPayment";
-import PaymentMethodSelection from "@/components/OrderPayment/components/PaymentMethodSelection";
 
-export default function PaymentPage() {
-  const [petInfo, setPetInfo] = useState<PetInfo>({
-    name: "",
-    category: "",
-    breed: "",
-    age: "",
-    gender: "",
-    hasAllergies: false,
-    healthCondition: "",
-    specialRequests: "",
-  });
-
-  const [shippingInfo, setShippingInfo] = useState<ShippingInfo>({
-    fullName: "",
-    address: "",
-    city: "",
-    postalCode: "",
-    phoneNumber: "",
-  });
-
-  const [termsAccepted, setTermsAccepted] = useState(false);
-  const [petModalOpen, setPetModalOpen] = useState(false);
-  const [addressModalOpen, setAddressModalOpen] = useState(false);
-
-  const subtotal = orderItems.reduce((sum, item) => sum + item.price, 0);
-  const shipping = 5.0;
-  const total = subtotal + shipping;
-
-  const handlePetInfoChange = (
-    field: keyof PetInfo,
-    value: string | boolean
-  ) => {
-    setPetInfo((prev) => ({ ...prev, [field]: value }));
-  };
-
-  const handleShippingInfoChange = (
-    field: keyof ShippingInfo,
-    value: string
-  ) => {
-    setShippingInfo((prev) => ({ ...prev, [field]: value }));
-  };
-
-  const handleLoadPet = (pet: SavedPet) => {
-    setPetInfo({
-      name: pet.name,
-      category: pet.category,
-      breed: pet.breed,
-      age: pet.age,
-      gender: pet.gender,
-      hasAllergies: pet.hasAllergies,
-      healthCondition: pet.healthCondition,
-      specialRequests: pet.specialRequests,
-    });
-  };
-
-  const handleLoadAddress = (address: SavedAddress) => {
-    setShippingInfo({
-      fullName: address.fullName,
-      address: address.address,
-      city: address.city,
-      postalCode: address.postalCode,
-      phoneNumber: address.phoneNumber,
-    });
-  };
-
-  const [selectedCoupon, setSelectedCoupon] = useState<string>("");
-
-  const [availableCoupons] = useState<Coupon[]>([
-    {
-      id: "WELCOME15",
-      name: "신규 회원 15% 할인",
-      type: "percentage",
-      value: 15,
-      minAmount: 20,
-      description: "20달러 이상 구매 시 15% 할인",
-    },
-    {
-      id: "SAVE5",
-      name: "5달러 즉시 할인",
-      type: "fixed",
-      value: 5,
-      minAmount: 30,
-      description: "30달러 이상 구매 시 5달러 할인",
-    },
-    {
-      id: "FIRSTTIME20",
-      name: "첫 구매 20% 할인",
-      type: "percentage",
-      value: 20,
-      minAmount: 25,
-      description: "25달러 이상 첫 구매 시 20% 할인",
-    },
-  ]);
-
-  // 할인 계산
-  const getSelectedCoupon = (): Coupon | undefined =>
-    availableCoupons.find((coupon) => coupon.id === selectedCoupon);
-
-  const calculateDiscount = () => {
-    const coupon = getSelectedCoupon();
-    if (!coupon) return 0;
-
-    if (subtotal >= coupon.minAmount) {
-      if (coupon.type === "percentage") {
-        return subtotal * (coupon.value / 100);
-      } else if (coupon.type === "fixed") {
-        return coupon.value;
-      }
-    }
-
-    return 0;
-  };
-
-  const isCouponApplicable = (coupon: Coupon) => subtotal >= coupon.minAmount;
-  const handleSubmit = (event: React.FormEvent) => {
-    event.preventDefault();
-    console.log("Order submitted:", { petInfo, shippingInfo });
-  };
-
+/**
+ * 주문/결제 페이지 - 단순한 컨테이너
+ *
+ * 주요 역할:
+ * - 페이지 레이아웃 제공 (Container, Breadcrumbs, Header)
+ * - 테마 제공자 역할
+ * - OrderPaymentManagement 컴포넌트에 모든 비즈니스 로직 위임
+ *
+ * 비즈니스 로직은 OrderPaymentManagement에서 처리:
+ * - 상태 관리 (petInfo, shippingInfo, coupons 등)
+ * - API 호출 (반려동물, 주소, 쿠폰, 주문 생성)
+ * - 이벤트 핸들러 (폼 변경, 모달 관리 등)
+ * - 주문 생성 및 결제 플로우
+ */
+const OrderPaymentPage: React.FC = () => {
   return (
     <ThemeProvider theme={theme}>
       <Box
@@ -212,105 +85,12 @@ export default function PaymentPage() {
             />
           </Box>
 
-          <form onSubmit={handleSubmit}>
-            <OrderSummary orderItems={orderItems} />
-
-            <PetInformationForm
-              petInfo={petInfo}
-              onPetInfoChange={handlePetInfoChange}
-              onLoadSavedPet={() => setPetModalOpen(true)}
-            />
-
-            <ShippingInformationForm
-              shippingInfo={shippingInfo}
-              onShippingInfoChange={handleShippingInfoChange}
-              onLoadSavedAddress={() => setAddressModalOpen(true)}
-            />
-            <PaymentMethodSelection
-              availableCoupons={availableCoupons}
-              selectedCoupon={selectedCoupon}
-              onCouponSelect={setSelectedCoupon}
-              isCouponApplicable={isCouponApplicable}
-              discountAmount={calculateDiscount()}
-            />
-
-            <OrderTotal
-              subtotal={subtotal}
-              shipping={shipping}
-              discount={calculateDiscount()}
-              total={total - calculateDiscount()}
-            />
-
-            {/* Terms and Submit */}
-            <Box style={{ paddingLeft: 16, paddingRight: 16, marginTop: 32 }}>
-              <Box style={{ paddingTop: 24, paddingBottom: 24 }}>
-                <FormControlLabel
-                  control={
-                    <Checkbox
-                      checked={termsAccepted}
-                      onChange={(e) => setTermsAccepted(e.target.checked)}
-                      style={{
-                        color: "#e7ddd0",
-                        alignSelf: "flex-start",
-                        marginTop: 4,
-                      }}
-                    />
-                  }
-                  label={
-                    <Typography
-                      style={{
-                        fontSize: "0.875rem",
-                        lineHeight: 1.6,
-                        marginLeft: 8,
-                      }}
-                    >
-                      저는 모든 정보가 정확함을 확인하였으며, 주문 세부사항을
-                      검토하였습니다. 주문제작 간식들은 맞춤 제작되므로 판매자의
-                      확인이 필요할 수 있음을 이해합니다.
-                    </Typography>
-                  }
-                  style={{ alignItems: "flex-start", margin: 0 }}
-                />
-              </Box>
-
-              <Button
-                type="submit"
-                variant="contained"
-                size="large"
-                fullWidth
-                disabled={!termsAccepted}
-                startIcon={<ShoppingCartCheckout />}
-                style={{
-                  paddingTop: 20,
-                  paddingBottom: 20,
-                  fontSize: "1.125rem",
-                  fontWeight: 700,
-                  borderRadius: 8,
-                  boxShadow: "0px 4px 12px rgba(0, 0, 0, 0.1)",
-                  textTransform: "none",
-                }}
-              >
-                주문 및 결제
-              </Button>
-            </Box>
-          </form>
+          {/* 메인 컴포넌트 - 모든 비즈니스 로직은 여기서 처리 */}
+          <OrderPaymentManagement />
         </Container>
-
-        {/* Modals */}
-        <PetModal
-          open={petModalOpen}
-          onClose={() => setPetModalOpen(false)}
-          onSelectPet={handleLoadPet}
-          savedPets={savedPets}
-        />
-
-        <AddressModal
-          open={addressModalOpen}
-          onClose={() => setAddressModalOpen(false)}
-          onSelectAddress={handleLoadAddress}
-          savedAddresses={savedAddresses}
-        />
       </Box>
     </ThemeProvider>
   );
-}
+};
+
+export default OrderPaymentPage;
