@@ -1,31 +1,30 @@
 // src/components/ProductDetail/ProductReviews/ProductReviews.tsx
 
-import React, { useState, useMemo } from "react";
 import { Box, Typography, Grid } from "@mui/material";
 import { Review, ReviewStats } from "../review";
 import ReviewStatsOverview from "./ReviewStatsOverview";
 import ReviewSummaryAI from "./ReviewSummaryAI";
 import ReviewList from "./ReviewList";
 import ReviewPagination from "./ReviewPagination";
+import { ReviewSummary } from "@/service/review/ReviewSummaryAPI";
 
 interface ProductReviewsProps {
     reviews: Review[];
     stats: ReviewStats;
+    currentPage: number;
+    totalPages: number;
+    onPageChange: (page: number) => void;
+    reviewSummary: ReviewSummary | null;
 }
 
-const ProductReviews: React.FC<ProductReviewsProps> = ({ reviews, stats }) => {
-    const [currentPage, setCurrentPage] = useState(1);
-    const reviewsPerPage = 10;
+const reviewsPerPage = 10;
 
-
-    // 페이지네이션 계산
-    const totalPages = Math.ceil(reviews.length / reviewsPerPage);
-    const currentReviews = useMemo(() => {
-        const startIndex = (currentPage - 1) * reviewsPerPage;
-        const endIndex = startIndex + reviewsPerPage;
-        return reviews.slice(startIndex, endIndex);
-    }, [reviews, currentPage, reviewsPerPage]);
-
+const ProductReviews: React.FC<ProductReviewsProps> = ({ reviews,
+                                                           stats,
+                                                           currentPage,
+                                                           totalPages,
+                                                           onPageChange,
+                                                           reviewSummary,}) => {
     // 데이터 안전성 체크 - useMemo 아래로 이동
     if (!stats || !stats.ratingDistribution) {
         return (
@@ -35,14 +34,9 @@ const ProductReviews: React.FC<ProductReviewsProps> = ({ reviews, stats }) => {
         );
     }
 
-    // 🔥 event 매개변수를 _로 변경하여 사용하지 않음을 명시
-    const handlePageChange = (_: React.ChangeEvent<unknown>, page: number) => {
-        setCurrentPage(page);
-        const reviewSection = document.getElementById("review-section");
-        if (reviewSection) {
-            reviewSection.scrollIntoView({ behavior: "smooth", block: "start" });
-        }
-    };
+    const startIdx = (currentPage - 1) * reviewsPerPage;
+    const endIdx = startIdx + reviewsPerPage;
+    const currentReviews = reviews.slice(startIdx, endIdx);
 
     return (
         <Box sx={{ mt: 6, py: 4 }}>
@@ -84,8 +78,7 @@ const ProductReviews: React.FC<ProductReviewsProps> = ({ reviews, stats }) => {
                         sx={{ color: "text.secondary" }}
                     >
                         총 {stats.totalReviews}개 리뷰 중{" "}
-                        {(currentPage - 1) * reviewsPerPage + 1}-
-                        {Math.min(currentPage * reviewsPerPage, reviews.length)}개 표시
+                        {startIdx + 1}-{Math.min(endIdx, reviews.length)}개 표시
                     </Typography>
                     <Typography
                         variant="body2"
@@ -96,7 +89,10 @@ const ProductReviews: React.FC<ProductReviewsProps> = ({ reviews, stats }) => {
                 </Box>
 
                 {/* AI 리뷰 요약 */}
-                <ReviewSummaryAI reviews={reviews} totalReviews={stats.totalReviews} />
+                <ReviewSummaryAI
+                    reviewSummary={reviewSummary}
+                    totalReviews={stats.totalReviews}
+                />
 
                 {/* 리뷰 목록 */}
                 <ReviewList reviews={currentReviews} />
@@ -105,7 +101,7 @@ const ProductReviews: React.FC<ProductReviewsProps> = ({ reviews, stats }) => {
                 <ReviewPagination
                     totalPages={totalPages}
                     currentPage={currentPage}
-                    onPageChange={handlePageChange}
+                    onPageChange={(_, page) => onPageChange(page)}
                 />
 
                 {/* 리뷰가 없을 때 표시할 메시지 */}

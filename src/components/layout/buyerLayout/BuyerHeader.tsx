@@ -123,27 +123,24 @@ const BuyerHeader = () => {
 
     // 네비게이션 아이템
     const navigationItems = [
-        { label: "베스트 상품", path: "/best" },
-        { label: "특가 상품", path: "/sale" },
-        { label: "신규 상품", path: "/new" },
         {
             label: "카테고리",
-            path: "/categories",
+            path: "/productsList",
             subItems: [
                 {
                     label: "강아지 간식",
-                    path: "/categories/dog",
+                    path: "/productsList/dog",
                     subItems: [
-                        { label: "주문 제작", path: "/categories/dog/custom" },
-                        { label: "완제품", path: "/categories/dog/ready-made" },
+                        { label: "수제품", path: "/productsList/dog/handmade" },
+                        { label: "완제품", path: "/productsList/dog/finished" },
                     ],
                 },
                 {
                     label: "고양이 간식",
-                    path: "/categories/cat",
+                    path: "/productsList/cat",
                     subItems: [
-                        { label: "주문 제작", path: "/categories/cat/custom" },
-                        { label: "완제품", path: "/categories/cat/ready-made" },
+                        { label: "수제품", path: "/productsList/cat/handmade" },
+                        { label: "완제품", path: "/productsList/cat/finished" },
                     ],
                 },
             ],

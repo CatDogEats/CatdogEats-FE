@@ -1,7 +1,7 @@
 // src/types/Product.ts
 
 export interface Product {
-    id: string;
+    productNumber: string;
     name: string;
     brand?: string;
     price: number;
@@ -38,9 +38,6 @@ export type ProductCategory =
 export interface ProductFilters {
     petType: PetType | null;
     productType: ProductType | null;
-    priceRange: [number, number];
-    hasAllergens: boolean | null; // null = 전체, true = 유, false = 무
-    ratingRange: [number, number]; // [최소 평점, 최대 평점]
 }
 
 export type ProductType = "전체" | "수제품" | "완제품";
@@ -54,12 +51,12 @@ export const PET_TYPES: PetType[] = ["강아지", "고양이"];
 
 export const PRODUCT_TYPES: ProductType[] = ["전체", "수제품", "완제품"];
 
-export const SORT_OPTIONS: SortOption[] = [
-    { value: "sales", label: "판매량순" },
-    { value: "price", label: "가격순" },
-    { value: "latest", label: "등록순" },
-    { value: "rating", label: "평점순" },
+export const SORT_OPTIONS = [
+    { value: "CREATED_AT", label: "최신순" },
+    { value: "PRICE", label: "가격순" },
+    { value: "AVERAGE_STAR", label: "평점순" },
 ];
+
 
 export const ALLERGEN_OPTIONS = [
     { value: null, label: "전체" },

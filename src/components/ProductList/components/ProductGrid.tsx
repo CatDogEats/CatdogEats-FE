@@ -36,7 +36,7 @@ const ProductGrid: React.FC<ProductGridProps> = ({
         {/* 상품 그리드 */}
         <Grid container spacing={3} sx={{ mb: 5 }}>
           {products.map((product) => (
-              <Grid size={{ xs: 6, sm: 6, md: 4, lg: 3 }} key={product.id}>
+              <Grid size={{ xs: 6, sm: 6, md: 4, lg: 3 }} key={product.productNumber}>
                 <ProductCard
                     product={product}
                     onFavoriteToggle={onFavoriteToggle}
