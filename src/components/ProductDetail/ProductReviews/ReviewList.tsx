@@ -152,19 +152,23 @@ const ReviewList: React.FC<ReviewListProps> = ({ reviews }) => {
                         </Typography>
 
                         {/* 리뷰 이미지 (있는 경우) */}
-                        {review.image && (
-                            <Box
-                                component="img"
-                                src={review.image}
-                                alt="리뷰 사진"
-                                sx={{
-                                    width: 80,
-                                    height: 80,
-                                    objectFit: "cover",
-                                    borderRadius: 1,
-                                    mb: 2,
-                                }}
-                            />
+                        {review.images && review.images.length > 0 && (
+                            <Box sx={{ display: "flex", gap: 1, mb: 2 }}>
+                                {review.images.map((img, i) => (
+                                    <Box
+                                        key={i}
+                                        component="img"
+                                        src={img}
+                                        alt={`리뷰 사진 ${i + 1}`}
+                                        sx={{
+                                            width: 80,
+                                            height: 80,
+                                            objectFit: "cover",
+                                            borderRadius: 1,
+                                        }}
+                                    />
+                                ))}
+                            </Box>
                         )}
                     </Box>
 

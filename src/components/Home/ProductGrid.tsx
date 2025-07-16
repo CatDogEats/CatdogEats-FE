@@ -14,7 +14,7 @@ const ProductGrid = ({ products, onProductClick }: ProductGridProps) => {
         <Grid container spacing={3}>
             {products.map((product) => (
                 <Grid
-                    key={product.id}
+                    key={product.productNumber}
                     size={{
                         xs: 12,
                         sm: 6,

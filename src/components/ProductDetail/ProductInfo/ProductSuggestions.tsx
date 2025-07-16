@@ -1,78 +1,35 @@
 // src/components/ProductDetail/ProductInfo/ProductSuggestions.tsx
 import React from "react";
-import { Box, Typography, Button } from "@mui/material";
-import { Pets } from "@mui/icons-material";
+import { Box, Typography } from "@mui/material";
+import { Product } from "../Product";
 
-const ProductSuggestions: React.FC = () => {
-    const handlePetInfoInput = () => {
-        console.log("우리 아이 정보 입력하기");
-    };
+interface ProductSuggestionsProps {
+    product: Product;
+}
 
+const ProductSuggestions: React.FC<ProductSuggestionsProps> = ({ product }) => {
     return (
-        <Box>
+        <Box
+            sx={{
+                background: "#faf6f2",
+                padding: "24px 20px",
+                borderRadius: "12px",
+            }}
+        >
             <Typography
-                variant="h3"
-                sx={{
-                    mb: 2,
-                    color: "text.primary",
-                }}
+                variant="h6"
+                fontWeight={700}
+                gutterBottom
             >
-                이런 아이에게 좋아요!
+                상품 내용
             </Typography>
-            <Box sx={{ display: "flex", flexDirection: "column", gap: 1 }}>
-                <Typography
-                    variant="body2"
-                    sx={{
-                        color: "text.primary",
-                        display: "flex",
-                        alignItems: "center",
-                        gap: 1,
-                    }}
-                >
-                    • 모든 연령 및 견종의 강아지 (2개월 이상)
-                </Typography>
-                <Typography
-                    variant="body2"
-                    sx={{
-                        color: "text.primary",
-                        display: "flex",
-                        alignItems: "center",
-                        gap: 1,
-                    }}
-                >
-                    • 소화기가 예민하거나 알러지가 있는 강아지
-                </Typography>
-                <Typography
-                    variant="body2"
-                    sx={{
-                        color: "text.primary",
-                        display: "flex",
-                        alignItems: "center",
-                        gap: 1,
-                    }}
-                >
-                    • 훈련용 간식 또는 칭찬 간식으로 활용
-                </Typography>
-            </Box>
-
-            <Button
-                variant="text"
-                startIcon={<Pets />}
-                onClick={handlePetInfoInput}
-                sx={{
-                    mt: 2,
-                    color: "primary.main",
-                    fontSize: "0.875rem",
-                    p: "4px 8px",
-                    borderRadius: 1,
-                    "&:hover": {
-                        backgroundColor: "primary.light",
-                        color: "primary.contrastText",
-                    },
-                }}
+            <Typography
+                variant="body1"
+                color="text.primary"
+                whiteSpace="pre-line"
             >
-                우리 아이 정보 입력하기
-            </Button>
+                {product.suitableFor ?? "-"}
+            </Typography>
         </Box>
     );
 };
