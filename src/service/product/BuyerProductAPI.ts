@@ -38,6 +38,7 @@ export function mapApiProductToFrontProduct(apiProduct: ApiProduct): Product {
         imageUrl = 'https://' + imageUrl;
     }
     return {
+        id: apiProduct.id,
         productNumber: apiProduct.productNumber,
         name: apiProduct.title,
         rating: apiProduct.averageStar ?? 0,
@@ -50,10 +51,16 @@ export function mapApiProductToFrontProduct(apiProduct: ApiProduct): Product {
 }
 
 // 상품 리스트 조회 (메인)
-export async function getMainProducts(filterType: ProductFilterType): Promise<Product[]> {
-    const res = await apiClient.get<MainProductResponse>(
-        '/v1/buyers/products/main',
-        { params: { filterType } }
-    );
-    return res.data.data.map(mapApiProductToFrontProduct);
+export const mainProduct = {
+    getMainProducts: async(filterType: ProductFilterType) => {
+        try {
+            const res = await apiClient.get<MainProductResponse>(
+                '/v1/buyers/products/main',
+                {params: {filterType}}
+            );
+            return res.data.data.map(mapApiProductToFrontProduct);
+        } catch (e) {
+            console.error("서버 연결 안됨");
+        }
+    }
 }
