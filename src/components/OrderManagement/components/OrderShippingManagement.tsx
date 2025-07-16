@@ -507,6 +507,10 @@ const OrderShippingManagement: React.FC = () => {
 
     try {
       await syncShipmentStatus(); // ▶️ API 호출
+
+      // 📍 추가: 딜레이를 추가하여 리렌더링 완료 대기
+      await new Promise((resolve) => setTimeout(resolve, 200));
+
       setAlertMessage("배송중 주문 정보를 최신 상태로 동기화했습니다.");
       setAlertSeverity("success");
     } catch (e) {
@@ -570,11 +574,15 @@ const OrderShippingManagement: React.FC = () => {
       setAlertMessage("주문 상태가 성공적으로 변경되었습니다.");
       setAlertSeverity("success");
       setShowAlert(true);
-      setStatusEditDialog(false);
 
-      // 📍 추가: 주문 목록 새로고침하여 최신 상태 반영
-      // 지연 정보가 포함된 최신 데이터를 가져오기 위함
-      await refreshOrders(); // 또는 refetch() 함수 호출
+      // 📍 수정: 데이터 새로고침을 먼저 실행
+      await refreshOrders();
+
+      // 📍 추가: 딜레이를 추가하여 리렌더링 완료 대기
+      await new Promise((resolve) => setTimeout(resolve, 200));
+
+      // 📍 수정: 그 다음에 Dialog 닫기
+      setStatusEditDialog(false);
 
       // 폼 초기화
       setSelectedOrder(null);
