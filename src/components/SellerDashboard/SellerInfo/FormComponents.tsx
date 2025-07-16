@@ -304,7 +304,6 @@ export const BasicInfoForm: React.FC<BasicInfoFormProps> = ({
                                                                 onImageUpload,
                                                                 onImageDelete,
                                                                 addressValidation = {isValid: true, message: ""},
-                                                                data
                                                             }) => {
     const handleAddressChange = (field: 'postalCode' | 'roadAddress' | 'detailAddress', value: string) => {
         onChange(field, value);
