@@ -23,6 +23,7 @@ const ShippingInformationForm: React.FC<ShippingInformationFormProps> = ({
   shippingInfo,
   onShippingInfoChange,
   onOpenAddressModal,
+  addressModalLoading = false,
 }) => {
   const [addressSearchOpen, setAddressSearchOpen] = useState(false);
 
@@ -63,13 +64,16 @@ const ShippingInformationForm: React.FC<ShippingInformationFormProps> = ({
               variant="text"
               size="small"
               onClick={onOpenAddressModal}
+              disabled={addressModalLoading}
               style={{
                 textTransform: "none",
                 fontWeight: 500,
                 fontSize: "0.875rem",
               }}
             >
-              저장된 주소 불러오기
+              {addressModalLoading
+                ? "주소 불러오는 중..."
+                : "저장된 주소 불러오기"}
             </Button>
           </Box>
           <Grid container spacing={3}>

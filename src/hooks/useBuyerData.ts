@@ -65,22 +65,28 @@ export const useBuyerOrderData = () => {
 
   /**
    * 2) 저장된 주소 불러오기 (모달 버튼 클릭 시)
+   * ✅ 수정: 백엔드 AddressResponseDto 구조에 맞춰 매핑 로직 개선
    */
   const loadAllAddresses = useCallback(async (): Promise<SavedAddress[]> => {
     try {
       setError(null);
       const addresses = await buyerApi.getAllAddresses();
+
       return addresses.map((addr) => ({
         id: addr.id,
         label: addr.title,
-        fullName: "수취인명",
-        address: `${addr.streetAddress} ${addr.detailAddress}`.trim(),
+        fullName: "수취인명", // ✅ 백엔드에서 수취인명 정보가 없으므로 기본값 사용
+        // ✅ 수정: district + neighborhood + streetAddress + detailAddress 조합
+        address:
+          `${addr.district} ${addr.neighborhood} ${addr.streetAddress} ${addr.detailAddress}`.trim(),
         city: addr.city,
         postalCode: addr.postalCode,
         phoneNumber: addr.phoneNumber,
       }));
     } catch (err) {
-      setError((err as ApiError).message);
+      const errorMessage = (err as ApiError).message;
+      console.error("주소 목록 조회 실패:", errorMessage);
+      setError(errorMessage);
       return [];
     }
   }, []);

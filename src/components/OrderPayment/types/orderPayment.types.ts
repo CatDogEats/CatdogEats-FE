@@ -64,6 +64,7 @@ export interface ShippingInformationFormProps {
   shippingInfo: ShippingInfo;
   onShippingInfoChange: (field: keyof ShippingInfo, value: string) => void;
   onOpenAddressModal: () => void;
+  addressModalLoading?: boolean; // ✅ 추가: 주소 모달 로딩 상태
 }
 
 export interface PaymentMethodSelectionProps {

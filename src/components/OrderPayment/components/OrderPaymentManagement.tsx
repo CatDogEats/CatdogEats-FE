@@ -55,6 +55,7 @@ const OrderPaymentManagement: React.FC = () => {
   // 2) 모달·API 상태
   const [petModalOpen, setPetModalOpen] = useState(false);
   const [addressModalOpen, setAddressModalOpen] = useState(false);
+  const [addressModalLoading, setAddressModalLoading] = useState(false);
   const [savedPets, setSavedPets] = useState<SavedPet[]>([]);
   const [savedAddresses, setSavedAddresses] = useState<SavedAddress[]>([]);
   const [availableCoupons, setAvailableCoupons] = useState<Coupon[]>([]);
@@ -88,11 +89,39 @@ const OrderPaymentManagement: React.FC = () => {
     setPetModalOpen(true);
   };
 
-  // 6) “저장된 주소 불러오기” 버튼
+  // 6) "저장된 주소 불러오기" 버튼 - ✅ 수정: 올바른 상태 이름 사용
   const handleOpenAddressModal = async () => {
-    const addrs = await loadAllAddresses();
-    setSavedAddresses(addrs);
-    setAddressModalOpen(true);
+    try {
+      setAddressModalLoading(true); // ✅ 수정: 올바른 함수명
+      console.log("주소 모달 열기 시작");
+
+      const savedAddresses = await loadAllAddresses();
+      console.log("불러온 주소 목록:", savedAddresses);
+
+      setSavedAddresses(savedAddresses);
+      setAddressModalOpen(true); // ✅ 수정: 올바른 함수명
+
+      if (savedAddresses.length === 0) {
+        console.log("저장된 주소가 없습니다.");
+      }
+    } catch (error) {
+      console.error("주소 모달 열기 실패:", error);
+
+      const errorMessage =
+        error instanceof Error
+          ? error.message
+          : "주소를 불러오는데 실패했습니다.";
+
+      // ✅ 에러 상황에서도 모달을 열어서 사용자가 새 주소를 추가할 수 있도록 함
+      setSavedAddresses([]);
+      setAddressModalOpen(true); // ✅ 수정: 올바른 함수명
+
+      alert(
+        `주소 불러오기 실패: ${errorMessage}\n\n새 주소를 직접 입력하실 수 있습니다.`
+      );
+    } finally {
+      setAddressModalLoading(false); // ✅ 수정: 올바른 함수명
+    }
   };
 
   // 7) 폼 핸들러들
@@ -204,6 +233,7 @@ const OrderPaymentManagement: React.FC = () => {
           shippingInfo={shippingInfo}
           onShippingInfoChange={handleShippingInfoChange}
           onOpenAddressModal={handleOpenAddressModal}
+          addressModalLoading={addressModalLoading}
         />
 
         <PaymentMethodSelection

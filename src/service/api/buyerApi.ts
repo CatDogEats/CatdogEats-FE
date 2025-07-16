@@ -86,9 +86,15 @@ export const buyerApi = {
   /**
    * 모든 주소 정보 조회 (모달용)
    * API: GET /v1/buyers/address/all
+   * ✅ 수정: 에러 처리 개선 및 디버깅 정보 추가
    */
   getAllAddresses: async (): Promise<AddressResponse[]> => {
     try {
+      console.log(
+        "주소 목록 조회 시작:",
+        `${API_BASE_URL}/v1/buyers/address/all`
+      );
+
       const response = await axios.get<APIResponse<AddressResponse[]>>(
         `${API_BASE_URL}/v1/buyers/address/all`,
         {
@@ -98,13 +104,37 @@ export const buyerApi = {
         }
       );
 
-      return extractApiData(response.data);
+      console.log("주소 목록 조회 응답:", response.data);
+
+      const result = extractApiData(response.data);
+      console.log("주소 목록 추출 결과:", result);
+
+      return result;
     } catch (error) {
       console.error("주소 목록 조회 실패:", error);
+
+      // ✅ 추가: 구체적인 에러 상황별 처리
+      if (axios.isAxiosError(error)) {
+        const status = error.response?.status;
+        const errorData = error.response?.data;
+
+        console.error("HTTP 상태 코드:", status);
+        console.error("에러 응답 데이터:", errorData);
+
+        if (status === 401) {
+          throw new Error("인증이 필요합니다. 다시 로그인해주세요.");
+        } else if (status === 403) {
+          throw new Error("주소 조회 권한이 없습니다.");
+        } else if (status === 500) {
+          throw new Error(
+            "서버 오류가 발생했습니다. 잠시 후 다시 시도해주세요."
+          );
+        }
+      }
+
       throw handleApiError(error);
     }
   },
-
   /**
    * 기본 주소 정보 조회 (자동 로드용)
    * API: GET /v1/buyers/address/default

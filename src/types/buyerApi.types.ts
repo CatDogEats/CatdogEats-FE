@@ -27,11 +27,16 @@ export interface AddressResponse {
   id: string;
   title: string;
   city: string;
+  district: string;
+  neighborhood: string;
   streetAddress: string;
   detailAddress: string;
   postalCode: string;
   phoneNumber: string;
+  addressType: "PERSONAL" | "BUSINESS";
   isDefault: boolean;
+  createdAt: string;
+  updatedAt: string;
 }
 
 export interface DefaultAddressResponse {
