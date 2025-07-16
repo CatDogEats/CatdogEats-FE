@@ -103,7 +103,6 @@ jobs:
         run: |
           mkdir -p deploy
           cp docker-compose.yml deploy/
-          printf '%s\n' "${{ secrets.ENV_FILE }}" > deploy/.env.production
           cd deploy
           zip -r deploy.zip .
 
@@ -125,6 +124,9 @@ jobs:
           script: |
             cd /home/${{ secrets.EC2_USER }}/app
             unzip -o deploy.zip
+            cat << 'EOF' > .env.production
+            ${{ secrets.ENV_FILE }}
+            EOF
             docker compose --env-file .env.production down
             docker compose --env-file .env.production pull
             docker compose --env-file .env.production up -d --build
