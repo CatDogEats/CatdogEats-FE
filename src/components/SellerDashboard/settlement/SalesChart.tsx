@@ -8,7 +8,7 @@ import {
     useTheme,
     Tabs,
     Tab,
-    Button
+    CircularProgress
 } from '@mui/material';
 
 // 컴포넌트 임포트
@@ -25,12 +25,16 @@ interface EnhancedSalesChartProps extends SalesChartProps {
     viewMode?: 'monthly' | 'yearly';
     onYearChange?: (year: number) => void;
     onMonthChange?: (month: number) => void;
-    onViewModeChange?: (mode: 'monthly' | 'yearly') => void; // 🔧 추가
+    onViewModeChange?: (mode: 'monthly' | 'yearly') => void;
+    loading?: boolean; // 로딩 상태 추가
+    yearTotalAmount?: number; // 년도 총 매출 추가
+    yearTotalQuantity?: number; // 년도 총 판매수량 추가
+    availableYears?: number[]; // 사용 가능한 년도 목록 추가
 }
 
 interface YearlyMonthData {
     year: number;
-    monthlyData: { month: string; amount: number; }[];
+    monthlyData: { month: string; amount: number; originalAmount?: number; orderCount?: number; totalQuantity?: number; }[];
 }
 
 interface ProductSalesData {
@@ -39,6 +43,7 @@ interface ProductSalesData {
     percentage: number;
     color: string;
     salesCount: number;
+    productId?: string;
 }
 
 const SalesChart: React.FC<EnhancedSalesChartProps> = ({
@@ -51,18 +56,14 @@ const SalesChart: React.FC<EnhancedSalesChartProps> = ({
                                                            viewMode = 'monthly',
                                                            onYearChange,
                                                            onMonthChange,
-                                                           onViewModeChange // 🔧 추가
+                                                           onViewModeChange,
+                                                           loading = false,
+                                                           yearTotalAmount = 0,
+                                                           yearTotalQuantity = 0,
+                                                           availableYears = [2022, 2023, 2024, 2025]
                                                        }) => {
     const theme = useTheme();
     const [tabValue, setTabValue] = useState(0);
-
-    // 사용 가능한 년도 목록 생성
-    const availableYears = yearlyData.length > 0
-        ? yearlyData.map(item => item.year)
-        : [2022, 2023, 2024, 2025];
-
-    // 사용 가능한 월 목록
-    const availableMonths = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12];
 
     // 현재 선택된 년도의 월별 데이터
     const currentYearData = yearlyData.find(item => item.year === selectedYear)?.monthlyData || data;
@@ -71,11 +72,7 @@ const SalesChart: React.FC<EnhancedSalesChartProps> = ({
         setTabValue(newValue);
     };
 
-    // 총 매출액 및 성장률 계산
-    const totalSales = currentYearData.reduce((sum, item) => sum + item.amount, 0);
-    const growthRate = currentYearData.length >= 2
-        ? ((currentYearData[currentYearData.length - 1].amount - currentYearData[currentYearData.length - 2].amount) / currentYearData[currentYearData.length - 2].amount * 100)
-        : 0;
+   
 
     // 상품별 매출 총합 계산
     const totalProductSales = productData.reduce((sum, item) => sum + item.amount, 0);
@@ -115,6 +112,16 @@ const SalesChart: React.FC<EnhancedSalesChartProps> = ({
                     >
                         {title}
                     </Typography>
+
+                    {/* 로딩 상태 표시 */}
+                    {loading && (
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                            <CircularProgress size={20} />
+                            <Typography variant="body2" color="text.secondary">
+                                데이터 로딩 중...
+                            </Typography>
+                        </Box>
+                    )}
                 </Box>
 
                 {/* 탭 */}
@@ -171,31 +178,34 @@ const SalesChart: React.FC<EnhancedSalesChartProps> = ({
                             selectedYear={selectedYear}
                             onYearChange={onYearChange}
                             availableYears={availableYears}
+                            loading={loading}
+                            yearTotalAmount={yearTotalAmount}
+                            yearTotalQuantity={yearTotalQuantity}
                         />
                     ) : (
-                        // 🔧 수정: ProductChart에 모든 필요한 props 전달
                         <ProductChart
                             data={productData}
                             selectedYear={selectedYear}
                             selectedMonth={selectedMonth}
-                            viewMode={viewMode} // 🔧 viewMode 전달
+                            viewMode={viewMode}
                             onYearChange={onYearChange}
                             onMonthChange={onMonthChange}
-                            onViewModeChange={onViewModeChange} // 🔧 viewMode 변경 핸들러 전달
+                            onViewModeChange={onViewModeChange}
                             availableYears={availableYears}
-                            availableMonths={availableMonths}
+                            availableMonths={[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]}
+                            loading={loading}
                         />
                     )}
                 </Box>
 
-                {/* 요약 정보 */}
+                {/* : 요약 정보 - 성장률 표시 제거 */}
                 <Box sx={{
                     p: 3,
                     backgroundColor: theme.palette.background.default,
                     borderTop: `1px solid ${theme.palette.grey[200]}`
                 }}>
                     {tabValue === 0 ? (
-                        // 기간별 매출 요약
+                        // : 기간별 매출 요약 - 성장률 제거
                         <Box sx={{ textAlign: 'center' }}>
                             <Typography
                                 variant="h3"
@@ -205,7 +215,7 @@ const SalesChart: React.FC<EnhancedSalesChartProps> = ({
                                     mb: 1
                                 }}
                             >
-                                ₩{totalSales.toLocaleString()}
+                                ₩{(yearTotalAmount || 0).toLocaleString()}
                             </Typography>
                             <Box sx={{
                                 display: 'flex',
@@ -220,22 +230,25 @@ const SalesChart: React.FC<EnhancedSalesChartProps> = ({
                                 >
                                     {selectedYear}년 총 매출
                                 </Typography>
-                                <Box sx={{
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    color: growthRate >= 0 ? '#48bb78' : '#f56565',
-                                    gap: 0.5
-                                }}>
-                                    <span className="material-icons">
-                                        {growthRate >= 0 ? 'trending_up' : 'trending_down'}
-                                    </span>
-                                    <Typography
-                                        variant="h6"
-                                        sx={{ fontWeight: 700 }}
-                                    >
-                                        {Math.abs(growthRate).toFixed(1)}%
-                                    </Typography>
-                                </Box>
+                                {yearTotalQuantity && yearTotalQuantity > 0 && (
+                                    <Box sx={{
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        color: theme.palette.secondary.main,
+                                        gap: 0.5
+                                    }}>
+                                        <span className="material-icons">
+                                            inventory
+                                        </span>
+                                        <Typography
+                                            variant="h6"
+                                            sx={{ fontWeight: 700 }}
+                                        >
+                                            {yearTotalQuantity.toLocaleString()}개 판매
+                                        </Typography>
+                                    </Box>
+                                )}
+                                {/* 🔧 제거: 성장률 표시 완전 제거 */}
                             </Box>
                         </Box>
                     ) : (
@@ -283,56 +296,6 @@ const SalesChart: React.FC<EnhancedSalesChartProps> = ({
                             </Box>
                         </Box>
                     )}
-
-                    {/* 데이터 내보내기 버튼 */}
-                    <Box sx={{ textAlign: 'center', mt: 3 }}>
-                        <Button
-                            variant="outlined"
-                            size="large"
-                            startIcon={
-                                <span
-                                    className="material-icons"
-                                    style={{ fontSize: '20px' }}
-                                >
-                                    file_download
-                                </span>
-                            }
-                            onClick={() => {
-                                if (tabValue === 0) {
-                                    console.log('기간별 매출 데이터 내보내기:', {
-                                        year: selectedYear,
-                                        type: 'monthly',
-                                        data: currentYearData
-                                    });
-                                } else {
-                                    console.log('상품별 매출 데이터 내보내기:', {
-                                        year: selectedYear,
-                                        month: selectedMonth,
-                                        viewMode: viewMode,
-                                        type: 'product',
-                                        data: productData
-                                    });
-                                }
-                            }}
-                            sx={{
-                                borderColor: theme.palette.primary.main,
-                                color: theme.palette.primary.main,
-                                fontWeight: 600,
-                                textTransform: 'none',
-                                px: 4,
-                                py: 1.5,
-                                fontSize: '1rem',
-                                borderRadius: 3,
-                                '&:hover': {
-                                    borderColor: theme.palette.primary.dark,
-                                    backgroundColor: 'rgba(232, 152, 48, 0.04)',
-                                    transform: 'translateY(-1px)'
-                                }
-                            }}
-                        >
-                            {tabValue === 0 ? '년도별 데이터 내보내기' : `${viewMode === 'yearly' ? '년도별' : '월별'} 상품 데이터 내보내기`}
-                        </Button>
-                    </Box>
                 </Box>
             </CardContent>
         </Card>

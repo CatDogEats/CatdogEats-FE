@@ -6,7 +6,7 @@ import HomePage from "@/pages/mainpage/HomePage";
 import LoginPage from "@/pages/auth/LoginPage";
 import RoleSelectionPage from "@/pages/auth/RoleSelectionPage";
 import NotFoundPage from "@/pages/common/NotFoundPage.tsx";
-import SellerStorePage from "@/pages/SellerDashboardPage/SellerStorePage.tsx";
+import SellerStorePage from "@/pages/SellerStorePage.tsx";
 import OrderPayPage from "@/pages/OrderPaymentPage/OrderPaymentPage.tsx";
 import MyPage from "@/pages/Account/Account.tsx";
 import ProductListPage from "@/pages/ProductListPage.tsx";

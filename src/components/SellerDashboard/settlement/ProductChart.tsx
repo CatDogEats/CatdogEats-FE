@@ -12,7 +12,8 @@ import {
     MenuItem,
     SelectChangeEvent,
     ToggleButton,
-    ToggleButtonGroup
+    ToggleButtonGroup,
+    CircularProgress
 } from '@mui/material';
 
 interface ProductSalesData {
@@ -21,39 +22,64 @@ interface ProductSalesData {
     percentage: number;
     color: string;
     salesCount: number;
+    productId?: string;
 }
 
 interface ProductChartProps {
     data: ProductSalesData[];
     selectedYear?: number;
     selectedMonth?: number;
-    viewMode?: 'monthly' | 'yearly'; // 🔧 상위에서 전달받는 viewMode
+    viewMode?: 'monthly' | 'yearly';
     onYearChange?: (year: number) => void;
     onMonthChange?: (month: number) => void;
-    onViewModeChange?: (mode: 'monthly' | 'yearly') => void; // 🔧 viewMode 변경 핸들러
+    onViewModeChange?: (mode: 'monthly' | 'yearly') => void;
     availableYears?: number[];
     availableMonths?: number[];
+    loading?: boolean; // : 로딩 상태
 }
 
 const ProductChart: React.FC<ProductChartProps> = ({
                                                        data,
                                                        selectedYear = new Date().getFullYear(),
                                                        selectedMonth = new Date().getMonth() + 1,
-                                                       viewMode = 'monthly', // 🔧 상위에서 전달받음
+                                                       viewMode = 'monthly',
                                                        onYearChange,
                                                        onMonthChange,
-                                                       onViewModeChange, // 🔧 상위로 전달
+                                                       onViewModeChange,
                                                        availableYears = [2022, 2023, 2024, 2025],
-                                                       availableMonths = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]
+                                                       availableMonths = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12],
+                                                       loading = false // : 로딩 상태
                                                    }) => {
     const theme = useTheme();
     const [currentPage, setCurrentPage] = useState(0);
     const itemsPerPage = 8;
 
-    // 🔧 수정: viewMode가 변경될 때 페이지 초기화
+
     useEffect(() => {
         setCurrentPage(0);
     }, [viewMode, selectedYear, selectedMonth]);
+
+    //  추가: 로딩 상태 처리
+    if (loading) {
+        return (
+            <Box sx={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                height: 400,
+                flexDirection: 'column',
+                color: theme.palette.text.secondary
+            }}>
+                <CircularProgress size={60} sx={{ mb: 2 }} />
+                <Typography variant="h6" sx={{ mb: 1 }}>
+                    상품별 매출 데이터를 불러오는 중...
+                </Typography>
+                <Typography variant="body2">
+                    잠시만 기다려주세요.
+                </Typography>
+            </Box>
+        );
+    }
 
     // 페이지네이션 계산
     const totalPages = Math.ceil(data.length / itemsPerPage);
@@ -82,13 +108,13 @@ const ProductChart: React.FC<ProductChartProps> = ({
         setCurrentPage(0);
     };
 
-    // 🔧 수정: viewMode 변경을 상위로 전달
+
     const handleViewModeChange = (
         _: React.MouseEvent<HTMLElement>,
         newViewMode: 'monthly' | 'yearly'
     ) => {
         if (newViewMode !== null) {
-            onViewModeChange?.(newViewMode); // 🔧 상위로 전달
+            onViewModeChange?.(newViewMode);
             setCurrentPage(0);
         }
     };
@@ -161,7 +187,8 @@ const ProductChart: React.FC<ProductChartProps> = ({
         selectedYear,
         selectedMonth,
         데이터수: data.length,
-        현재페이지: currentPage
+        현재페이지: currentPage,
+        loading
     });
 
     return (
