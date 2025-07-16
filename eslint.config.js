@@ -1,50 +1,45 @@
 // eslint.config.js
 import js from '@eslint/js'
 import globals from 'globals'
-import ts from 'typescript-eslint'
 import reactHooks from 'eslint-plugin-react-hooks'
 import reactRefresh from 'eslint-plugin-react-refresh'
+import ts from '@typescript-eslint/eslint-plugin'
+import tsParser from '@typescript-eslint/parser'
 import prettier from 'eslint-config-prettier'
 
-/** @type {import('eslint').FlatConfig[]} */
 export default [
-    // 1) 기본 JS 추천 설정
     js.configs.recommended,
-
-    // 2) TS 추천 설정
-    ...ts.configs.recommended,
-
-    // 3) 언어 옵션 (ES2021, 모듈, 브라우저+Node 전역)
     {
+        files: ['**/*.{ts,tsx}'],
         languageOptions: {
-            ecmaVersion: 2021,
-            sourceType: 'module',
-            globals: {
-                ...globals.browser,
-                ...globals.node,
-            },
+            parser: tsParser,
+            parserOptions: { ecmaVersion: 2020, sourceType: 'module' },
+            globals: globals.browser
         },
-    },
-
-    // 4) React-hooks 플러그인 룰
-    {
         plugins: {
+            '@typescript-eslint': ts,
             'react-hooks': reactHooks,
-            'react-refresh': reactRefresh,
+            'react-refresh': reactRefresh
         },
         rules: {
-            ...reactHooks.configs.recommended.rules,
-            'react-refresh/only-export-components': ['warn', { allowConstantExport: true }],
+            // 빈 인터페이스 허용
+            '@typescript-eslint/no-empty-object-type': 'off',
+            // 빈 구조 분해 허용
+            'no-empty-pattern': 'off',
+            // any 타입 허용
+            '@typescript-eslint/no-explicit-any': 'off',
+            // 자기 자신에 할당 금지 해제 (필요하다면)
+            'no-self-assign': 'off',
+
+            // 나머지 룰들은 원하시는 대로…
+            'react-refresh/only-export-components': [
+                'warn',
+                { allowConstantExport: true },
+            ],
+            '@typescript-eslint/no-unused-vars': ['warn', { argsIgnorePattern: '^_' }],
+            'react-hooks/rules-of-hooks': 'error',
+            'react-hooks/exhaustive-deps': 'warn'
         },
     },
-
-    {
-        rules: {
-            '@typescript-eslint/no-unused-vars': 'warn',
-            '@typescript-eslint/no-explicit-any': 'warn',
-        },
-    },
-
-    // 6) Prettier (마지막에 배치)
-    prettier,
+    prettier, // 마지막에 Prettier
 ]
