@@ -115,6 +115,7 @@ jobs:
           key: ${{ secrets.EC2_SSH_KEY }}
           source: "deploy/deploy.zip"
           target: "/home/${{ secrets.EC2_USER }}/app"
+          strip_components: 1
 
       - name: SSH & run Docker Compose
         uses: appleboy/ssh-action@v0.1.10
