@@ -79,6 +79,7 @@ export default function AddressModal({
                     </Avatar>
                   </ListItemAvatar>
                   <ListItemText
+                    disableTypography
                     primary={
                       <Box
                         sx={{ display: "flex", alignItems: "center", gap: 1 }}
