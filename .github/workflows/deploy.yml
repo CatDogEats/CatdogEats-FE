@@ -53,8 +53,12 @@ jobs:
       - name: Prepare image names
         id: prep
         run: |
-          REPO_NAME=${{ github.event.repository.name }}
-          REPO="${{ secrets.DOCKERHUB_USERNAME }}/${REPO_NAME}"
+          # owner/repo 에서 repo 부분만 추출
+          REPO_NAME=${GITHUB_REPOSITORY##*/}
+          # 소문자로 강제 변환
+          REPO_NAME_LOWER=${REPO_NAME,,}
+          # Docker Hub 네임스페이스/저장소:태그
+          REPO="${{ secrets.DOCKERHUB_USERNAME }}/${REPO_NAME_LOWER}"
           IMAGE_CLIENT="$REPO-client:${GITHUB_SHA}"
           IMAGE_CLIENT_LATEST="$REPO-client:latest"
           IMAGE_SERVER="$REPO-server:${GITHUB_SHA}"
@@ -63,6 +67,7 @@ jobs:
           echo "IMAGE_CLIENT_LATEST=$IMAGE_CLIENT_LATEST" >> $GITHUB_OUTPUT
           echo "IMAGE_SERVER=$IMAGE_SERVER"           >> $GITHUB_OUTPUT
           echo "IMAGE_SERVER_LATEST=$IMAGE_SERVER_LATEST" >> $GITHUB_OUTPUT
+
 
 
       - name: Build & push client image
