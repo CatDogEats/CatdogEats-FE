@@ -36,7 +36,7 @@ export type {
 
   // 헬퍼 함수들
   convertAPIDataToPrototype,
-} from "@/types/buyerOrder.types";
+} from "../../types/buyerOrder.types";
 
 // 컴포넌트 전용 타입들
 export type {
@@ -75,11 +75,6 @@ export type {
   ComponentRef,
   EventHandlers,
   PageSizeOption,
-
-  // 상수들
-  PAGE_SIZE_OPTIONS,
-  DEFAULT_PAGE_CONFIG,
-  DEFAULT_SNACKBAR_CONFIG,
 } from "./types/buyerOrderComponent.types";
 
 // ==================== API Service exports ====================
@@ -89,24 +84,7 @@ export {
   ORDER_DELETE_ERROR_MESSAGES,
   canDeleteOrder,
   getOrderDeleteErrorMessage,
-} from "@/service/api/buyerOrderApi";
-
-// ==================== Hook exports ====================
-export {
-  useBuyerOrderManagement,
-  useBuyerOrderDetail,
-  useBuyerShipmentDetail,
-  useOrderActionAvailability,
-  useErrorMessage,
-} from "@/hooks/useBuyerOrders";
-
-export type {
-  UseBuyerOrderManagementReturn,
-  UseBuyerOrderDetailReturn,
-  UseBuyerShipmentDetailReturn,
-} from "@/hooks/useBuyerOrders";
-
-// ==================== 유틸리티 함수들 ====================
+} from "../../service/api/buyerOrderApi";
 
 /**
  * 프로토타입 UI와 Enhanced 컴포넌트 간 전환을 위한 래퍼 함수들

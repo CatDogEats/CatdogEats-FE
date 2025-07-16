@@ -20,7 +20,7 @@ import {
   Alert,
 } from "@mui/material";
 import { ChevronRight, LocalShipping } from "@mui/icons-material";
-import { useBuyerShipmentDetail } from "@/hooks/useBuyerOrders";
+import { useBuyerShipmentDetail } from "../../../hooks/useBuyerOrders";
 import type { TrackingDetail } from "@/types/buyerOrder.types";
 interface ShippingDetailViewEnhancedProps {
   setDetailView: (view: string | null) => void;

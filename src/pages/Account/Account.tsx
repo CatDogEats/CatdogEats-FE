@@ -215,8 +215,8 @@ export default function MyPage() {
   };
 
   const handleDeletePet = (id: string) => {
-  setPets(pets.filter(pet => pet.id !== id));
-
+    setPets(pets.filter((pet) => pet.id !== id));
+  };
   // 메인 컨텐츠 렌더링
   const renderContent = () => {
     // 회원 탈퇴 완료 화면 (기존 유지)

@@ -20,7 +20,7 @@ import { Search } from "@mui/icons-material";
 import {
   useBuyerOrderManagement,
   useErrorMessage,
-} from "@/hooks/useBuyerOrders";
+} from "../../../hooks/useBuyerOrders";
 import OrderItem from "@/components/Account/OrderItem";
 import CustomStepIcon from "@/components/Account/CustomStepIcon";
 import ArrowConnector from "@/components/Account/ArrowConnector";
@@ -42,6 +42,18 @@ const OrdersViewEnhanced: React.FC<OrdersViewEnhancedProps> = ({
   setSelectedPeriod,
   handleOrderAction,
 }) => {
+  const getStatusColor = (status: string) => {
+    const colorMap: Record<string, string> = {
+      payment_completed: "info",
+      preparing: "warning",
+      ready_for_delivery: "primary",
+      in_transit: "secondary",
+      delivered: "success",
+      order_cancelled: "error",
+    };
+    return colorMap[status] || "default";
+  };
+
   // API 연동 훅
   const {
     prototypeOrders,
@@ -236,15 +248,22 @@ const OrdersViewEnhanced: React.FC<OrdersViewEnhancedProps> = ({
       {/* 주문 목록 */}
       {paginatedOrders.length > 0 ? (
         <>
-          {paginatedOrders.map((order: Order) => (
-            <OrderItem
-              key={order.id}
-              order={order}
-              onAction={handleOrderActionEnhanced}
-              isActionLoading={actionLoading}
-            />
-          ))}
-
+          {paginatedOrders.map((order: Order) => {
+            const status = order.orderStatus.toLowerCase(); // ex. "delivered"
+            return (
+              <OrderItem
+                key={order.id}
+                order={{
+                  ...order,
+                  status, // 상태 문자열
+                  statusColor: getStatusColor(status), // 컬러 키워드
+                  deliveryDate: order.orderDate, // (필요에 따라 formatDate(order.orderDate) 로 교체)
+                }}
+                onAction={handleOrderActionEnhanced}
+                isActionLoading={actionLoading}
+              />
+            );
+          })}
           <Pagination
             currentPage={currentPage}
             totalPages={Math.ceil(filteredOrders.length / itemsPerPage)}

@@ -20,15 +20,17 @@ import {
   Snackbar,
 } from "@mui/material";
 import { ChevronRight } from "@mui/icons-material";
-import { useBuyerOrderDetail, useErrorMessage } from "@/hooks/useBuyerOrders";
-import { buyerOrderApi } from "@/service/api/buyerOrderApi";
 import { ORDER_STATUS_INFO_MAP } from "@/types/buyerOrder.types";
+import {
+  useBuyerOrderDetail,
+  useErrorMessage,
+} from "../../../hooks/useBuyerOrders";
+import { buyerOrderApi } from "../../../service/api/buyerOrderApi";
 import type {
-  Order,
   OrderStatus,
   OrderStatusInfo,
   BuyerOrderDetailItem,
-} from "@/types/buyerOrder.types";
+} from "../../../types/buyerOrder.types";
 interface OrderDetailEnhancedProps {
   selectedOrder: any; // 기존 프로토타입 Order 객체
   setDetailView: (view: string | null) => void;
@@ -285,7 +287,7 @@ const OrderDetailEnhanced: React.FC<OrderDetailEnhancedProps> = ({
             </TableRow>
           </TableHead>
           <TableBody>
-            {orderDetail.orderItems.map((item) => (
+            {orderDetail.orderItems.map((item: BuyerOrderDetailItem) => (
               <TableRow key={item.orderItemId}>
                 <TableCell>{item.productName}</TableCell>
                 <TableCell sx={{ textAlign: "center" }}>
