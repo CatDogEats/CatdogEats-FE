@@ -59,7 +59,8 @@ const ProductBasicInfo: React.FC<ProductBasicInfoProps> = ({ product }) => {
 
             {/* 가격 */}
             <Box sx={{ display: "flex", alignItems: "center", gap: 2, mb: 3 }}>
-                {product.originalPrice && (
+                {(product.originalPrice &&
+                    product.originalPrice !== product.price) && (
                     <Typography
                         variant="body1"
                         sx={{
@@ -80,6 +81,7 @@ const ProductBasicInfo: React.FC<ProductBasicInfoProps> = ({ product }) => {
                     {product.price.toLocaleString()}원
                 </Typography>
             </Box>
+
 
             {/* 태그 표시 */}
             {product.tags && product.tags.length > 0 && (

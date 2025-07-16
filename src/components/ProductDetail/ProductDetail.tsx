@@ -7,6 +7,7 @@ import ProductImages from "./ProductImages";
 import ProductInfo from "./ProductInfo";
 import ProductReviews from "./ProductReviews";
 import RelatedProducts from "./RelatedProducts";
+import { ReviewSummary } from "@/service/review/ReviewSummaryAPI";
 
 interface ProductDetailProps {
     product: Product;
@@ -18,6 +19,10 @@ interface ProductDetailProps {
         price: number;
         image: string;
     }>;
+    reviewPage: number;
+    totalReviewPages: number;
+    onChangeReviewPage: (page: number) => void;
+    reviewSummary: ReviewSummary | null;
 }
 
 const ProductDetail: React.FC<ProductDetailProps> = ({
@@ -25,6 +30,10 @@ const ProductDetail: React.FC<ProductDetailProps> = ({
                                                          reviews,
                                                          reviewStats,
                                                          relatedProducts,
+                                                         reviewPage,
+                                                         totalReviewPages,
+                                                         onChangeReviewPage,
+                                                         reviewSummary
                                                      }) => {
     return (
         <Box sx={{ backgroundColor: "background.default", minHeight: "100vh" }}>
@@ -63,7 +72,14 @@ const ProductDetail: React.FC<ProductDetailProps> = ({
 
                 {/* 고객 리뷰 섹션 */}
                 <Box sx={{ mb: { xs: 6, md: 10 } }}>
-                    <ProductReviews reviews={reviews} stats={reviewStats} />
+                    <ProductReviews
+                        reviews={reviews}
+                        stats={reviewStats}
+                        currentPage={reviewPage}
+                        totalPages={totalReviewPages}
+                        onPageChange={(page) => onChangeReviewPage(page)}
+                        reviewSummary={reviewSummary}
+                    />
                 </Box>
 
                 {/* 추천 상품 섹션 */}

@@ -6,7 +6,7 @@ import HomePage from "@/pages/mainpage/HomePage";
 import LoginPage from "@/pages/auth/LoginPage";
 import RoleSelectionPage from "@/pages/auth/RoleSelectionPage";
 import NotFoundPage from "@/pages/common/NotFoundPage.tsx";
-import SellerStorePage from "@/pages/SellerDashboardPage/SellerStorePage.tsx";
+import SellerStorePage from "@/pages/SellerStorePage.tsx";
 import OrderPayPage from "@/pages/OrderPaymentPage/OrderPaymentPage.tsx";
 import MyPage from "@/pages/Account/Account.tsx";
 import ProductListPage from "@/pages/ProductListPage.tsx";
@@ -34,12 +34,23 @@ const router = createBrowserRouter([
 
 
 
-            { path: "productsList", element: <ProductListPage /> }, // 상품 목록 페이지
+            {
+                path: "productsList",
+                element: <ProductListPage />
+            },
+            {
+                path: "productsList/:pet",
+                element: <ProductListPage />
+            },
+            {
+                path: "productsList/:pet/:type",
+                element: <ProductListPage />
+            },// 상품 목록 페이지
 
 
             // 상품 상세 페이지
             {
-                path: 'product-detail',
+                path: 'products/:productNumber',
                 element: <ProductDetailPage />,
             },
 

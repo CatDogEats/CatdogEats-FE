@@ -14,18 +14,12 @@ export interface Review {
   rating: number;
   content: string;
   date: string;
-  image?: string; // 선택적 첨부 이미지
+  images?: string[];
 }
 
 /** 리뷰 통계 */
 export interface ReviewStats {
   averageRating: number;
   totalReviews: number;
-  ratingDistribution: {
-    5: number;
-    4: number;
-    3: number;
-    2: number;
-    1: number;
-  };
+  ratingDistribution: { [key: string]: number };
 }

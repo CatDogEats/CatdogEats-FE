@@ -111,129 +111,7 @@ const SettlementSummary = ({ data, dateRangeLabel }: SettlementSummaryProps) => 
                     </Card>
                 </Grid>
 
-                {/* 정산완료 */}
-                <Grid size={{ xs: 12, sm: 6, md: 3 }}>
-                    <Card sx={{
-                        borderRadius: 3,
-                        border: `1px solid rgba(72, 187, 120, 0.2)`,
-                        background: 'linear-gradient(135deg, rgba(72, 187, 120, 0.05) 0%, rgba(72, 187, 120, 0.1) 100%)',
-                        transition: 'all 0.3s ease',
-                        '&:hover': {
-                            transform: 'translateY(-2px)',
-                            boxShadow: '0 4px 12px rgba(72, 187, 120, 0.2)'
-                        }
-                    }}>
-                        <CardContent sx={{ p: 2.5 }}>
-                            <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                                <Box>
-                                    <Typography
-                                        variant="body2"
-                                        sx={{
-                                            color: '#48bb78',
-                                            fontSize: '0.875rem',
-                                            mb: 0.5,
-                                            fontWeight: 500
-                                        }}
-                                    >
-                                        정산완료
-                                    </Typography>
-                                    <Typography
-                                        variant="h4"
-                                        sx={{
-                                            fontWeight: 700,
-                                            color: '#48bb78'
-                                        }}
-                                    >
-                                        ₩{data.completedAmount.toLocaleString()}
-                                    </Typography>
-                                    <Typography
-                                        variant="caption"
-                                        sx={{
-                                            color: '#48bb78',
-                                            fontSize: '0.75rem',
-                                            fontWeight: 500
-                                        }}
-                                    >
-                                        {data.completedCount}건 ({data.completionRate.toFixed(1)}%)
-                                    </Typography>
-                                </Box>
-                                <span
-                                    className="material-icons"
-                                    style={{
-                                        fontSize: '32px',
-                                        color: '#48bb78',
-                                        opacity: 0.7
-                                    }}
-                                >
-                                    check_circle
-                                </span>
-                            </Box>
-                        </CardContent>
-                    </Card>
-                </Grid>
-
-                {/* 대기중/처리중 */}
-                <Grid size={{ xs: 12, sm: 6, md: 3 }}>
-                    <Card sx={{
-                        borderRadius: 3,
-                        border: `1px solid rgba(237, 137, 54, 0.2)`,
-                        background: 'linear-gradient(135deg, rgba(237, 137, 54, 0.05) 0%, rgba(237, 137, 54, 0.1) 100%)',
-                        transition: 'all 0.3s ease',
-                        '&:hover': {
-                            transform: 'translateY(-2px)',
-                            boxShadow: '0 4px 12px rgba(237, 137, 54, 0.2)'
-                        }
-                    }}>
-                        <CardContent sx={{ p: 2.5 }}>
-                            <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                                <Box>
-                                    <Typography
-                                        variant="body2"
-                                        sx={{
-                                            color: '#ed8936',
-                                            fontSize: '0.875rem',
-                                            mb: 0.5,
-                                            fontWeight: 500
-                                        }}
-                                    >
-                                        대기중/처리중
-                                    </Typography>
-                                    <Typography
-                                        variant="h4"
-                                        sx={{
-                                            fontWeight: 700,
-                                            color: '#ed8936'
-                                        }}
-                                    >
-                                        ₩{data.pendingAmount.toLocaleString()}
-                                    </Typography>
-                                    <Typography
-                                        variant="caption"
-                                        sx={{
-                                            color: '#ed8936',
-                                            fontSize: '0.75rem',
-                                            fontWeight: 500
-                                        }}
-                                    >
-                                        {data.pendingCount}건 ({(100 - data.completionRate).toFixed(1)}%)
-                                    </Typography>
-                                </Box>
-                                <span
-                                    className="material-icons"
-                                    style={{
-                                        fontSize: '32px',
-                                        color: '#ed8936',
-                                        opacity: 0.7
-                                    }}
-                                >
-                                    schedule
-                                </span>
-                            </Box>
-                        </CardContent>
-                    </Card>
-                </Grid>
-
-                {/* 평균 정산 금액 */}
+                {/* 총 정산 금액 */}
                 <Grid size={{ xs: 12, sm: 6, md: 3 }}>
                     <Card sx={{
                         borderRadius: 3,
@@ -257,7 +135,7 @@ const SettlementSummary = ({ data, dateRangeLabel }: SettlementSummaryProps) => 
                                             fontWeight: 500
                                         }}
                                     >
-                                        평균 정산 금액
+                                        총 정산 금액
                                     </Typography>
                                     <Typography
                                         variant="h4"
@@ -266,10 +144,7 @@ const SettlementSummary = ({ data, dateRangeLabel }: SettlementSummaryProps) => 
                                             color: theme.palette.primary.main
                                         }}
                                     >
-                                        ₩{data.totalCount > 0
-                                        ? Math.round(data.totalAmount / data.totalCount).toLocaleString()
-                                        : '0'
-                                    }
+                                        ₩{data.totalAmount.toLocaleString()}
                                     </Typography>
                                     <Typography
                                         variant="caption"
@@ -279,7 +154,7 @@ const SettlementSummary = ({ data, dateRangeLabel }: SettlementSummaryProps) => 
                                             fontWeight: 500
                                         }}
                                     >
-                                        건당 평균
+                                        전체 정산액
                                     </Typography>
                                 </Box>
                                 <span
@@ -290,7 +165,129 @@ const SettlementSummary = ({ data, dateRangeLabel }: SettlementSummaryProps) => 
                                         opacity: 0.7
                                     }}
                                 >
-                                    trending_up
+                                    payments
+                                </span>
+                            </Box>
+                        </CardContent>
+                    </Card>
+                </Grid>
+
+                {/* 정산완료 금액 */}
+                <Grid size={{ xs: 12, sm: 6, md: 3 }}>
+                    <Card sx={{
+                        borderRadius: 3,
+                        border: `1px solid rgba(72, 187, 120, 0.2)`,
+                        background: 'linear-gradient(135deg, rgba(72, 187, 120, 0.05) 0%, rgba(72, 187, 120, 0.1) 100%)',
+                        transition: 'all 0.3s ease',
+                        '&:hover': {
+                            transform: 'translateY(-2px)',
+                            boxShadow: '0 4px 12px rgba(72, 187, 120, 0.2)'
+                        }
+                    }}>
+                        <CardContent sx={{ p: 2.5 }}>
+                            <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                                <Box>
+                                    <Typography
+                                        variant="body2"
+                                        sx={{
+                                            color: '#48bb78',
+                                            fontSize: '0.875rem',
+                                            mb: 0.5,
+                                            fontWeight: 500
+                                        }}
+                                    >
+                                        정산완료 금액
+                                    </Typography>
+                                    <Typography
+                                        variant="h4"
+                                        sx={{
+                                            fontWeight: 700,
+                                            color: '#48bb78'
+                                        }}
+                                    >
+                                        ₩{data.completedAmount.toLocaleString()}
+                                    </Typography>
+                                    <Typography
+                                        variant="caption"
+                                        sx={{
+                                            color: '#48bb78',
+                                            fontSize: '0.75rem',
+                                            fontWeight: 500
+                                        }}
+                                    >
+                                        완료된 정산액
+                                    </Typography>
+                                </Box>
+                                <span
+                                    className="material-icons"
+                                    style={{
+                                        fontSize: '32px',
+                                        color: '#48bb78',
+                                        opacity: 0.7
+                                    }}
+                                >
+                                    check_circle
+                                </span>
+                            </Box>
+                        </CardContent>
+                    </Card>
+                </Grid>
+
+                {/* 처리중 금액 */}
+                <Grid size={{ xs: 12, sm: 6, md: 3 }}>
+                    <Card sx={{
+                        borderRadius: 3,
+                        border: `1px solid rgba(237, 137, 54, 0.2)`,
+                        background: 'linear-gradient(135deg, rgba(237, 137, 54, 0.05) 0%, rgba(237, 137, 54, 0.1) 100%)',
+                        transition: 'all 0.3s ease',
+                        '&:hover': {
+                            transform: 'translateY(-2px)',
+                            boxShadow: '0 4px 12px rgba(237, 137, 54, 0.2)'
+                        }
+                    }}>
+                        <CardContent sx={{ p: 2.5 }}>
+                            <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                                <Box>
+                                    <Typography
+                                        variant="body2"
+                                        sx={{
+                                            color: '#ed8936',
+                                            fontSize: '0.875rem',
+                                            mb: 0.5,
+                                            fontWeight: 500
+                                        }}
+                                    >
+                                        처리중 금액
+                                    </Typography>
+                                    <Typography
+                                        variant="h4"
+                                        sx={{
+                                            fontWeight: 700,
+                                            color: '#ed8936'
+                                        }}
+                                    >
+                                        ₩{data.pendingAmount.toLocaleString()}
+                                    </Typography>
+                                    <Typography
+                                        variant="caption"
+                                        sx={{
+                                            color: '#ed8936',
+                                            fontSize: '0.75rem',
+                                            fontWeight: 500
+                                        }}
+                                    >
+                                        처리중인 정산액
+                                    </Typography>
+                                </Box>
+                                <span
+                                    className="material-icons"
+                                    style={{
+                                        fontSize: '32px',
+                                        color: '#ed8936',
+                                        opacity: 0.7
+                                    }}
+                                >
+                                    schedule
                                 </span>
                             </Box>
                         </CardContent>
