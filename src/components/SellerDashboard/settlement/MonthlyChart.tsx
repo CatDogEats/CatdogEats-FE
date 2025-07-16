@@ -74,11 +74,14 @@ const MonthlyChart: React.FC<MonthlyChartProps> = ({
     };
 
     const formatBarAmount = (amount: number): string => {
-        // amount가 이미 천원 단위로 변환된 값이므로
-        if (amount >= 10000) {  // 1천만원 이상 (천원단위로는 10000 이상)
-            return `${Math.round(amount / 10000)}억원`;
+        if (amount >= 100000) {  // 1억원 이상 (천원단위로는 100000 이상)
+            return `${Math.round(amount / 100000)}억원`; // ✅ 올바른 계산
+        } else if (amount >= 10000) {  // 1천만원 이상 (천원단위로는 10000 이상)
+            return `${Math.round(amount / 10000)}천만원`;
         } else if (amount >= 1000) {  // 100만원 이상 (천원단위로는 1000 이상)
-            return `${Math.round(amount / 10)}만원`;  // 3022 → 302만원
+            return `${Math.round(amount / 1000)}백만원`;
+        } else if (amount >= 10) {  // 1만원 이상 (천원단위로는 10 이상)
+            return `${Math.round(amount / 10)}만원`;
         } else if (amount >= 1) {  // 1천원 이상
             return `${amount}천원`;
         } else {

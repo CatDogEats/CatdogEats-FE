@@ -1,27 +1,28 @@
-// src/components/SellerDashboard/Dashboard/AIForecastPanel/ForecastItem.tsx
+// src/components/SellerDashboard/Dashboard/DemandForecastPanel/ForecastItem.tsx
 import React from "react";
 import { Box, Typography } from "@mui/material";
-import { TrendingUp, CheckCircle } from "@mui/icons-material";
-import { DemandForecastItem, getStatusColor } from "../SellerDashboardData";
+import { CheckCircle, Warning } from "@mui/icons-material";
+import { DemandForecastItem, getStatusColor } from "../StatCards/types";
 
 interface ForecastItemProps {
     item: DemandForecastItem;
 }
 
-const getTrendIcon = (trend: string) => {
-    switch (trend) {
-        case "급증":
-            return <TrendingUp sx={{ color: "#EB5757", fontSize: 16 }} />;
-        case "증가":
-            return <TrendingUp sx={{ color: "#F2994A", fontSize: 16 }} />;
-        case "안정":
+const getStatusIcon = (status: string) => {
+    switch (status) {
+        case "재주문 필요":
+            return <Warning sx={{ color: "#F2994A", fontSize: 16 }} />;
+        case "충분":
             return <CheckCircle sx={{ color: "#6FCF97", fontSize: 16 }} />;
         default:
-            return <TrendingUp sx={{ color: "#A59A8E", fontSize: 16 }} />;
+            return <CheckCircle sx={{ color: "#A59A8E", fontSize: 16 }} />;
     }
 };
 
 export const ForecastItem: React.FC<ForecastItemProps> = ({ item }) => {
+    const shortageQuantity = Math.max(0, item.predictedQuantity - item.currentStock);
+    const dailyAverage = (item.predictedQuantity / 7).toFixed(1);
+
     return (
         <Box
             sx={{
@@ -49,26 +50,48 @@ export const ForecastItem: React.FC<ForecastItemProps> = ({ item }) => {
                         color: "#333333",
                     }}
                 >
-                    {item.product}
+                    {item.productName}
                 </Typography>
-                <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+
+                <Box sx={{ display: "flex", alignItems: "center", gap: 1, mb: 0.5 }}>
                     <Typography
                         variant="caption"
                         sx={{ color: "#A59A8E", fontSize: "0.75rem" }}
                     >
-                        현재: {item.currentStock}개
+                        현재 재고: {item.currentStock}개
                     </Typography>
+                </Box>
+
+                <Box sx={{ display: "flex", alignItems: "center", gap: 1, mb: 0.5 }}>
                     <Typography
                         variant="caption"
                         sx={{ color: "#333333", fontSize: "0.75rem" }}
                     >
-                        예측: {item.predictedDemand}개
+                        7일 판매량 예측: {item.predictedQuantity}개
                     </Typography>
                 </Box>
+
+                <Box sx={{ display: "flex", alignItems: "center", gap: 1, mb: 0.5 }}>
+                    <Typography
+                        variant="caption"
+                        sx={{ color: "#666666", fontSize: "0.75rem" }}
+                    >
+                        일평균 예측: {dailyAverage}개
+                    </Typography>
+                </Box>
+
+                {item.status === "재주문 필요" && (
+                    <Typography
+                        variant="caption"
+                        sx={{ color: "#F2994A", fontSize: "0.75rem", fontWeight: 600 }}
+                    >
+                        부족량: {shortageQuantity}개
+                    </Typography>
+                )}
             </Box>
 
             <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-                {getTrendIcon(item.trend)}
+                {getStatusIcon(item.status)}
                 <Typography
                     sx={{
                         fontSize: "0.75rem",
