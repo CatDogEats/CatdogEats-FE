@@ -59,7 +59,11 @@ const ProductCard: React.FC<ProductCardProps> = ({
         }
     };
 
-    const formatPrice = (price: number): string => {
+    const formatPrice = (price: number | null | undefined): string => {
+        // null, undefined, 또는 숫자가 아닌 값 처리
+        if (price == null || isNaN(price)) {
+            return '₩0';
+        }
         return `₩${price.toLocaleString()}`;
     };
 
