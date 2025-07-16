@@ -3,11 +3,9 @@
 import { useState } from "react";
 import { Box, Container, Grid, Card, CardContent } from "@mui/material";
 import { ThemeProvider } from "@mui/material/styles";
-import {
-  OrdersViewEnhanced as OrdersView,
-  ShippingDetailViewEnhanced as ShippingDetailView,
-  OrderDetailEnhanced as OrderDetail,
-} from "@/components/BuyerOrderTracking";
+import OrdersView from "@/components/Account/OrdersView";
+import ShippingDetailView from "@/components/Account/ShippingDetailView";
+import OrderDetail from "@/components/Account/OrderDetail";
 // 기존 컴포넌트들
 import ReviewsView from "@/components/Account/ReviewsView";
 import ReturnInquiryView from "@/components/Account/ReturnInquiryView";
@@ -28,6 +26,7 @@ import WithdrawalSuccessView from "@/components/Account/withdrawalSuccessView";
 
 // 타입 및 데이터
 import type { Address, Pet, Order } from "components/Account";
+import { mockOrders } from "@/data/mock-data";
 import { theme } from "@/theme";
 
 export default function MyPage() {
@@ -189,7 +188,7 @@ export default function MyPage() {
       return (
         <ShippingDetailView
           setDetailView={setDetailView}
-          orderNumber={selectedOrder.orderNumber} // 🆕 주문번호 전달
+          orderNumber={selectedOrder.orderNumber}
         />
       );
     }
@@ -222,7 +221,7 @@ export default function MyPage() {
             setSearchQuery={setSearchQuery}
             selectedPeriod={selectedPeriod}
             setSelectedPeriod={setSelectedPeriod}
-            // mockOrders prop 제거 - Enhanced 컴포넌트에서 API로 직접 조회
+            mockOrders={mockOrders} // ✅ mockOrders props 복원
             handleOrderAction={handleOrderAction}
           />
         );
