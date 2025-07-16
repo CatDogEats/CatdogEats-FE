@@ -149,6 +149,7 @@ export const useBuyerOrderData = () => {
   return {
     loading,
     error,
+    setError,
     loadPets,
     loadAllAddresses,
     loadAvailableCoupons,

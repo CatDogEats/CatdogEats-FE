@@ -106,6 +106,11 @@ export interface OrderCreateRequest {
   paymentInfo: {
     orderName: string;
     sellerCoupons: string[];
+    // ✅ 추가: 백엔드 PaymentInfoRequest와 일치하는 필드들
+    customerName?: string;
+    customerEmail?: string;
+    successUrl?: string;
+    failUrl?: string;
   };
   shippingAddress: {
     recipientName: string;

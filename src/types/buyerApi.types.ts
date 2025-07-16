@@ -75,6 +75,10 @@ export interface OrderCreateRequest {
   paymentInfo: {
     orderName: string;
     sellerCoupons: string[];
+    customerName?: string;
+    customerEmail?: string;
+    successUrl?: string;
+    failUrl?: string;
   };
   shippingAddress: {
     recipientName: string;
