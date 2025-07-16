@@ -3,8 +3,12 @@
 export interface ProductFormData {
   id?: string;
   productName: string;
+  subtitle: string;
   category: ProductCategory;
+  productType: "FINISHED" | "HANDMADE";
   price: number;
+  isDiscount: boolean;
+  discountRate: number;
   description: string;
   ingredients: string;
   images: File[];
@@ -21,6 +25,7 @@ export interface StockItem {
   id: string;
   productId: string;
   productName: string;
+  subtitle: string;
   category: ProductCategory;
   currentStock: number;
   minStock: number;
@@ -46,20 +51,16 @@ export interface StockMovement {
 }
 
 export type ProductCategory =
-  | "dog_snacks"
-  | "cat_snacks"
-  | "chews"
-  | "training_treats";
+    | "DOG"
+    | "CAT";
 
 export type StockStatus = "충분" | "부족" | "품절" | "재주문필요";
 
 export type StockMovementType = "입고" | "출고" | "반품" | "폐기" | "조정";
 
 export const PRODUCT_CATEGORIES = [
-  { value: "dog_snacks", label: "강아지 간식" },
-  { value: "cat_snacks", label: "고양이 간식" },
-  { value: "chews", label: "츄르/개껌" },
-  { value: "training_treats", label: "훈련용 간식" },
+  { value: "DOG", label: "강아지 간식" },
+  { value: "CAT", label: "고양이 간식" }
 ] as const;
 
 export const STOCK_MOVEMENT_TYPES = [
@@ -68,4 +69,9 @@ export const STOCK_MOVEMENT_TYPES = [
   { value: "반품", label: "반품" },
   { value: "폐기", label: "폐기" },
   { value: "조정", label: "재고 조정" },
+] as const;
+
+export const PRODUCT_TYPE_OPTIONS = [
+  { value: "FINISHED", label: "완제품" },
+  { value: "HANDMADE", label: "수제품" },
 ] as const;

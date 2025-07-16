@@ -1,293 +1,248 @@
+"use client"
+
+import type React from "react"
+import { useEffect, useState, useCallback } from "react"
 import {
     AppBar,
     Toolbar,
     Typography,
     Box,
     IconButton,
-    TextField,
-    InputAdornment,
     Button,
     useMediaQuery,
     useTheme,
-    Drawer,
-    List,
-    ListItem,
-    ListItemText,
-    Divider,
+    Badge, // 이 부분 추가
     CircularProgress,
-} from '@mui/material';
-import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import NotificationMenu, { Notification } from '../../common/NotificationMenu';
-import ProfileMenu, { UserInfo } from '../../common/ProfileMenu';
-import ChatModal from '../../common/chat/ChatModal';
-import type { User } from '@/service/auth/AuthAPI';
+} from "@mui/material"
+import { useNavigate } from "react-router-dom"
+import { Menu as MenuIcon, ShoppingCart as ShoppingCartIcon, MoreVert as MoreVertIcon } from "@mui/icons-material"
+import { useAuthStore } from "@/service/auth/AuthStore"
+import { authApi } from "@/service/auth/AuthAPI"
+import ChatModal from "@/components/common/chat/ChatModal"
+import DropdownMenu from "./DropdownMenu"
+import SearchBar from "./SearchBar"
+import MobileDrawer from "./MobileDrawer"
+import ProfileMenu from "@/components/common/ProfileMenu"
 
-interface BuyerHeaderProps {
-    user: User | null;
-    isAuthenticated: boolean;
-    loading: boolean;
-    logout: () => Promise<void>;
+interface Notification {
+    id: string
+    type: "order" | "delivery" | "inquiry"
+    title: string
+    message: string
+    timestamp: string
+    isRead: boolean
 }
 
-const BuyerHeader = ({ user, isAuthenticated, loading, logout }: BuyerHeaderProps) => {
-    const navigate = useNavigate();
-    const theme = useTheme();
-    const isMobile = useMediaQuery(theme.breakpoints.down('lg'));
-    const isSmall = useMediaQuery(theme.breakpoints.down('sm'));
-    const [mobileOpen, setMobileOpen] = useState(false);
-    const [menuOpen, setMenuOpen] = useState(false);
-    const [hoveredCategory, setHoveredCategory] = useState<string | null>(null);
-    const [hoveredSubCategory, setHoveredSubCategory] = useState<string | null>(null);
-    const [chatModalOpen, setChatModalOpen] = useState(false);
+const BuyerHeader = () => {
+    const navigate = useNavigate()
+    const theme = useTheme()
+    const isMobile = useMediaQuery(theme.breakpoints.down("lg"))
+    const isSmall = useMediaQuery(theme.breakpoints.down("sm"))
 
-    // 사용자 정보를 user 데이터에서 가져오기
-    const userInfo: UserInfo = {
-        name: user?.email?.split('@')[0] || '사용자', // 이메일 앞부분을 이름으로 사용
-        profileImage: '' // 프로필 이미지가 없으면 이니셜 표시
-    };
+    // Zustand 스토어에서 인증 상태 가져오기
+    const { isAuthenticated, name, role, loading, clearAuth, setLoading } = useAuthStore()
+
+    useEffect(() => {
+        console.log("BuyerHeader 상태:", { isAuthenticated, name, role, loading })
+    }, [isAuthenticated, name, role, loading])
+
+
+    // 로컬 상태
+    const [mobileOpen, setMobileOpen] = useState(false)
+    const [menuOpen, setMenuOpen] = useState(false)
+    const [hoveredCategory, setHoveredCategory] = useState<string | null>(null)
+    const [hoveredSubCategory, setHoveredSubCategory] = useState<string | null>(null)
+    const [chatModalOpen, setChatModalOpen] = useState(false)
+    const [searchQuery, setSearchQuery] = useState("")
 
     // 임시 알림 데이터
     const [notifications] = useState<Notification[]>([
         {
-            id: '1',
-            type: 'order',
-            title: '주문이 접수되었습니다',
-            message: '주문번호 #12345가 정상적으로 접수되었습니다.',
-            timestamp: '2분 전',
-            isRead: false
+            id: "1",
+            type: "order",
+            title: "주문이 접수되었습니다",
+            message: "주문번호 #12345가 정상적으로 접수되었습니다.",
+            timestamp: "2분 전",
+            isRead: false,
         },
         {
-            id: '2',
-            type: 'delivery',
-            title: '배송이 시작되었습니다',
-            message: '주문하신 상품이 배송을 시작했습니다.',
-            timestamp: '1시간 전',
-            isRead: false
+            id: "2",
+            type: "delivery",
+            title: "배송이 시작되었습니다",
+            message: "주문하신 상품이 배송을 시작했습니다.",
+            timestamp: "1시간 전",
+            isRead: false,
         },
         {
-            id: '3',
-            type: 'inquiry',
-            title: '문의 답변이 등록되었습니다',
-            message: '상품 문의에 대한 답변이 등록되었습니다.',
-            timestamp: '3시간 전',
-            isRead: true
+            id: "3",
+            type: "inquiry",
+            title: "문의 답변이 등록되었습니다",
+            message: "상품 문의에 대한 답변이 등록되었습니다.",
+            timestamp: "3시간 전",
+            isRead: true,
+        },
+    ])
+
+
+    // 로그아웃 핸들러
+    const handleLogout = useCallback(async () => {
+        try {
+            setLoading(true)
+            await authApi.logout()
+            clearAuth()
+            navigate("/")
+        } catch (error) {
+            console.error("로그아웃 실패:", error)
+        } finally {
+            setLoading(false)
         }
-    ]);
+    }, [clearAuth, navigate, setLoading])
+
+    // 검색 핸들러
+    const handleSearch = useCallback(
+        (e: React.FormEvent) => {
+            e.preventDefault()
+            if (searchQuery.trim()) {
+                navigate(`/search?q=${encodeURIComponent(searchQuery.trim())}`)
+                setSearchQuery("")
+            }
+        },
+        [searchQuery, navigate],
+    )
 
     // ChatModal 핸들러
-    const handleChatModalOpen = () => {
-        setChatModalOpen(true);
-        setMenuOpen(false);
-        setMobileOpen(false);
-    };
+    const handleChatModalOpen = useCallback(() => {
+        setChatModalOpen(true)
+        setMenuOpen(false)
+        setMobileOpen(false)
+    }, [])
 
-    const handleChatModalClose = () => {
-        setChatModalOpen(false);
-    };
+    const handleChatModalClose = useCallback(() => {
+        setChatModalOpen(false)
+    }, [])
 
+    // 네비게이션 아이템
     const navigationItems = [
-        { label: '베스트 상품', path: '/best' },
-        { label: '특가 상품', path: '/sale' },
-        { label: '신규 상품', path: '/new' },
         {
-            label: '카테고리',
-            path: '/categories',
+            label: "카테고리",
+            path: "/productsList",
             subItems: [
                 {
-                    label: '강아지 간식',
-                    path: '/categories/dog',
+                    label: "강아지 간식",
+                    path: "/productsList/dog",
                     subItems: [
-                        { label: '주문 제작', path: '/categories/dog/custom' },
-                        { label: '완제품', path: '/categories/dog/ready-made' }
-                    ]
+                        { label: "수제품", path: "/productsList/dog/handmade" },
+                        { label: "완제품", path: "/productsList/dog/finished" },
+                    ],
                 },
                 {
-                    label: '고양이 간식',
-                    path: '/categories/cat',
+                    label: "고양이 간식",
+                    path: "/productsList/cat",
                     subItems: [
-                        { label: '주문 제작', path: '/categories/cat/custom' },
-                        { label: '완제품', path: '/categories/cat/ready-made' }
-                    ]
-                }
-            ]
+                        { label: "수제품", path: "/productsList/cat/handmade" },
+                        { label: "완제품", path: "/productsList/cat/finished" },
+                    ],
+                },
+            ],
         },
-        { label: '판매자와 1:1채팅', action: handleChatModalOpen },
-        { label: '고객센터', path: '/support' },
-    ];
+        { label: "판매자와 1:1채팅", action: handleChatModalOpen },
+        { label: "고객센터", path: "/support" },
+    ]
 
-    const handleDrawerToggle = () => {
-        setMobileOpen(!mobileOpen);
-    };
+    // 드로어 토글
+    const handleDrawerToggle = useCallback(() => {
+        setMobileOpen(!mobileOpen)
+    }, [mobileOpen])
 
-    const handleMenuToggle = () => {
-        setMenuOpen(!menuOpen);
-        setHoveredCategory(null);
-        setHoveredSubCategory(null);
-    };
-
-    // 알림 클릭 핸들러
-    const handleNotificationClick = (notification: Notification) => {
-        console.log('알림 클릭:', notification);
-        switch (notification.type) {
-            case 'order':
-                navigate('/account/orders');
-                break;
-            case 'delivery':
-                navigate('/account/orders');
-                break;
-            case 'inquiry':
-                navigate('/account/inquiries');
-                break;
-            default:
-                break;
-        }
-    };
+    // 메뉴 토글
+    const handleMenuToggle = useCallback(() => {
+        setMenuOpen(!menuOpen)
+        setHoveredCategory(null)
+        setHoveredSubCategory(null)
+    }, [menuOpen])
 
     // 프로필 메뉴 핸들러들
-    const handleProfileEdit = () => {
-        navigate('/mypage');
-    };
-
-    const handleLogout = async () => {
-        try {
-            await logout();
-            navigate('/'); // 로그아웃 후 홈으로 이동
-        } catch (error) {
-            console.error('로그아웃 실패:', error);
-        }
-    };
+    const handleProfileEdit = useCallback(() => {
+        navigate("/account")
+    }, [navigate])
 
     // 네비게이션 아이템 클릭 핸들러
-    const handleNavigationClick = (item: any) => {
-        if (item.action) {
-            item.action();
-        } else if (item.path) {
-            navigate(item.path);
-            setMobileOpen(false);
-        }
-    };
-
-    const drawer = (
-        <Box sx={{ width: 250, pt: 2 }}>
-            <Box sx={{ px: 2, mb: 2 }}>
-                <Typography variant="h6" sx={{ fontWeight: 700, color: 'primary.main' }}>
-                    CatDogEats
-                </Typography>
-            </Box>
-            <Divider />
-            <List>
-                {navigationItems.map((item) => (
-                    <ListItem
-                        key={item.label}
-                        onClick={() => handleNavigationClick(item)}
-                        sx={{ cursor: 'pointer', '&:hover': { bgcolor: 'grey.100' } }}
-                    >
-                        <ListItemText primary={item.label} />
-                    </ListItem>
-                ))}
-            </List>
-            <Divider />
-            <Box sx={{ p: 2 }}>
-                {!isAuthenticated ? (
-                    <>
-                        <Button
-                            fullWidth
-                            variant="outlined"
-                            sx={{ mb: 1 }}
-                            onClick={() => {
-                                navigate('/login');
-                                setMobileOpen(false);
-                            }}
-                        >
-                            로그인
-                        </Button>
-                        <Button
-                            fullWidth
-                            variant="contained"
-                            onClick={() => {
-                                navigate('/login');
-                                setMobileOpen(false);
-                            }}
-                        >
-                            회원가입
-                        </Button>
-                    </>
-                ) : (
-                    <Button
-                        fullWidth
-                        variant="outlined"
-                        onClick={() => {
-                            handleLogout();
-                            setMobileOpen(false);
-                        }}
-                        disabled={loading}
-                    >
-                        {loading ? <CircularProgress size={20} /> : '로그아웃'}
-                    </Button>
-                )}
-            </Box>
-        </Box>
-    );
+    const handleNavigationClick = useCallback(
+        (item: any) => {
+            if (item.action) {
+                item.action()
+            } else if (item.path) {
+                navigate(item.path)
+                setMobileOpen(false)
+            }
+        },
+        [navigate],
+    )
 
     return (
         <>
             <AppBar
                 position="sticky"
                 sx={{
-                    backgroundColor: 'white',
-                    color: 'text.primary',
-                    boxShadow: 'none',
-                    borderBottom: '1px solid',
-                    borderBottomColor: 'grey.200',
+                    backgroundColor: "white",
+                    color: "text.primary",
+                    boxShadow: "none",
+                    borderBottom: "1px solid",
+                    borderBottomColor: "grey.200",
                 }}
             >
-                <Toolbar sx={{ justifyContent: 'space-between', py: { xs: 1, sm: 1.5 }, minHeight: '64px !important', position: 'relative' }}>
+                <Toolbar
+                    sx={{
+                        justifyContent: "space-between",
+                        py: { xs: 1, sm: 1.5 },
+                        minHeight: "64px !important",
+                        position: "relative",
+                    }}
+                >
                     {/* 왼쪽 영역: 햄버거 메뉴 + 로고 */}
-                    <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                    <Box sx={{ display: "flex", alignItems: "center" }}>
                         <IconButton
                             onClick={handleMenuToggle}
                             size="small"
                             sx={{
-                                color: 'text.secondary',
+                                color: "text.secondary",
                                 mr: 2,
-                                '&:hover': {
-                                    color: 'primary.main',
-                                    backgroundColor: 'grey.50'
-                                }
+                                "&:hover": {
+                                    color: "primary.main",
+                                    backgroundColor: "grey.50",
+                                },
                             }}
                         >
-                            <span className="material-icons" style={{ fontSize: '20px' }}>
-                                menu
-                            </span>
+                            <MenuIcon fontSize="small" />
                         </IconButton>
 
-                        <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                        <Box sx={{ display: "flex", alignItems: "center" }}>
                             <Box
                                 sx={{
                                     width: 32,
                                     height: 32,
-                                    borderRadius: '50%',
-                                    background: '#e89830',
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    justifyContent: 'center',
+                                    borderRadius: "50%",
+                                    background: "#e89830",
+                                    display: "flex",
+                                    alignItems: "center",
+                                    justifyContent: "center",
                                     mr: 1.5,
-                                    cursor: 'pointer'
+                                    cursor: "pointer",
                                 }}
-                                onClick={() => navigate('/')}
+                                onClick={() => navigate("/")}
                             >
+
                             </Box>
                             <Typography
                                 variant="h6"
                                 component="div"
                                 sx={{
                                     fontWeight: 700,
-                                    color: 'text.primary',
-                                    cursor: 'pointer',
-                                    fontSize: { xs: '1.1rem', sm: '1.25rem' }
+                                    color: "text.primary",
+                                    cursor: "pointer",
+                                    fontSize: { xs: "1.1rem", sm: "1.25rem" },
                                 }}
-                                onClick={() => navigate('/')}
+                                onClick={() => navigate("/")}
                             >
                                 CatDogEats
                             </Typography>
@@ -295,266 +250,78 @@ const BuyerHeader = ({ user, isAuthenticated, loading, logout }: BuyerHeaderProp
                     </Box>
 
                     {/* 드롭다운 메뉴 */}
-                    {menuOpen && (
-                        <Box
-                            sx={{
-                                position: 'absolute',
-                                top: '100%',
-                                left: 0,
-                                width: 'fit-content',
-                                minWidth: '180px',
-                                height: 'calc(100vh - 64px)',
-                                backgroundColor: 'white',
-                                boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
-                                zIndex: 1000,
-                                borderTop: '1px solid',
-                                borderTopColor: 'grey.200',
-                                borderRadius: '0 0 8px 8px'
-                            }}
-                        >
-                            <List sx={{ py: 0 }}>
-                                {navigationItems.map((item, index) => (
-                                    <Box key={item.label} sx={{ position: 'relative' }}>
-                                        <ListItem
-                                            onClick={() => {
-                                                if (!item.subItems) {
-                                                    handleNavigationClick(item);
-                                                    setMenuOpen(false);
-                                                }
-                                            }}
-                                            onMouseEnter={() => {
-                                                if (item.subItems) {
-                                                    setHoveredCategory(item.label);
-                                                }
-                                            }}
-                                            onMouseLeave={() => {
-                                                if (item.subItems) {
-                                                    setHoveredCategory(null);
-                                                    setHoveredSubCategory(null);
-                                                }
-                                            }}
-                                            sx={{
-                                                cursor: 'pointer',
-                                                py: 2,
-                                                px: 3,
-                                                borderBottom: index < navigationItems.length - 1 ? '1px solid' : 'none',
-                                                borderBottomColor: 'grey.100',
-                                                '&:hover': {
-                                                    backgroundColor: 'grey.50'
-                                                },
-                                                whiteSpace: 'nowrap',
-                                                display: 'flex',
-                                                justifyContent: 'space-between',
-                                                alignItems: 'center'
-                                            }}
-                                        >
-                                            <ListItemText
-                                                primary={item.label}
-                                                primaryTypographyProps={{
-                                                    fontSize: '0.875rem',
-                                                    fontWeight: 400,
-                                                    color: 'text.primary'
-                                                }}
-                                            />
-                                            {item.subItems && (
-                                                <span className="material-icons" style={{ fontSize: '16px', color: '#999' }}>
-                                                    chevron_right
-                                                </span>
-                                            )}
-                                        </ListItem>
-
-                                        {/* 서브메뉴 코드는 기존과 동일하므로 생략 */}
-                                        {item.subItems && hoveredCategory === item.label && (
-                                            <Box
-                                                sx={{
-                                                    position: 'absolute',
-                                                    top: 0,
-                                                    left: '100%',
-                                                    width: 'fit-content',
-                                                    minWidth: '150px',
-                                                    backgroundColor: 'white',
-                                                    boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
-                                                    zIndex: 1001,
-                                                    borderRadius: '8px',
-                                                    border: '1px solid',
-                                                    borderColor: 'grey.200'
-                                                }}
-                                                onMouseEnter={() => setHoveredCategory(item.label)}
-                                                onMouseLeave={() => {
-                                                    setHoveredCategory(null);
-                                                    setHoveredSubCategory(null);
-                                                }}
-                                            >
-                                                <List sx={{ py: 0 }}>
-                                                    {item.subItems.map((subItem, subIndex) => (
-                                                        <Box key={subItem.label} sx={{ position: 'relative' }}>
-                                                            <ListItem
-                                                                onClick={() => {
-                                                                    if (!subItem.subItems) {
-                                                                        navigate(subItem.path);
-                                                                        setMenuOpen(false);
-                                                                        setHoveredCategory(null);
-                                                                        setHoveredSubCategory(null);
-                                                                    }
-                                                                }}
-                                                                onMouseEnter={() => {
-                                                                    if (subItem.subItems) {
-                                                                        setHoveredSubCategory(subItem.label);
-                                                                    }
-                                                                }}
-                                                                onMouseLeave={() => {
-                                                                    if (subItem.subItems) {
-                                                                        setHoveredSubCategory(null);
-                                                                    }
-                                                                }}
-                                                                sx={{
-                                                                    cursor: 'pointer',
-                                                                    py: 1.5,
-                                                                    px: 2.5,
-                                                                    borderBottom: subIndex < item.subItems.length - 1 ? '1px solid' : 'none',
-                                                                    borderBottomColor: 'grey.100',
-                                                                    '&:hover': {
-                                                                        backgroundColor: 'grey.50'
-                                                                    },
-                                                                    whiteSpace: 'nowrap',
-                                                                    display: 'flex',
-                                                                    justifyContent: 'space-between',
-                                                                    alignItems: 'center'
-                                                                }}
-                                                            >
-                                                                <ListItemText
-                                                                    primary={subItem.label}
-                                                                    primaryTypographyProps={{
-                                                                        fontSize: '0.8rem',
-                                                                        fontWeight: 400,
-                                                                        color: 'text.primary'
-                                                                    }}
-                                                                />
-                                                                {subItem.subItems && (
-                                                                    <span className="material-icons" style={{ fontSize: '14px', color: '#999' }}>
-                                                                        chevron_right
-                                                                    </span>
-                                                                )}
-                                                            </ListItem>
-
-                                                            {/* 2차 서브메뉴 */}
-                                                            {subItem.subItems && hoveredSubCategory === subItem.label && (
-                                                                <Box
-                                                                    sx={{
-                                                                        position: 'absolute',
-                                                                        top: 0,
-                                                                        left: '100%',
-                                                                        width: 'fit-content',
-                                                                        minWidth: '120px',
-                                                                        backgroundColor: 'white',
-                                                                        boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
-                                                                        zIndex: 1002,
-                                                                        borderRadius: '8px',
-                                                                        border: '1px solid',
-                                                                        borderColor: 'grey.200'
-                                                                    }}
-                                                                    onMouseEnter={() => setHoveredSubCategory(subItem.label)}
-                                                                    onMouseLeave={() => setHoveredSubCategory(null)}
-                                                                >
-                                                                    <List sx={{ py: 0 }}>
-                                                                        {subItem.subItems.map((subSubItem, subSubIndex) => (
-                                                                            <ListItem
-                                                                                key={subSubItem.label}
-                                                                                onClick={() => {
-                                                                                    navigate(subSubItem.path);
-                                                                                    setMenuOpen(false);
-                                                                                    setHoveredCategory(null);
-                                                                                    setHoveredSubCategory(null);
-                                                                                }}
-                                                                                sx={{
-                                                                                    cursor: 'pointer',
-                                                                                    py: 1.5,
-                                                                                    px: 2,
-                                                                                    borderBottom: subSubIndex < subItem.subItems.length - 1 ? '1px solid' : 'none',
-                                                                                    borderBottomColor: 'grey.100',
-                                                                                    '&:hover': {
-                                                                                        backgroundColor: 'grey.50'
-                                                                                    },
-                                                                                    whiteSpace: 'nowrap'
-                                                                                }}
-                                                                            >
-                                                                                <ListItemText
-                                                                                    primary={subSubItem.label}
-                                                                                    primaryTypographyProps={{
-                                                                                        fontSize: '0.75rem',
-                                                                                        fontWeight: 400,
-                                                                                        color: 'text.primary'
-                                                                                    }}
-                                                                                />
-                                                                            </ListItem>
-                                                                        ))}
-                                                                    </List>
-                                                                </Box>
-                                                            )}
-                                                        </Box>
-                                                    ))}
-                                                </List>
-                                            </Box>
-                                        )}
-                                    </Box>
-                                ))}
-                            </List>
-                        </Box>
-                    )}
+                    <DropdownMenu
+                        navigationItems={navigationItems}
+                        menuOpen={menuOpen}
+                        hoveredCategory={hoveredCategory}
+                        hoveredSubCategory={hoveredSubCategory}
+                        setHoveredCategory={setHoveredCategory}
+                        setHoveredSubCategory={setHoveredSubCategory}
+                        setMenuOpen={setMenuOpen}
+                        onNavigationClick={handleNavigationClick}
+                    />
 
                     {/* 우측 영역: 검색창 및 메뉴 */}
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: { xs: 1, sm: 2 } }}>
-                        {/* 검색창 (데스크톱) */}
-                        {!isSmall && (
-                            <TextField
-                                placeholder="간식 검색..."
-                                size="small"
-                                sx={{
-                                    width: { sm: 200, md: 250 },
-                                    '& .MuiOutlinedInput-root': {
-                                        backgroundColor: '#f5f5f5',
-                                        borderRadius: '20px',
-                                        fontSize: '0.875rem',
-                                        '& fieldset': {
-                                            border: 'none',
-                                        },
-                                        '&:hover fieldset': {
-                                            border: 'none',
-                                        },
-                                        '&.Mui-focused fieldset': {
-                                            border: '1px solid #e89830',
-                                        },
-                                        '& input': {
-                                            fontSize: '0.875rem',
-                                            py: '8px',
-                                        }
-                                    }
-                                }}
-                                InputProps={{
-                                    startAdornment: (
-                                        <InputAdornment position="start">
-                                            <span className="material-icons" style={{ fontSize: '18px', color: '#999' }}>
-                                                search
-                                            </span>
-                                        </InputAdornment>
-                                    ),
-                                }}
-                            />
-                        )}
+                    <Box sx={{ display: "flex", alignItems: "center", gap: { xs: 1, sm: 2 } }}>
+                        {/* 검색창 */}
+                        <SearchBar
+                            searchQuery={searchQuery}
+                            setSearchQuery={setSearchQuery}
+                            onSearch={handleSearch}
+                            isSmall={isSmall}
+                        />
 
                         {/* 로그인 상태에 따른 우측 버튼 영역 */}
                         {isAuthenticated ? (
                             <>
                                 {/* 로그인된 경우: 알림 + 프로필 */}
-                                <NotificationMenu
-                                    notifications={notifications}
-                                    onNotificationClick={handleNotificationClick}
-                                />
+                                <IconButton
+                                    size="small"
+                                    sx={{
+                                        color: "text.secondary",
+                                        "&:hover": {
+                                            color: "primary.main",
+                                            backgroundColor: "grey.50",
+                                        },
+                                    }}
+                                >
+                                    <Badge badgeContent={notifications.filter((n) => !n.isRead).length} color="error">
+                    <span className="material-icons" style={{ fontSize: "20px" }}>
+                      notifications
+                    </span>
+                                    </Badge>
+                                </IconButton>
+
                                 <ProfileMenu
-                                    userInfo={userInfo}
+                                    userInfo={{ name: name || "사용자" }}
                                     onProfileEdit={handleProfileEdit}
                                     onLogout={handleLogout}
                                 />
+
+                                {/* 로그아웃 버튼 (데스크톱에서만) */}
+                                {!isMobile && (
+                                    <Button
+                                        variant="outlined"
+                                        onClick={handleLogout}
+                                        disabled={loading}
+                                        sx={{
+                                            fontSize: "0.875rem",
+                                            fontWeight: 400,
+                                            color: "text.secondary",
+                                            textTransform: "none",
+                                            minWidth: "auto",
+                                            px: 2,
+                                            borderColor: "grey.300",
+                                            "&:hover": {
+                                                color: "text.primary",
+                                                borderColor: "grey.400",
+                                                backgroundColor: "grey.50",
+                                            },
+                                        }}
+                                    >
+                                        {loading ? <CircularProgress size={16} /> : "로그아웃"}
+                                    </Button>
+                                )}
                             </>
                         ) : (
                             <>
@@ -563,37 +330,37 @@ const BuyerHeader = ({ user, isAuthenticated, loading, logout }: BuyerHeaderProp
                                     <>
                                         <Button
                                             variant="text"
-                                            onClick={() => navigate('/login')}
+                                            onClick={() => navigate("/login")}
                                             sx={{
-                                                fontSize: '0.875rem',
+                                                fontSize: "0.875rem",
                                                 fontWeight: 400,
-                                                color: 'text.secondary',
-                                                textTransform: 'none',
-                                                minWidth: 'auto',
+                                                color: "text.secondary",
+                                                textTransform: "none",
+                                                minWidth: "auto",
                                                 px: 2,
-                                                '&:hover': {
-                                                    color: 'text.primary',
-                                                    backgroundColor: 'transparent',
-                                                }
+                                                "&:hover": {
+                                                    color: "text.primary",
+                                                    backgroundColor: "transparent",
+                                                },
                                             }}
                                         >
                                             로그인
                                         </Button>
                                         <Button
                                             variant="contained"
-                                            onClick={() => navigate('/login')}
+                                            onClick={() => navigate("/login")}
                                             sx={{
-                                                fontSize: '0.875rem',
+                                                fontSize: "0.875rem",
                                                 fontWeight: 500,
-                                                backgroundColor: '#e89830',
-                                                color: 'white',
-                                                textTransform: 'none',
-                                                borderRadius: '20px',
+                                                backgroundColor: "#e89830",
+                                                color: "white",
+                                                textTransform: "none",
+                                                borderRadius: "20px",
                                                 px: 3,
                                                 py: 1,
-                                                '&:hover': {
-                                                    backgroundColor: '#d18224',
-                                                }
+                                                "&:hover": {
+                                                    backgroundColor: "#d18224",
+                                                },
                                             }}
                                         >
                                             회원가입
@@ -606,37 +373,17 @@ const BuyerHeader = ({ user, isAuthenticated, loading, logout }: BuyerHeaderProp
                         {/* 장바구니 아이콘 */}
                         <IconButton
                             size="small"
-                            onClick={() => navigate('/cart')}
+                            onClick={() => navigate("/cart")}
                             sx={{
-                                color: 'text.secondary',
-                                '&:hover': {
-                                    color: 'primary.main',
-                                    backgroundColor: 'grey.50'
-                                }
+                                color: "text.secondary",
+                                "&:hover": {
+                                    color: "primary.main",
+                                    backgroundColor: "grey.50",
+                                },
                             }}
                         >
-                            <span className="material-icons" style={{ fontSize: '20px' }}>
-                                shopping_cart
-                            </span>
+                            <ShoppingCartIcon fontSize="small" />
                         </IconButton>
-
-                        {/* 모바일 검색 아이콘 */}
-                        {isSmall && (
-                            <IconButton
-                                size="small"
-                                sx={{
-                                    color: 'text.secondary',
-                                    '&:hover': {
-                                        color: 'primary.main',
-                                        backgroundColor: 'grey.50'
-                                    }
-                                }}
-                            >
-                                <span className="material-icons" style={{ fontSize: '20px' }}>
-                                    search
-                                </span>
-                            </IconButton>
-                        )}
 
                         {/* 모바일 드로어 메뉴 버튼 */}
                         {isMobile && (
@@ -644,16 +391,14 @@ const BuyerHeader = ({ user, isAuthenticated, loading, logout }: BuyerHeaderProp
                                 onClick={handleDrawerToggle}
                                 size="small"
                                 sx={{
-                                    color: 'text.secondary',
-                                    '&:hover': {
-                                        color: 'primary.main',
-                                        backgroundColor: 'grey.50'
-                                    }
+                                    color: "text.secondary",
+                                    "&:hover": {
+                                        color: "primary.main",
+                                        backgroundColor: "grey.50",
+                                    },
                                 }}
                             >
-                                <span className="material-icons" style={{ fontSize: '20px' }}>
-                                    more_vert
-                                </span>
+                                <MoreVertIcon fontSize="small" />
                             </IconButton>
                         )}
                     </Box>
@@ -661,25 +406,20 @@ const BuyerHeader = ({ user, isAuthenticated, loading, logout }: BuyerHeaderProp
             </AppBar>
 
             {/* 모바일 드로어 */}
-            <Drawer
-                variant="temporary"
-                anchor="right"
-                open={mobileOpen}
+            <MobileDrawer
+                mobileOpen={mobileOpen}
                 onClose={handleDrawerToggle}
-                ModalProps={{
-                    keepMounted: true,
-                }}
-            >
-                {drawer}
-            </Drawer>
+                navigationItems={navigationItems}
+                isAuthenticated={isAuthenticated}
+                loading={loading}
+                onNavigationClick={handleNavigationClick}
+                onLogout={handleLogout}
+            />
 
             {/* ChatModal */}
-            <ChatModal
-                open={chatModalOpen}
-                onClose={handleChatModalClose}
-            />
+            <ChatModal open={chatModalOpen} onClose={handleChatModalClose} />
         </>
-    );
-};
+    )
+}
 
-export default BuyerHeader;
+export default BuyerHeader
