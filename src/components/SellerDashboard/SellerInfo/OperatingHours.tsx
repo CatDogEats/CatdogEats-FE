@@ -31,10 +31,9 @@ const OperatingHours: React.FC<OperatingHoursProps> = ({ hours, onChange }) => {
                 mb={1}
             >
                 운영시간
-                <Typography component="span" color="error" ml={0.5}>*</Typography>
             </Typography>
             <Grid container spacing={1.5} sx={{ alignItems: 'flex-end' }}>
-                <Grid item xs={3} sm={3}>
+                <Grid item xs={3}>
                     <TextField
                         fullWidth
                         label="시작시간"
@@ -54,7 +53,7 @@ const OperatingHours: React.FC<OperatingHoursProps> = ({ hours, onChange }) => {
                         }}
                     />
                 </Grid>
-                <Grid item xs={3} sm={3}>
+                <Grid item xs={3}>
                     <TextField
                         fullWidth
                         label="종료시간"
@@ -74,7 +73,7 @@ const OperatingHours: React.FC<OperatingHoursProps> = ({ hours, onChange }) => {
                         }}
                     />
                 </Grid>
-                <Grid item xs={6} sm={6}>
+                <Grid item xs={6}>
                     <TextField
                         fullWidth
                         label="휴무정보"

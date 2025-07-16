@@ -31,10 +31,19 @@ declare global {
 }
 
 // ==================== 인터페이스 ====================
+interface AddressData {
+    postalCode: string;
+    roadAddress: string;
+    city: string;           // 시/도
+    district: string;       // 시군구
+    neighborhood: string;   // 동/읍/면
+    streetAddress: string;  // 도로명 + 번지
+}
+
 interface AddressSearchModalProps {
     open: boolean;
     onClose: () => void;
-    onSelect: (address: { postalCode: string; roadAddress: string }) => void;
+    onSelect: (address: AddressData) => void;
 }
 
 // ==================== 카카오 주소 검색 모달 ====================
@@ -71,6 +80,47 @@ const AddressSearchModal: React.FC<AddressSearchModalProps> = ({
         });
     };
 
+    // 시/도명 정규화 함수
+    const normalizeCityName = (sido: string): string => {
+        const cityMappings: Record<string, string> = {
+            '서울': '서울특별시',
+            '부산': '부산광역시',
+            '대구': '대구광역시',
+            '인천': '인천광역시',
+            '광주': '광주광역시',
+            '대전': '대전광역시',
+            '울산': '울산광역시',
+            '세종': '세종특별자치시',
+            '경기': '경기도',
+            '강원': '강원특별자치도',
+            '충북': '충청북도',
+            '충남': '충청남도',
+            '전북': '전북특별자치도',
+            '전남': '전라남도',
+            '경북': '경상북도',
+            '경남': '경상남도',
+            '제주': '제주특별자치도'
+        };
+
+        return cityMappings[sido] || sido;
+    };
+
+    // 도로명과 번지수 분리 함수
+    const extractStreetAndNumber = (roadAddress: string, sido: string, sigungu: string): string => {
+        // 전체 주소에서 시/도, 시군구를 제거하여 도로명+번지만 추출
+        const prefix = `${sido} ${sigungu} `;
+        if (roadAddress.startsWith(prefix)) {
+            const remaining = roadAddress.substring(prefix.length);
+            // 동명이 포함된 경우 제거 (예: "역삼동 테헤란로 123" → "테헤란로 123")
+            const parts = remaining.split(' ');
+            if (parts.length > 1 && parts[0].endsWith('동')) {
+                return parts.slice(1).join(' ');
+            }
+            return remaining;
+        }
+        return roadAddress;
+    };
+
     // 스크립트 로드
     useEffect(() => {
         const initScript = async () => {
@@ -105,14 +155,25 @@ const AddressSearchModal: React.FC<AddressSearchModalProps> = ({
 
             const postcode = new window.daum.Postcode({
                 oncomplete: (data: any) => {
-                    console.log("Address selected:", data);
+                    console.log("카카오 주소 API 응답:", data);
 
+                    // 도로명 주소 우선, 없으면 지번 주소 사용
                     const fullAddress = data.roadAddress || data.jibunAddress;
 
-                    onSelect({
+                    // 카카오 API에서 제공하는 개별 필드들을 활용하여 주소 분리
+                    const addressData: AddressData = {
                         postalCode: data.zonecode,
                         roadAddress: fullAddress,
-                    });
+                        city: normalizeCityName(data.sido),           // 시/도 정규화
+                        district: data.sigungu,                      // 시군구
+                        neighborhood: data.bname2 || data.bname || '', // 동명 (bname2 우선, 없으면 bname)
+                        streetAddress: extractStreetAndNumber(fullAddress, data.sido, data.sigungu) // 도로명+번지만 추출
+                    };
+
+                    console.log("파싱된 주소 정보:", addressData);
+
+                    // 부모 컴포넌트에 상세한 주소 정보 전달
+                    onSelect(addressData);
                     onClose();
                 },
                 onclose: () => {

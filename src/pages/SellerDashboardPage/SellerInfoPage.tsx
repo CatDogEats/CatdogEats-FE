@@ -1,7 +1,7 @@
 // src/pages/SellerDashboardPage/SellerInfoPage.tsx
 
 import React from "react";
-import { Box, Grid, Paper, Typography, Container } from "@mui/material";
+import { Box, Grid, Paper, Typography, Container, Alert } from "@mui/material";
 import {
     BRAND_COLORS,
     PageHeader,
@@ -16,16 +16,19 @@ const SellerInfoPage: React.FC = () => {
     const {
         data,
         isLoading,
+        error,
         updateField,
         handleSave,
         handleCancel,
         handleBusinessNumberVerify,
         handleCustomerViewClick,
+        handleImageUpload,
+        handleImageDelete,
     } = useSellerInfo();
 
     return (
         <Box sx={{ p: { xs: 2, md: 4 } }}>
-            {/* 페이지 제목 - 좌측 정렬로 변경 */}
+            {/* 페이지 제목 */}
             <Container maxWidth="lg" sx={{ mb: 4 }}>
                 <Box sx={{ mb: 4 }}>
                     <Typography
@@ -52,13 +55,24 @@ const SellerInfoPage: React.FC = () => {
                 </Box>
             </Container>
 
-            {/* 메인 콘텐츠 - 더 넓은 최대 너비로 확장 */}
+            {/* 메인 콘텐츠 */}
             <Container maxWidth="lg" sx={{ width: '100%' }}>
+                {/* 에러 메시지 */}
+                {error && (
+                    <Box sx={{ mb: 3 }}>
+                        <Alert severity="error">
+                            {error}
+                        </Alert>
+                    </Box>
+                )}
+
                 <Paper
                     sx={{
                         p: { xs: 3, sm: 4, md: 5 },
                         borderRadius: 3,
-                        border: `1px solid ${BRAND_COLORS.BORDER}`
+                        border: `1px solid ${BRAND_COLORS.BORDER}`,
+                        opacity: isLoading ? 0.7 : 1,
+                        transition: 'opacity 0.3s ease'
                     }}
                 >
                     {/* 페이지 헤더 */}
@@ -67,18 +81,24 @@ const SellerInfoPage: React.FC = () => {
                         onCustomerViewClick={handleCustomerViewClick}
                     />
 
-                    {/* 카드 섹션 - 반응형 레이아웃 개선 */}
+                    {/* 카드 섹션 */}
                     <Box sx={{ mb: 5 }}>
                         <Grid container spacing={3}>
                             {/* 프로필 미리보기 카드 */}
                             <Grid item xs={12} lg={8}>
                                 <ProfilePreviewCard
-                                    workshopName={data.workshopName || "달콤한 우리집 간식공방"}
+                                    workshopName={data.vendorName || "달콤한 우리집 간식공방"}
                                     rating={data.rating}
                                     avatarEmoji={data.avatarEmoji}
                                     profileImage={data.profileImage}
                                     tags={data.tags}
-                                    operatingHours={data.operatingHours}
+                                    operatingHours={{
+                                        start: data.operatingHours.start,
+                                        end: data.operatingHours.end,
+                                        holidayInfo: data.closedDays.length > 0
+                                            ? `${data.closedDays.join(', ')} 휴무`
+                                            : data.operatingHours.holidayInfo
+                                    }}
                                 />
                             </Grid>
 
@@ -93,18 +113,25 @@ const SellerInfoPage: React.FC = () => {
                     <Box>
                         <BasicInfoForm
                             data={{
-                                workshopName: data.workshopName,
-                                representativeName: data.representativeName,
+                                vendorName: data.vendorName,
                                 businessNumber: data.businessNumber,
+                                settlementBank: data.settlementBank,
+                                settlementAcc: data.settlementAcc,
                                 postalCode: data.postalCode,
                                 roadAddress: data.roadAddress,
                                 detailAddress: data.detailAddress,
+                                phoneNumber: data.phoneNumber,
                                 tags: data.tags,
                                 operatingHours: data.operatingHours,
+                                closedDays: data.closedDays,
+                                deliveryFee: data.deliveryFee,
+                                freeShippingThreshold: data.freeShippingThreshold,
                                 profileImage: data.profileImage,
                             }}
                             onChange={updateField}
                             onBusinessNumberVerify={handleBusinessNumberVerify}
+                            onImageUpload={handleImageUpload}
+                            onImageDelete={handleImageDelete}
                         />
 
                         <FormActions
@@ -114,6 +141,29 @@ const SellerInfoPage: React.FC = () => {
                         />
                     </Box>
                 </Paper>
+
+                {/* 추가 정보 섹션 */}
+                <Box sx={{ mt: 3 }}>
+                    <Paper sx={{ p: 3, borderRadius: 3, border: `1px solid ${BRAND_COLORS.BORDER}` }}>
+                        <Typography variant="h6" fontWeight="600" mb={2}>
+                            💡 도움말
+                        </Typography>
+                        <Box component="ul" sx={{ pl: 2, color: BRAND_COLORS.TEXT_SECONDARY }}>
+                            <Typography component="li" variant="body2" mb={1}>
+                                <strong>프로필 완성도:</strong> 모든 필수 정보를 입력하면 더 많은 고객에게 노출됩니다.
+                            </Typography>
+                            <Typography component="li" variant="body2" mb={1}>
+                                <strong>배송 정보:</strong> 적절한 배송비와 무료배송 기준을 설정하여 고객 만족도를 높이세요.
+                            </Typography>
+                            <Typography component="li" variant="body2" mb={1}>
+                                <strong>정산 계좌:</strong> 매출 정산을 위한 계좌이므로 정확히 입력해주세요.
+                            </Typography>
+                            <Typography component="li" variant="body2">
+                                <strong>휴무일:</strong> 고객이 주문 시 참고할 수 있도록 정확한 휴무일을 설정해주세요.
+                            </Typography>
+                        </Box>
+                    </Paper>
+                </Box>
             </Container>
         </Box>
     );
