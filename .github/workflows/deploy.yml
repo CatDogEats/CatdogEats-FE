@@ -102,10 +102,7 @@ jobs:
       - name: Generate deploy bundle
         run: |
           mkdir -p deploy
-          # copy compose + nginx config
           cp docker-compose.yml deploy/
-          cp .platform/nginx/conf.d/*.conf deploy/
-          # generate .env.production from secret
           printf '%s\n' "${{ secrets.ENV_FILE }}" > deploy/.env.production
           cd deploy
           zip -r deploy.zip .
