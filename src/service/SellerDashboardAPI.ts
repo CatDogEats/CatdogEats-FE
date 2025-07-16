@@ -26,10 +26,10 @@ export interface DemandForecastResponse {
     productId: string;
     productName: string;
     currentStock: number;
-    predictedQuantity: number;
+    predictedQuantity: number; // 7일 판매량 예측
     shortageQuantity: number;
     algorithmType: string;
-    confidenceScore: number;
+    confidenceScore: number; // API에는 있지만 UI에서는 사용하지 않음
     forecastDate: string;
 }
 
@@ -74,9 +74,8 @@ export interface DemandForecastItem {
     productId: string;
     productName: string;
     currentStock: number;
-    predictedQuantity: number;
+    predictedQuantity: number; // 7일 판매량 예측
     status: "재주문 필요" | "충분";
-    confidenceScore: number;
 }
 
 // ===== API 서비스 함수 =====
@@ -155,14 +154,16 @@ export const transformToProductChart = (productRanking: ProductRankingResponse[]
         productId: product.productId,
         productName: product.productName,
         totalSales: product.totalSales,
-        totalQuantity: product.totalQuantity,  // 이 줄 추가
+        totalQuantity: product.totalQuantity,
         percentage: totalSales > 0 ? Math.round((product.totalSales / totalSales) * 100) : 0,
         color: colors[index % colors.length]
     }));
 };
 
 /**
- * 수요 예측 데이터 변환
+ * 수요 예측 데이터 변환 (수정됨)
+ * - confidenceScore 제거
+ * - 재주문 필요 조건: currentStock < predictedQuantity (7일 예측량)
  */
 export const transformToDemandForecast = (demandForecasts: DemandForecastResponse[]): DemandForecastItem[] => {
     return demandForecasts.map(item => ({
@@ -170,9 +171,8 @@ export const transformToDemandForecast = (demandForecasts: DemandForecastRespons
         productId: item.productId,
         productName: item.productName,
         currentStock: item.currentStock,
-        predictedQuantity: item.predictedQuantity,
-        status: item.currentStock < item.predictedQuantity ? "재주문 필요" : "충분",
-        confidenceScore: Math.round(item.confidenceScore * 100) // 소수점을 퍼센트로 변환
+        predictedQuantity: item.predictedQuantity, // 7일 판매량 예측 그대로 사용
+        status: item.currentStock < item.predictedQuantity ? "재주문 필요" : "충분"
     }));
 };
 

@@ -1,4 +1,4 @@
-// src/components/SellerDashboard/Dashboard/types.ts
+// src/components/SellerDashboard/Dashboard/StatCards/types.ts
 
 // 통계 카드 타입
 export interface StatItem {
@@ -13,9 +13,8 @@ export interface DemandForecastItem {
     productId: string;
     productName: string;
     currentStock: number;
-    predictedQuantity: number;
+    predictedQuantity: number; // 7일 판매량 예측
     status: "재주문 필요" | "충분";
-    confidenceScore: number;
 }
 
 // 상품 차트 데이터 타입
@@ -42,10 +41,4 @@ export const getStatusColor = (status: string): string => {
         default:
             return "#A59A8E";
     }
-};
-
-export const getConfidenceColor = (confidence: number): string => {
-    if (confidence >= 90) return "#6FCF97";
-    if (confidence >= 80) return "#F2994A";
-    return "#EB5757";
 };

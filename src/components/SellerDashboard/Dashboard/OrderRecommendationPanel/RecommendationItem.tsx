@@ -1,7 +1,7 @@
 // src/components/SellerDashboard/Dashboard/OrderRecommendationPanel/RecommendationItem.tsx
 import React from "react";
-import { Box, Typography, LinearProgress } from "@mui/material";
-import { DemandForecastItem, getConfidenceColor } from "../StatCards/types";
+import { Box, Typography } from "@mui/material";
+import { DemandForecastItem } from "../StatCards/types";
 
 interface RecommendationItemProps {
     item: DemandForecastItem;
@@ -13,6 +13,7 @@ export const RecommendationItem: React.FC<RecommendationItemProps> = ({ item }) 
         : item.productName;
 
     const shortageQuantity = Math.max(0, item.predictedQuantity - item.currentStock);
+    const dailyAverage = (item.predictedQuantity / 7).toFixed(1);
 
     return (
         <Box
@@ -79,7 +80,7 @@ export const RecommendationItem: React.FC<RecommendationItemProps> = ({ item }) 
                         variant="caption"
                         sx={{ color: "#A59A8E", fontSize: "0.75rem" }}
                     >
-                        예상 수요
+                        7일 판매량 예측
                     </Typography>
                     <Typography
                         sx={{
@@ -89,6 +90,31 @@ export const RecommendationItem: React.FC<RecommendationItemProps> = ({ item }) 
                         }}
                     >
                         {item.predictedQuantity}개
+                    </Typography>
+                </Box>
+
+                <Box
+                    sx={{
+                        display: "flex",
+                        justifyContent: "space-between",
+                        alignItems: "center",
+                        mb: 0.5,
+                    }}
+                >
+                    <Typography
+                        variant="caption"
+                        sx={{ color: "#A59A8E", fontSize: "0.75rem" }}
+                    >
+                        일평균 예측
+                    </Typography>
+                    <Typography
+                        sx={{
+                            fontSize: "0.875rem",
+                            fontWeight: 600,
+                            color: "#666666",
+                        }}
+                    >
+                        {dailyAverage}개
                     </Typography>
                 </Box>
 
@@ -115,35 +141,6 @@ export const RecommendationItem: React.FC<RecommendationItemProps> = ({ item }) 
                         {shortageQuantity}개
                     </Typography>
                 </Box>
-            </Box>
-
-            <Box
-                sx={{
-                    display: "flex",
-                    justifyContent: "space-between",
-                    alignItems: "center",
-                }}
-            >
-                <Typography
-                    variant="caption"
-                    sx={{ color: "#A59A8E", fontSize: "0.75rem" }}
-                >
-                    신뢰도: {item.confidenceScore}%
-                </Typography>
-                <LinearProgress
-                    variant="determinate"
-                    value={item.confidenceScore}
-                    sx={{
-                        width: 60,
-                        height: 4,
-                        borderRadius: 2,
-                        backgroundColor: "#F3EADD",
-                        "& .MuiLinearProgress-bar": {
-                            backgroundColor: getConfidenceColor(item.confidenceScore),
-                            borderRadius: 2,
-                        },
-                    }}
-                />
             </Box>
         </Box>
     );

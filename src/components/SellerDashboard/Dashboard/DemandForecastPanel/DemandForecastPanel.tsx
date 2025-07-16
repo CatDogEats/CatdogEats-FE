@@ -1,14 +1,15 @@
 // src/components/SellerDashboard/Dashboard/DemandForecastPanel/DemandForecastPanel.tsx
-import React from "react";
+import React, { useState } from "react";
 import {
     Box,
     Typography,
     Card,
-    Chip,
     Alert,
     AlertTitle,
+    IconButton,
+    Chip,
 } from "@mui/material";
-import { TrendingUp, Analytics } from "@mui/icons-material";
+import { Analytics, ChevronLeft, ChevronRight } from "@mui/icons-material";
 import { ForecastItem } from "./ForecastItem";
 import { DemandForecastItem } from "../StatCards/types";
 
@@ -16,14 +17,32 @@ interface DemandForecastPanelProps {
     title?: string;
     data: DemandForecastItem[];
     loading?: boolean;
+    itemsPerPage?: number;
 }
 
 export const DemandForecastPanel: React.FC<DemandForecastPanelProps> = ({
                                                                             title = "수요 예측 결과",
                                                                             data,
-                                                                            loading = false
+                                                                            loading = false,
+                                                                            itemsPerPage = 5
                                                                         }) => {
+    const [currentPage, setCurrentPage] = useState(0);
+
     const reorderCount = data.filter(item => item.status === "재주문 필요").length;
+
+    // 페이징 계산
+    const totalPages = Math.ceil(data.length / itemsPerPage);
+    const startIndex = currentPage * itemsPerPage;
+    const endIndex = startIndex + itemsPerPage;
+    const currentData = data.slice(startIndex, endIndex);
+
+    const handlePrevPage = () => {
+        setCurrentPage(prev => Math.max(0, prev - 1));
+    };
+
+    const handleNextPage = () => {
+        setCurrentPage(prev => Math.min(totalPages - 1, prev + 1));
+    };
 
     if (loading) {
         return (
@@ -81,16 +100,19 @@ export const DemandForecastPanel: React.FC<DemandForecastPanelProps> = ({
                         {title}
                     </Typography>
                 </Box>
-                <Chip
-                    icon={<TrendingUp />}
-                    label="실시간 분석"
-                    size="small"
-                    sx={{
-                        backgroundColor: "#F3EADD",
-                        color: "#ef9942",
-                        fontSize: "0.75rem",
-                    }}
-                />
+                {/* 페이징 정보 표시 */}
+                {totalPages > 1 && (
+                    <Chip
+                        label={`${currentPage + 1}/${totalPages}`}
+                        size="small"
+                        sx={{
+                            backgroundColor: "#F3EADD",
+                            color: "#ef9942",
+                            fontSize: "0.75rem",
+                            height: 24
+                        }}
+                    />
+                )}
             </Box>
 
             {reorderCount > 0 && (
@@ -113,9 +135,52 @@ export const DemandForecastPanel: React.FC<DemandForecastPanelProps> = ({
                 </Box>
             )}
 
+            {/* 페이징 정보 */}
+            {data.length > 0 && (
+                <Box
+                    sx={{
+                        display: "flex",
+                        justifyContent: "space-between",
+                        alignItems: "center",
+                        mb: 2,
+                    }}
+                >
+                    <Typography variant="caption" sx={{ color: "#A59A8E" }}>
+                        {startIndex + 1}-{Math.min(endIndex, data.length)} / 전체 {data.length}개 상품
+                    </Typography>
+
+                    {totalPages > 1 && (
+                        <Box sx={{ display: "flex", alignItems: "center" }}>
+                            <IconButton
+                                onClick={handlePrevPage}
+                                disabled={currentPage === 0}
+                                size="small"
+                                sx={{
+                                    color: currentPage === 0 ? "#ccc" : "#ef9942",
+                                    "&:disabled": { color: "#ccc" }
+                                }}
+                            >
+                                <ChevronLeft fontSize="small" />
+                            </IconButton>
+                            <IconButton
+                                onClick={handleNextPage}
+                                disabled={currentPage === totalPages - 1}
+                                size="small"
+                                sx={{
+                                    color: currentPage === totalPages - 1 ? "#ccc" : "#ef9942",
+                                    "&:disabled": { color: "#ccc" }
+                                }}
+                            >
+                                <ChevronRight fontSize="small" />
+                            </IconButton>
+                        </Box>
+                    )}
+                </Box>
+            )}
+
             <Box sx={{ flex: 1, overflow: "auto" }}>
-                {data.length > 0 ? (
-                    data.map((item) => (
+                {currentData.length > 0 ? (
+                    currentData.map((item) => (
                         <ForecastItem key={item.id} item={item} />
                     ))
                 ) : (
