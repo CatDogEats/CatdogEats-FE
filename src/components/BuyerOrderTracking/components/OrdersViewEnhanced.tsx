@@ -42,8 +42,26 @@ const OrdersViewEnhanced: React.FC<OrdersViewEnhancedProps> = ({
   setSelectedPeriod,
   handleOrderAction,
 }) => {
-  const getStatusColor = (status: string) => {
-    const colorMap: Record<string, string> = {
+  const getStatusColor = (
+    status: string
+  ):
+    | "default"
+    | "primary"
+    | "secondary"
+    | "error"
+    | "warning"
+    | "info"
+    | "success" => {
+    const colorMap: Record<
+      string,
+      | "default"
+      | "primary"
+      | "secondary"
+      | "error"
+      | "warning"
+      | "info"
+      | "success"
+    > = {
       payment_completed: "info",
       preparing: "warning",
       ready_for_delivery: "primary",
@@ -266,8 +284,9 @@ const OrdersViewEnhanced: React.FC<OrdersViewEnhancedProps> = ({
           })}
           <Pagination
             currentPage={currentPage}
-            totalPages={Math.ceil(filteredOrders.length / itemsPerPage)}
-            onPageChange={handlePageChange}
+            totalItems={filteredOrders.length}
+            itemsPerPage={itemsPerPage}
+            onPageChange={(page: number) => setCurrentPage(page)}
           />
         </>
       ) : ordersLoading ? (

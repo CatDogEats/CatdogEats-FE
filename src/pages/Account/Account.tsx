@@ -301,14 +301,7 @@ export default function MyPage() {
         );
 
       case "pets":
-        return (
-          <PetsView
-            pets={pets}
-            setPets={setPets}
-            setPetDialogOpen={setPetDialogOpen}
-            setEditingPet={setEditingPet}
-          />
-        );
+        return <PetsView />;
 
       case "coupons":
         return <CouponsView />;
@@ -356,7 +349,21 @@ export default function MyPage() {
           editingPet={editingPet}
           newPet={newPet}
           setNewPet={setNewPet}
-          onSubmit={handlePetSubmit}
+          onSuccess={() => {
+            // 성공 시 다이얼로그 닫기만 하면 됨 (PetsView에서 자체 새로고침)
+            setPetDialogOpen(false);
+            setEditingPet(null);
+            setNewPet({
+              name: "",
+              breed: "",
+              age: "",
+              gender: "",
+              category: "",
+              hasAllergies: false,
+              healthCondition: "",
+              specialRequests: "",
+            });
+          }}
         />
 
         {/* 회원 탈퇴 확인 모달 */}
