@@ -7,9 +7,7 @@ export { default as OrderDetailEnhanced } from "./components/OrderDetailEnhanced
 
 // ==================== 타입 exports ====================
 
-// 글로벌 타입들
-export type {
-  // 기본 인터페이스들
+import type {
   OrderStatus,
   CourierCompany,
   APIResponse,
@@ -30,13 +28,38 @@ export type {
   OrderStatusInfo,
   Order,
   ApiError,
+} from "../../types/buyerOrder.types";
 
-  // 상수 및 매핑
+import {
   ORDER_STATUS_INFO_MAP,
-
-  // 헬퍼 함수들
   convertAPIDataToPrototype,
 } from "../../types/buyerOrder.types";
+
+// 그 다음 export
+export type {
+  OrderStatus,
+  CourierCompany,
+  APIResponse,
+  BuyerOrderListResponse,
+  BuyerOrderSummary,
+  BuyerOrderItem,
+  OrderSummaryInfo,
+  ShipmentBasicInfo,
+  BuyerOrderDetailResponse,
+  BuyerOrderDetailItem,
+  RecipientInfo,
+  PaymentInfo,
+  BuyerShipmentDetailResponse,
+  TrackingDetail,
+  BuyerOrderDeleteRequest,
+  BuyerOrderDeleteResponse,
+  PaginationInfo,
+  OrderStatusInfo,
+  Order,
+  ApiError,
+};
+
+export { ORDER_STATUS_INFO_MAP, convertAPIDataToPrototype };
 
 // 컴포넌트 전용 타입들
 export type {

@@ -42,34 +42,17 @@ const OrdersViewEnhanced: React.FC<OrdersViewEnhancedProps> = ({
   setSelectedPeriod,
   handleOrderAction,
 }) => {
-  const getStatusColor = (
-    status: string
-  ):
-    | "default"
-    | "primary"
-    | "secondary"
-    | "error"
-    | "warning"
-    | "info"
-    | "success" => {
-    const colorMap: Record<
-      string,
-      | "default"
-      | "primary"
-      | "secondary"
-      | "error"
-      | "warning"
-      | "info"
-      | "success"
-    > = {
-      payment_completed: "info",
+  const getStatusColor = (status: string): "success" | "warning" | "error" => {
+    // ✅ 허용되는 타입만 사용
+    const colorMap: Record<string, "success" | "warning" | "error"> = {
+      payment_completed: "warning",
       preparing: "warning",
-      ready_for_delivery: "primary",
-      in_transit: "secondary",
+      ready_for_delivery: "warning",
+      in_transit: "warning",
       delivered: "success",
       order_cancelled: "error",
     };
-    return colorMap[status] || "default";
+    return colorMap[status] || "warning"; // ✅ "warning"을 기본값으로 사용
   };
 
   // API 연동 훅
@@ -139,16 +122,14 @@ const OrdersViewEnhanced: React.FC<OrdersViewEnhancedProps> = ({
   };
 
   // 주문 액션 핸들러 (삭제 에러 처리 추가)
-  const handleOrderActionEnhanced = async (action: string, order: Order) => {
+  const handleOrderActionEnhanced = async (action: string, order: any) => {
     if (action === "delete") {
       try {
         await deleteOrder({ orderNumber: order.orderNumber });
-        // 성공 시 페이지 새로고침은 훅에서 자동 처리됨
       } catch (error: any) {
         showErrorMessage(error.message);
       }
     } else {
-      // 다른 액션들은 기존 핸들러로 전달
       handleOrderAction(action, order);
     }
   };
@@ -167,7 +148,7 @@ const OrdersViewEnhanced: React.FC<OrdersViewEnhancedProps> = ({
   }, [actionError, showErrorMessage]);
 
   // 로딩 상태
-  if (ordersLoading && prototypeOrders.length === 0) {
+  if ((ordersLoading || actionLoading) && prototypeOrders.length === 0) {
     return (
       <Box
         sx={{
@@ -267,18 +248,25 @@ const OrdersViewEnhanced: React.FC<OrdersViewEnhancedProps> = ({
       {paginatedOrders.length > 0 ? (
         <>
           {paginatedOrders.map((order: Order) => {
-            const status = order.orderStatus.toLowerCase(); // ex. "delivered"
+            const status = order.shippingStatus.toLowerCase();
             return (
               <OrderItem
                 key={order.id}
                 order={{
                   ...order,
-                  status, // 상태 문자열
-                  statusColor: getStatusColor(status), // 컬러 키워드
-                  deliveryDate: order.orderDate, // (필요에 따라 formatDate(order.orderDate) 로 교체)
+                  status,
+                  statusColor: getStatusColor(status),
+                  deliveryDate: order.orderDate,
+                  // ✅ 기존 products를 Product 타입에 맞게 변환 (최소한의 수정)
+                  products: order.products.map((product, index) => ({
+                    id: `${order.id}-${index}`, // 임시 ID (기존 동작 유지)
+                    name: product.name,
+                    price: product.price,
+                    quantity: product.quantity,
+                    image: "", // 빈 문자열 (null 대신 - 기존 방식 유지)
+                  })),
                 }}
-                onAction={handleOrderActionEnhanced}
-                isActionLoading={actionLoading}
+                handleOrderAction={handleOrderActionEnhanced}
               />
             );
           })}
@@ -286,7 +274,7 @@ const OrdersViewEnhanced: React.FC<OrdersViewEnhancedProps> = ({
             currentPage={currentPage}
             totalItems={filteredOrders.length}
             itemsPerPage={itemsPerPage}
-            onPageChange={(page: number) => setCurrentPage(page)}
+            onPageChange={handlePageChange} // ✅ 함수 직접 전달
           />
         </>
       ) : ordersLoading ? (

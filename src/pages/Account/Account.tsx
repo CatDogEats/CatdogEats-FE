@@ -35,7 +35,6 @@ export default function MyPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedPeriod, setSelectedPeriod] = useState("최근 6개월");
   const [addresses, setAddresses] = useState<Address[]>([]);
-  const [pets, setPets] = useState<Pet[]>([]);
   const [addressDialogOpen, setAddressDialogOpen] = useState(false);
   const [petDialogOpen, setPetDialogOpen] = useState(false);
   const [editingAddress, setEditingAddress] = useState<Address | null>(null);
@@ -154,34 +153,6 @@ export default function MyPage() {
     });
   };
 
-  const handlePetSubmit = () => {
-    if (editingPet) {
-      setPets(
-        pets.map((pet) =>
-          pet.id === editingPet.id ? { ...editingPet, ...newPet } : pet
-        )
-      );
-    } else {
-      const pet: Pet = {
-        id: Date.now().toString(),
-        ...newPet,
-      };
-      setPets([...pets, pet]);
-    }
-    setPetDialogOpen(false);
-    setEditingPet(null);
-    setNewPet({
-      name: "",
-      breed: "",
-      age: "",
-      gender: "",
-      category: "",
-      hasAllergies: false,
-      healthCondition: "",
-      specialRequests: "",
-    });
-  };
-
   const handleEditAddress = (address: Address) => {
     setEditingAddress(address);
     setNewAddress({
@@ -195,28 +166,10 @@ export default function MyPage() {
     setAddressDialogOpen(true);
   };
 
-  const handleEditPet = (pet: Pet) => {
-    setEditingPet(pet);
-    setNewPet({
-      name: pet.name,
-      breed: pet.breed,
-      age: pet.age,
-      gender: pet.gender,
-      category: pet.category,
-      hasAllergies: pet.hasAllergies,
-      healthCondition: pet.healthCondition,
-      specialRequests: pet.specialRequests,
-    });
-    setPetDialogOpen(true);
-  };
-
   const handleDeleteAddress = (id: string) => {
     setAddresses(addresses.filter((addr) => addr.id !== id));
   };
 
-  const handleDeletePet = (id: string) => {
-    setPets(pets.filter((pet) => pet.id !== id));
-  };
   // 메인 컨텐츠 렌더링
   const renderContent = () => {
     // 회원 탈퇴 완료 화면 (기존 유지)
@@ -240,6 +193,7 @@ export default function MyPage() {
         />
       );
     }
+
     if (detailView === "return" && selectedOrder) {
       return <ReturnRequestView setDetailView={setDetailView} />;
     }
