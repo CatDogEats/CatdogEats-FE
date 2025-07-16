@@ -91,6 +91,28 @@ const OrderTotal: React.FC<OrderTotalProps> = ({
           {total.toLocaleString()}원
         </Typography>
       </Box>
+      <Box
+        style={{
+          marginTop: 16,
+          padding: 12,
+          backgroundColor: "#f5f5f5",
+          borderRadius: 4,
+          border: "1px solid #e0e0e0",
+        }}
+      >
+        <Typography
+          variant="body2"
+          style={{
+            fontSize: "0.75rem",
+            color: "#666666",
+            textAlign: "center",
+            lineHeight: 1.4,
+          }}
+        >
+          기본 배송비는 3,000원이며, 배송비 제외 총 금액이 50,000원 이상이면
+          배송비가 무료입니다.
+        </Typography>
+      </Box>
     </Paper>
   );
 };
