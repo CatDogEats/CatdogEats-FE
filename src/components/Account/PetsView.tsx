@@ -1,45 +1,117 @@
-"use client"
+"use client";
 
-import type React from "react"
-import { useState, useMemo } from "react"
-import { Box, Typography, Button, Card, CardContent, Chip, IconButton, Paper, Grid } from "@mui/material"
-import { Add, Edit, Delete, Pets } from "@mui/icons-material"
-import type { Pet } from "./index"
-import Pagination from "../common/Pagination"
+import React, { useEffect, useState } from "react";
+import {
+    Box,
+    Typography,
+    Button,
+    Card,
+    CardContent,
+    Chip,
+    IconButton,
+    Paper,
+    Grid,
+} from "@mui/material";
+import { Add, Edit, Delete, Pets } from "@mui/icons-material";
+import Pagination from "../common/Pagination";
+import {
+    fetchPets,
+    deletePet,
+    Pet,
+} from "@/service/pet/PetAPI";
+import PetDialog from "./PetDialog";
 
-interface PetsViewProps {
-    pets: Pet[]
-    handleEditPet: (pet: Pet) => void
-    handleDeletePet: (id: string) => void
-    setPetDialogOpen: (open: boolean) => void
-}
+const ITEMS_PER_PAGE = 4;
 
-const PetsView: React.FC<PetsViewProps> = ({ pets, handleEditPet, handleDeletePet, setPetDialogOpen }) => {
-    const [currentPage, setCurrentPage] = useState(1)
-    const itemsPerPage = 4
+const PetsView: React.FC = () => {
+    const [pets, setPets] = useState<Pet[]>([]);
+    const [page, setPage] = useState(0);
+    const [totalPages, setTotalPages] = useState(1);
+    const [loading, setLoading] = useState(false);
 
-    // 페이지네이션을 위한 펫 데이터 슬라이싱
-    const paginatedPets = useMemo(() => {
-        if (pets.length <= itemsPerPage) {
-            return pets;
+    // 다이얼로그 상태
+    const [dialogOpen, setDialogOpen] = useState(false);
+    const [editingPet, setEditingPet] = useState<Pet | null>(null);
+    const [newPet, setNewPet] = useState<any>(null);
+
+    // 데이터 불러오기
+    const loadPets = async (pageToLoad = page) => {
+        setLoading(true);
+        try {
+            const res = await fetchPets(pageToLoad, ITEMS_PER_PAGE);
+            if (res.success) {
+                setPets(res.data.content);
+                setTotalPages(res.data.totalPages);
+                setPage(res.data.page);
+            } else {
+                alert(res.message || "펫 목록 조회에 실패했습니다.");
+            }
+        } catch {
+            alert("펫 목록 조회 중 오류가 발생했습니다.");
+        } finally {
+            setLoading(false);
         }
-        const startIndex = (currentPage - 1) * itemsPerPage;
-        const endIndex = startIndex + itemsPerPage;
-        return pets.slice(startIndex, endIndex);
-    }, [pets, currentPage]);
+    };
 
+    useEffect(() => {
+        loadPets();
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []);
 
-    const handlePageChange = (page: number) => {
-        setCurrentPage(page)
-    }
+    // 등록 다이얼로그 열기
+    const handleAddPetClick = () => {
+        setEditingPet(null);
+        setNewPet({
+            name: "",
+            category: "",
+            gender: "",
+            age: "",
+            breed: "",
+            hasAllergies: false,
+            healthCondition: "",
+            specialRequests: "",
+        });
+        setDialogOpen(true);
+    };
 
-    // ���이지가 변경되었을 때 현재 페이지가 유효한지 확인
-    useMemo(() => {
-        const totalPages = Math.ceil(pets.length / itemsPerPage)
-        if (currentPage > totalPages && totalPages > 0) {
-            setCurrentPage(1)
+    // 수정 다이얼로그 열기
+    const handleEditPetClick = (pet: Pet) => {
+        setEditingPet(pet);
+        setNewPet({
+            ...pet,
+            category: pet.petCategory === "DOG" ? "dogs" : "cats",
+            gender: pet.gender === "M" ? "male" : "female",
+            hasAllergies: pet.isAllergy,
+            healthCondition: pet.healthState,
+            specialRequests: pet.requestion,
+        });
+        setDialogOpen(true);
+    };
+
+    const handleDeletePet = async (petId: string) => {
+        if (!window.confirm("정말로 삭제하시겠습니까?")) return;
+        try {
+            const res = await deletePet(petId);
+            if (res.success) {
+                alert("펫 정보가 삭제되었습니다.");
+                loadPets(page);
+            } else {
+                alert(res.message || "펫 삭제에 실패했습니다.");
+            }
+        } catch {
+            alert("펫 삭제 중 오류가 발생했습니다.");
         }
-    }, [pets.length, currentPage])
+    };
+
+    // 다이얼로그 등록/수정 완료 후 콜백
+    const handleDialogSuccess = () => {
+        setDialogOpen(false);
+        loadPets(page);
+    };
+
+    const handlePageChange = (newPage: number) => {
+        loadPets(newPage - 1); // 서버 0-based, UI 1-based이면 -1 필요
+    };
 
     return (
         <Box>
@@ -47,19 +119,28 @@ const PetsView: React.FC<PetsViewProps> = ({ pets, handleEditPet, handleDeletePe
                 <Typography variant="h4" style={{ fontWeight: "bold", color: "text.primary" }}>
                     나의 반려동물
                 </Typography>
-                <Button variant="contained" startIcon={<Add />} onClick={() => setPetDialogOpen(true)}>
+                <Button
+                    variant="contained"
+                    startIcon={<Add />}
+                    onClick={handleAddPetClick}
+                    disabled={loading}
+                >
                     새 반려동물 추가
                 </Button>
             </Box>
 
+            {loading && (
+                <Box sx={{ textAlign: "center", my: 4 }}>
+                    <Typography>목록을 불러오는 중입니다...</Typography>
+                </Box>
+            )}
+            {!loading && (
             <Grid container spacing={3}>
-                {paginatedPets.map((pet) => (
-                    <Grid size={{ xs: 12, md: 6 }} key={pet.id}>
+                {pets.map((pet) => (
+                    <Grid size={{ xs: 6 }} key={pet.id}>
                         <Card style={{ height: "100%" }}>
                             <CardContent>
-                                <Box
-                                    style={{ display: "flex", justifyContent: "space-between", alignItems: "start", marginBottom: 16 }}
-                                >
+                                <Box style={{ display: "flex", justifyContent: "space-between", alignItems: "start", marginBottom: 16 }}>
                                     <Box style={{ display: "flex", alignItems: "center", gap: 8 }}>
                                         <Pets color="primary" />
                                         <Typography variant="h6" style={{ fontWeight: 600 }}>
@@ -67,7 +148,7 @@ const PetsView: React.FC<PetsViewProps> = ({ pets, handleEditPet, handleDeletePe
                                         </Typography>
                                     </Box>
                                     <Box>
-                                        <IconButton size="small" onClick={() => handleEditPet(pet)}>
+                                        <IconButton size="small" onClick={() => handleEditPetClick(pet)}>
                                             <Edit />
                                         </IconButton>
                                         <IconButton size="small" onClick={() => handleDeletePet(pet.id)}>
@@ -76,25 +157,25 @@ const PetsView: React.FC<PetsViewProps> = ({ pets, handleEditPet, handleDeletePe
                                     </Box>
                                 </Box>
                                 <Typography variant="body2" color="text.secondary" style={{ marginBottom: 4 }}>
-                                    카테고리: {pet.category.replace("_", " ").replace(/\b\w/g, (l) => l.toUpperCase())}
+                                    카테고리: {pet.petCategory === "DOG" ? "강아지" : "고양이"}
                                 </Typography>
                                 <Typography variant="body2" color="text.secondary" style={{ marginBottom: 4 }}>
-                                    나이: {pet.age}세 • 성별: {pet.gender === "male" ? "수컷" : "암컷"}
+                                    나이: {pet.age}세 • 성별: {pet.gender === "M" ? "수컷" : "암컷"}
                                 </Typography>
                                 <Typography variant="body2" color="text.secondary" style={{ marginBottom: 4 }}>
-                                    품종: {pet.breed.replace("_", " ").replace(/\b\w/g, (l) => l.toUpperCase())}
+                                    품종: {pet.breed}
                                 </Typography>
-                                {pet.hasAllergies && (
+                                {pet.isAllergy && (
                                     <Chip label="알레르기 있음" color="warning" size="small" style={{ marginBottom: 8 }} />
                                 )}
-                                {pet.healthCondition && (
+                                {pet.healthState && (
                                     <Typography variant="body2" color="text.secondary" style={{ marginBottom: 4 }}>
-                                        건강상태: {pet.healthCondition}
+                                        건강상태: {pet.healthState}
                                     </Typography>
                                 )}
-                                {pet.specialRequests && (
+                                {pet.requestion && (
                                     <Typography variant="body2" color="text.secondary">
-                                        특별요청: {pet.specialRequests}
+                                        특별요청: {pet.requestion}
                                     </Typography>
                                 )}
                             </CardContent>
@@ -117,24 +198,41 @@ const PetsView: React.FC<PetsViewProps> = ({ pets, handleEditPet, handleDeletePe
                             <Typography variant="body2" color="text.secondary" style={{ marginBottom: 24 }}>
                                 소중한 반려동물의 정보를 등록해보세요
                             </Typography>
-                            <Button variant="contained" startIcon={<Add />} onClick={() => setPetDialogOpen(true)}>
+                            <Button
+                                variant="contained"
+                                startIcon={<Add />}
+                                onClick={handleAddPetClick}
+                                disabled={loading}
+                            >
                                 첫 번째 반려동물 추가하기
                             </Button>
                         </Paper>
                     </Grid>
                 )}
             </Grid>
-
-            {pets.length > itemsPerPage && (
+            )}
+            {totalPages > 1 && (
                 <Pagination
-                    currentPage={currentPage}
+                    currentPage={page + 1}
                     totalItems={pets.length}
-                    itemsPerPage={itemsPerPage}
+                    itemsPerPage={ITEMS_PER_PAGE}
                     onPageChange={handlePageChange}
                 />
             )}
-        </Box>
-    )
-}
 
-export default PetsView
+            {/* 등록/수정 다이얼로그 */}
+            {dialogOpen && (
+                <PetDialog
+                    open={dialogOpen}
+                    onClose={() => setDialogOpen(false)}
+                    editingPet={editingPet}
+                    newPet={newPet}
+                    setNewPet={setNewPet}
+                    onSuccess={handleDialogSuccess}
+                />
+            )}
+        </Box>
+    );
+};
+
+export default PetsView;

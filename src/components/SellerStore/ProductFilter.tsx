@@ -23,13 +23,11 @@ const ProductFilter: React.FC<ProductFilterProps> = ({
                                                      }) => {
     return (
         <Box>
-
             <Stack
                 direction={{ xs: 'column', sm: 'row' }}
                 spacing={{ xs: 1, sm: 2 }}
                 flexWrap="wrap"
             >
-
                 <FormControlLabel
                     control={
                         <Checkbox

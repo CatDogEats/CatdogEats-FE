@@ -6,7 +6,7 @@ import HomePage from "@/pages/mainpage/HomePage";
 import LoginPage from "@/pages/auth/LoginPage";
 import RoleSelectionPage from "@/pages/auth/RoleSelectionPage";
 import NotFoundPage from "@/pages/common/NotFoundPage.tsx";
-import SellerStorePage from "@/pages/SellerDashboardPage/SellerStorePage.tsx";
+import SellerStorePage from "@/pages/SellerStorePage.tsx";
 import OrderPayPage from "@/pages/OrderPaymentPage/OrderPaymentPage.tsx";
 import MyPage from "@/pages/Account/Account.tsx";
 import ProductListPage from "@/pages/ProductListPage.tsx";
@@ -20,9 +20,7 @@ import OrdersManagementPage from "@/pages/SellerDashboardPage/OrderManagementPag
 import ShoppingCartPage from "@/pages/ShoppingCartPage";
 import CustomerServiceCenterPageServicePage from "@/pages/CusServiceCenterPage/CustomerServiceCenterPage.tsx";
 import WithdrawalSuccessPage from "@/pages/Account/WidrawSuccess.tsx";
-import AuthGuard from "@/routes/AuthGuard.tsx";
-
-
+import AuthGuard from "@/routes/AuthGuard.tsx"
 
 
 // React Router 7 사용
@@ -36,11 +34,23 @@ const router = createBrowserRouter([
 
 
 
-            { path: "productsList", element: <ProductListPage /> }, // 상품 목록 페이지
+            {
+                path: "productsList",
+                element: <ProductListPage />
+            },
+            {
+                path: "productsList/:pet",
+                element: <ProductListPage />
+            },
+            {
+                path: "productsList/:pet/:type",
+                element: <ProductListPage />
+            },// 상품 목록 페이지
+
 
             // 상품 상세 페이지
             {
-                path: 'product-detail',
+                path: 'products/:productNumber',
                 element: <ProductDetailPage />,
             },
 
@@ -48,7 +58,7 @@ const router = createBrowserRouter([
             // 마이페이지
             {
                 path: 'account',
-                element: <AuthGuard />,
+                element: <AuthGuard allowedRoles='ROLE_BUYER'/>,
                 children: [
                     { index: true, element: <MyPage /> }
                 ]
@@ -57,7 +67,7 @@ const router = createBrowserRouter([
             // 장바구니
             {
                 path: "cart",
-                element: <AuthGuard/>,
+                element: <AuthGuard allowedRoles='ROLE_BUYER'/>,
                 children: [
                     {index: true, element: <ShoppingCartPage/>}
                 ]
@@ -71,15 +81,12 @@ const router = createBrowserRouter([
             // 로그인 & 역할선택
             { path: 'login', element: <LoginPage /> },
             {
-                path: 'role-selection', element: <AuthGuard/>,
-                children: [
-                    {index: true, element: <RoleSelectionPage/>}
-                ]
+                path: 'role-selection', element:<RoleSelectionPage/>
             },
 
             // 결제 및 계정 관련 페이지
             {   path: "orderpayment",
-                element: <AuthGuard/>,
+                element: <AuthGuard allowedRoles='ROLE_BUYER'/>,
                 children: [
                     {index: true, element: <OrderPayPage/>}
                 ]
@@ -95,17 +102,17 @@ const router = createBrowserRouter([
         children: [
             {
                 path: "/seller",
-                element: <AuthGuard/>,
+                element: <AuthGuard allowedRoles='ROLE_SELLER'/>,
                 children: [
                         {
                             index:true,
                             element: <SellerDashboardDashboardPage />
-                        }
-                    ]
+                        },
+                ]
             },
             {
                 path: "products",
-                element: <AuthGuard/>,
+                element: <AuthGuard allowedRoles='ROLE_SELLER'/>,
                 children:   [
                         {
                             index: true,
@@ -115,7 +122,7 @@ const router = createBrowserRouter([
             },
             {
                 path: "orders",
-                element: <AuthGuard/> , //todo 주문배송 페이지 탭
+                element: <AuthGuard allowedRoles='ROLE_SELLER'/> , //todo 주문배송 페이지 탭
                 children: [
                     {
                         index: true,
@@ -125,7 +132,7 @@ const router = createBrowserRouter([
             },
             {
                 path: "settlement",
-                element: <AuthGuard/>, // 정산탭
+                element: <AuthGuard allowedRoles='ROLE_SELLER'/>, // 정산탭
                 children: [
                     {
                         index: true,
@@ -135,7 +142,7 @@ const router = createBrowserRouter([
             },
             {
                 path: "customers",
-                element: <AuthGuard/>,
+                element: <AuthGuard allowedRoles='ROLE_SELLER'/>,
                 children: [
                     {
                         index: true,
@@ -145,7 +152,7 @@ const router = createBrowserRouter([
             },
             {
                 path: "info",
-                element: <AuthGuard/>,
+                element: <AuthGuard allowedRoles='ROLE_SELLER'/>,
                 children: [
                     {
                         index: true,

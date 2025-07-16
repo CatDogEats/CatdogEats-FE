@@ -1,53 +1,47 @@
 import { Box } from '@mui/material';
 import { useNavigate } from 'react-router-dom';
+import { useEffect, useState } from 'react';
 import {
     HeroSection,
-    // ProductCategorySection,
     RecommendationSection,
     WorkshopSection,
     ProductTabSection
 } from '@/components/Home';
-import { Product } from '@/components/Home';
 import { Workshop } from '@/components/Home/types';
-import {
-    // popularProducts,
-    newProducts,
-    bestSellerProducts,
-    discountProducts,
-    // allergicFreeProducts,
-    // dentalCareProducts,
-    popularWorkshops,
-    // productCategories,
-    contentCategories,
-} from '@/data';
+import { popularWorkshops, contentCategories } from '@/data';
+import { mainProduct } from '@/service/product/BuyerProductAPI';
+import { Product } from '@/types/Product';
 
 const HomePage = () => {
     const navigate = useNavigate();
 
-    // 카테고리별 상품 데이터 매핑
-    // const getProductsByCategory = (categoryId: string): Product[] => {
-    //     switch (categoryId) {
-    //         case 'dog':
-    //             return popularProducts.filter(product => product.category === 'dog');
-    //         case 'cat':
-    //             return popularProducts.filter(product => product.category === 'cat');
-    //         case 'allergy-free':
-    //             return allergicFreeProducts;
-    //         case 'dental':
-    //             return dentalCareProducts;
-    //         default:
-    //             return popularProducts;
-    //     }
-    // };
+    // 각 탭별 상품 상태
+    const [productSets, setProductSets] = useState<Product[][]>([[], [], []]);
+    const [loading, setLoading] = useState(true);
 
+    useEffect(() => {
+        Promise.all([
+            mainProduct.getMainProducts('NEW'),
+            mainProduct.getMainProducts('BEST'),
+            mainProduct.getMainProducts('DISCOUNT')
+        ]).then(([newProducts, bestProducts, discountProducts]) => {
+            setProductSets([
+                newProducts || [],
+                bestProducts || [],
+                discountProducts || []
+            ]);
+            setLoading(false);
+        });
+    }, []);
+
+
+    // 상품 클릭 시 상세페이지 이동 (productNumber 사용)
     const handleProductClick = (product: Product) => {
-        console.log('상품 클릭:', product);
-        // 향후 상품 상세 페이지로 라우팅
+        navigate(`/products/${product.productNumber}`);
     };
 
-    const handleWorkshopClick = (workshop: Workshop) => {
-        console.log('공방 클릭:', workshop);
-        // 향후 공방 상세 페이지로 라우팅
+    const handleWorkshopClick = (_workshop: Workshop) => {
+        // ...
     };
 
     const handleShopNowClick = () => {
@@ -55,33 +49,24 @@ const HomePage = () => {
     };
 
     const handleStartRecommendation = () => {
-        // 맞춤 추천 페이지로 이동
-        console.log('맞춤 추천 시작');
+        // ...
     };
+
+    if (loading) return <Box>로딩중...</Box>;
 
     return (
         <Box>
             <HeroSection onShopNowClick={handleShopNowClick} />
-
-            {/*<ProductCategorySection*/}
-            {/*    categories={productCategories}*/}
-            {/*    getProductsByCategory={getProductsByCategory}*/}
-            {/*    onProductClick={handleProductClick}*/}
-            {/*/>*/}
-
             <ProductTabSection
                 categories={contentCategories}
-                productSets={[newProducts, bestSellerProducts, discountProducts]}
+                productSets={productSets}
                 onProductClick={handleProductClick}
             />
-
             <RecommendationSection onStartRecommendation={handleStartRecommendation} />
-
             <WorkshopSection
                 workshops={popularWorkshops}
                 onWorkshopClick={handleWorkshopClick}
             />
-
         </Box>
     );
 };

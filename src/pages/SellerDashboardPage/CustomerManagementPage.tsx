@@ -164,7 +164,6 @@ const CustomerManagementPage: React.FC = () => {
                     {activeTab === 1 && (
                         <Box sx={{ p: 3, height: "100%", overflow: "auto" }}>
                             <ProductReviewList
-                                productReviews={productReviews}
                                 reviewFilter={reviewFilter}
                                 reviewSort={reviewSort}
                                 onFilterChange={handleFilterChange}

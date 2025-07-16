@@ -1,6 +1,6 @@
 // src/components/ProductDetail/ProductInfo/ProductMakerInfo.tsx
 import React, { useState } from "react";
-import { Card, CardContent, Box, Avatar, Typography, Button } from "@mui/material";
+import { Card, CardContent, Box, Typography, Button } from "@mui/material";
 import ChatModal from "@/components/common/chat/ChatModal";
 import { Product } from "../Product";
 
@@ -10,8 +10,6 @@ interface ProductMakerInfoProps {
 
 const ProductMakerInfo: React.FC<ProductMakerInfoProps> = ({ product }) => {
     const [chatModalOpen, setChatModalOpen] = useState(false);
-
-    if (!product.brand) return null;
 
     const handleChatClick = () => {
         setChatModalOpen(true);
@@ -29,13 +27,6 @@ const ProductMakerInfo: React.FC<ProductMakerInfoProps> = ({ product }) => {
             }}>
                 <CardContent sx={{ p: 3 }}>
                     <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
-                        <Avatar sx={{
-                            width: 64,
-                            height: 64,
-                            backgroundColor: "primary.main"
-                        }}>
-                            {product.brand.charAt(0)}
-                        </Avatar>
                         <Box sx={{ flex: 1 }}>
                             <Typography
                                 variant="body1"
@@ -46,12 +37,6 @@ const ProductMakerInfo: React.FC<ProductMakerInfoProps> = ({ product }) => {
                                 }}
                             >
                                 {product.brand}
-                            </Typography>
-                            <Typography
-                                variant="body2"
-                                sx={{ color: "text.secondary" }}
-                            >
-                                정성을 담아 만드는 수제 간식 전문 브랜드입니다.
                             </Typography>
                         </Box>
                         <Button
