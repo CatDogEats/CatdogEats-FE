@@ -1,34 +1,32 @@
 // eslint.config.js
 import js from '@eslint/js'
 import globals from 'globals'
-import tseslint from 'typescript-eslint'
-import prettier from 'eslint-config-prettier'
+import ts from 'typescript-eslint'
 import reactHooks from 'eslint-plugin-react-hooks'
 import reactRefresh from 'eslint-plugin-react-refresh'
+import prettier from 'eslint-config-prettier'
 
 /** @type {import('eslint').FlatConfig[]} */
 export default [
-    // 1) 자바스크립트 기본 추천 설정
+    // 1) 기본 JS 추천 설정
     js.configs.recommended,
 
-    // 2) 타입스크립트 추천 설정
-    ...tseslint.configs.recommended,
+    // 2) TS 추천 설정
+    ...ts.configs.recommended,
 
-    // 3) 전역환경 정의 (Node, Browser) 및 언어 옵션
+    // 3) 언어 옵션 (ES2021, 모듈, 브라우저+Node 전역)
     {
-        env: {
-            browser: true,
-            node: true,
-            es2021: true,
-        },
         languageOptions: {
             ecmaVersion: 2021,
             sourceType: 'module',
-            globals: globals.browser,
+            globals: {
+                ...globals.browser,
+                ...globals.node,
+            },
         },
     },
 
-    // 4) 플러그인 및 룰
+    // 4) React-hooks 플러그인 룰
     {
         plugins: {
             'react-hooks': reactHooks,
@@ -37,11 +35,16 @@ export default [
         rules: {
             ...reactHooks.configs.recommended.rules,
             'react-refresh/only-export-components': ['warn', { allowConstantExport: true }],
+        },
+    },
+
+    {
+        rules: {
             '@typescript-eslint/no-unused-vars': 'warn',
             '@typescript-eslint/no-explicit-any': 'warn',
         },
     },
 
-    // 5) Prettier 설정 (충돌 방지)
+    // 6) Prettier (마지막에 배치)
     prettier,
 ]
