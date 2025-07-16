@@ -239,6 +239,7 @@ const OrderShippingManagement: React.FC = () => {
     ordersLoading,
     ordersError,
     updateOrderStatus,
+    refreshOrders,
     registerTrackingNumber,
     syncShipmentStatus,
     actionLoading,
@@ -573,7 +574,7 @@ const OrderShippingManagement: React.FC = () => {
 
       // 📍 추가: 주문 목록 새로고침하여 최신 상태 반영
       // 지연 정보가 포함된 최신 데이터를 가져오기 위함
-      window.location.reload(); // 또는 refetch() 함수 호출
+      await refreshOrders(); // 또는 refetch() 함수 호출
 
       // 폼 초기화
       setSelectedOrder(null);
@@ -920,7 +921,11 @@ const OrderShippingManagement: React.FC = () => {
               </Button>
               <Button
                 variant="outlined"
-                onClick={handleSyncShipmentStatus}
+                onClick={async (event) => {
+                  // ← async 이벤트 핸들러로 변경
+                  event.preventDefault(); // ← 기본 동작 방지
+                  await handleSyncShipmentStatus(); // ← await로 함수 호출
+                }}
                 disabled={actionLoading} // 로딩 중엔 비활성
                 sx={{ textTransform: "none", height: 40 }}
                 startIcon={
@@ -1246,7 +1251,11 @@ const OrderShippingManagement: React.FC = () => {
               취소
             </Button>
             <Button
-              onClick={handleSaveStatusChange}
+              onClick={async (event) => {
+                // ← async 이벤트 핸들러로 변경
+                event.preventDefault(); // ← 기본 동작 방지
+                await handleSaveStatusChange(); // ← await로 함수 호출
+              }}
               variant="contained"
               disabled={(() => {
                 if (!selectedOrder) return true;
