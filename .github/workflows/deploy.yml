@@ -32,7 +32,7 @@ jobs:
         continue-on-error: true
 
       - name: Build client & server
-        run: npm run build:ci
+        run: npm run build
 
   publish-docker-images:
     name: Build & Push Docker images
