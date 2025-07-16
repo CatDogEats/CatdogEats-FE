@@ -1,14 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import {
-  Box,
-  Container,
-  Grid,
-  Card,
-  CardContent,
-  Typography,
-} from "@mui/material";
+import { Box, Container, Grid, Card, CardContent } from "@mui/material";
 import { ThemeProvider } from "@mui/material/styles";
 import {
   OrdersViewEnhanced as OrdersView,
@@ -222,8 +215,7 @@ export default function MyPage() {
   };
 
   const handleDeletePet = (id: string) => {
-    setPets(pets.filter((pet) => pet.id !== id));
-  };
+  setPets(pets.filter(pet => pet.id !== id));
 
   // 메인 컨텐츠 렌더링
   const renderContent = () => {
@@ -294,6 +286,7 @@ export default function MyPage() {
           <ReturnInquiryView
             returnTab={returnTab}
             setReturnTab={setReturnTab}
+            setDetailView={setDetailView}
           />
         );
 
@@ -301,9 +294,9 @@ export default function MyPage() {
         return (
           <AddressesView
             addresses={addresses}
-            setAddresses={setAddresses}
+            handleEditAddress={handleEditAddress}
+            handleDeleteAddress={handleDeleteAddress}
             setAddressDialogOpen={setAddressDialogOpen}
-            setEditingAddress={setEditingAddress}
           />
         );
 

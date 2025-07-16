@@ -14,9 +14,9 @@ import type {
   BuyerOrderDeleteResponse,
   PaginationInfo,
   Order,
-  convertAPIDataToPrototype,
   ApiError,
 } from "@/types/buyerOrder.types";
+import { convertAPIDataToPrototype } from "@/types/buyerOrder.types";
 
 // ===== 훅 반환 타입들 =====
 

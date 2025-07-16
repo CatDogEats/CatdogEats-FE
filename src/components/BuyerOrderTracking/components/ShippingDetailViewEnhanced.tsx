@@ -21,7 +21,7 @@ import {
 } from "@mui/material";
 import { ChevronRight, LocalShipping } from "@mui/icons-material";
 import { useBuyerShipmentDetail } from "@/hooks/useBuyerOrders";
-
+import type { TrackingDetail } from "@/types/buyerOrder.types";
 interface ShippingDetailViewEnhancedProps {
   setDetailView: (view: string | null) => void;
   orderNumber?: string; // selectedOrder에서 전달받을 주문번호
@@ -215,11 +215,11 @@ const ShippingDetailViewEnhanced: React.FC<ShippingDetailViewEnhancedProps> = ({
               // 실제 배송 추적 데이터가 있는 경우
               shipmentDetail.trackingDetails
                 .sort(
-                  (a, b) =>
+                  (a: TrackingDetail, b: TrackingDetail) =>
                     new Date(b.timestamp).getTime() -
                     new Date(a.timestamp).getTime()
                 )
-                .map((tracking, index) => (
+                .map((tracking: TrackingDetail, index: number) => (
                   <TableRow key={index}>
                     <TableCell>
                       {formatTrackingTimestamp(tracking.timestamp)}

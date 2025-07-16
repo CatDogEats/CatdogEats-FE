@@ -26,7 +26,7 @@ import CustomStepIcon from "@/components/Account/CustomStepIcon";
 import ArrowConnector from "@/components/Account/ArrowConnector";
 import Pagination from "@/components/common/Pagination";
 import GuideView from "@/components/Account/GuideView";
-
+import type { Order } from "@/types/buyerOrder.types";
 interface OrdersViewEnhancedProps {
   searchQuery: string;
   setSearchQuery: (query: string) => void;
@@ -49,11 +49,7 @@ const OrdersViewEnhanced: React.FC<OrdersViewEnhancedProps> = ({
     ordersError,
     actionLoading,
     actionError,
-    pagination,
-    setPagination,
-    refreshOrders,
     deleteOrder,
-    searchOrders,
   } = useBuyerOrderManagement();
 
   // 에러 메시지 관리
@@ -83,18 +79,17 @@ const OrdersViewEnhanced: React.FC<OrdersViewEnhancedProps> = ({
   const filteredOrders = useMemo(() => {
     let filtered = prototypeOrders;
 
-    // 검색 필터
     if (searchQuery.trim()) {
-      filtered = filtered.filter((order) =>
-        order.products.some((product) =>
-          product.name.toLowerCase().includes(searchQuery.toLowerCase())
+      filtered = filtered.filter((order: Order) =>
+        order.products.some(
+          (product: { name: string; quantity: number; price: number }) =>
+            product.name.toLowerCase().includes(searchQuery.toLowerCase())
         )
       );
     }
 
-    // 기간 필터
     if (selectedPeriod !== "최근 6개월") {
-      filtered = filtered.filter((order) =>
+      filtered = filtered.filter((order: Order) =>
         order.date.includes(selectedPeriod)
       );
     }
@@ -114,7 +109,7 @@ const OrdersViewEnhanced: React.FC<OrdersViewEnhancedProps> = ({
   };
 
   // 주문 액션 핸들러 (삭제 에러 처리 추가)
-  const handleOrderActionEnhanced = async (action: string, order: any) => {
+  const handleOrderActionEnhanced = async (action: string, order: Order) => {
     if (action === "delete") {
       try {
         await deleteOrder({ orderNumber: order.orderNumber });
@@ -241,7 +236,7 @@ const OrdersViewEnhanced: React.FC<OrdersViewEnhancedProps> = ({
       {/* 주문 목록 */}
       {paginatedOrders.length > 0 ? (
         <>
-          {paginatedOrders.map((order) => (
+          {paginatedOrders.map((order: Order) => (
             <OrderItem
               key={order.id}
               order={order}

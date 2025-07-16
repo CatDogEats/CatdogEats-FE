@@ -23,7 +23,12 @@ import { ChevronRight } from "@mui/icons-material";
 import { useBuyerOrderDetail, useErrorMessage } from "@/hooks/useBuyerOrders";
 import { buyerOrderApi } from "@/service/api/buyerOrderApi";
 import { ORDER_STATUS_INFO_MAP } from "@/types/buyerOrder.types";
-
+import type {
+  Order,
+  OrderStatus,
+  OrderStatusInfo,
+  BuyerOrderDetailItem,
+} from "@/types/buyerOrder.types";
 interface OrderDetailEnhancedProps {
   selectedOrder: any; // 기존 프로토타입 Order 객체
   setDetailView: (view: string | null) => void;
@@ -158,7 +163,8 @@ const OrderDetailEnhanced: React.FC<OrderDetailEnhancedProps> = ({
   }
 
   // 주문 상태 정보
-  const statusInfo = ORDER_STATUS_INFO_MAP[orderDetail.orderStatus];
+  const statusInfo: OrderStatusInfo =
+    ORDER_STATUS_INFO_MAP[orderDetail.orderStatus as OrderStatus];
 
   // 날짜 포맷팅
   const formatDate = (dateString: string) => {
