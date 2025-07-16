@@ -9,7 +9,7 @@ import {
 } from '@/components/Home';
 import { Workshop } from '@/components/Home/types';
 import { popularWorkshops, contentCategories } from '@/data';
-import { getMainProducts } from '@/service/product/BuyerProductAPI';
+import { mainProduct } from '@/service/product/BuyerProductAPI';
 import { Product } from '@/types/Product';
 
 const HomePage = () => {
@@ -21,18 +21,19 @@ const HomePage = () => {
 
     useEffect(() => {
         Promise.all([
-            getMainProducts('NEW'),
-            getMainProducts('BEST'),
-            getMainProducts('DISCOUNT')
+            mainProduct.getMainProducts('NEW'),
+            mainProduct.getMainProducts('BEST'),
+            mainProduct.getMainProducts('DISCOUNT')
         ]).then(([newProducts, bestProducts, discountProducts]) => {
             setProductSets([
-                newProducts,
-                bestProducts,
-                discountProducts
+                newProducts || [],
+                bestProducts || [],
+                discountProducts || []
             ]);
             setLoading(false);
         });
     }, []);
+
 
     // 상품 클릭 시 상세페이지 이동 (productNumber 사용)
     const handleProductClick = (product: Product) => {
