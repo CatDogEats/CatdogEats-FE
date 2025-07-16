@@ -14,7 +14,7 @@ import type {
 import {
   PaymentConfirmRequest,
   PaymentConfirmResponse,
-} from "../types/paymentTypes";
+} from "@/types/paymentTypes";
 // API 기본 URL 설정
 const API_BASE_URL =
   import.meta.env.MODE === "development"
