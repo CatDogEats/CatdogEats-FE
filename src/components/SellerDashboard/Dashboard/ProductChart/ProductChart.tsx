@@ -84,7 +84,7 @@ const CustomXAxisTick = (props: any) => {
 };
 
 export const ProductChart: React.FC<ProductChartProps> = ({
-                                                              title = "월간 상품 매출 순위",
+                                                              title = "월간 상품 매출 순위 (TOP 10)",
                                                               period = "이번 달",
                                                               totalProducts = "0개",
                                                               changeRate = "0%",

@@ -64,6 +64,7 @@ export interface ProductChartData {
     productId: string;
     productName: string;
     totalSales: number;
+    totalQuantity: number;
     percentage: number;
     color: string;
 }
@@ -148,16 +149,15 @@ export const transformToProductChart = (productRanking: ProductRankingResponse[]
         "#63b3ed", "#68d391", "#fbb6ce", "#a78bfa", "#34d399"
     ];
 
-    // 전체 상품 사용 (5개 제한 제거)
     const totalSales = productRanking.reduce((sum, product) => sum + product.totalSales, 0);
 
     return productRanking.map((product, index) => ({
         productId: product.productId,
         productName: product.productName,
         totalSales: product.totalSales,
-        totalQuantity: product.totalQuantity,
+        totalQuantity: product.totalQuantity,  // 이 줄 추가
         percentage: totalSales > 0 ? Math.round((product.totalSales / totalSales) * 100) : 0,
-        color: colors[index % colors.length] // 색상이 부족하면 반복 사용
+        color: colors[index % colors.length]
     }));
 };
 
