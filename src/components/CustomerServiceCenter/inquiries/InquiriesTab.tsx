@@ -17,24 +17,33 @@ const InquiriesTab: React.FC = () => {
 
     return (
         <Box sx={{ pt: 3, pb: 4 }}>
-            <Typography variant="h5" fontWeight={600} sx={{ color: "#1c140d", mb: 3 }}>
+            <Typography
+                variant="h5"
+                fontWeight={600}
+                sx={{
+                    color: "text.primary",
+                    mb: 3
+                }}
+            >
                 1:1 문의
             </Typography>
 
-            <Box sx={{ display: "flex", borderBottom: "1px solid #e8dbce", mb: 3 }}>
+            <Box sx={{ display: "flex", borderBottom: "1px solid", borderBottomColor: "grey.200", mb: 3 }}>
                 <Button
                     sx={{
                         flex: 1,
                         pb: 1.5,
                         pt: 1,
                         borderBottom: "2px solid",
-                        borderBottomColor: activeTab === "history" ? "#f38b24" : "transparent",
-                        color: activeTab === "history" ? "#f38b24" : "#9c7349",
+                        borderBottomColor: activeTab === "history" ? "primary.main" : "transparent",
+                        color: activeTab === "history" ? "primary.main" : "text.secondary",
                         fontSize: "0.875rem",
                         fontWeight: 600,
                         borderRadius: 0,
+                        transition: "all 0.2s ease",
                         "&:hover": {
                             backgroundColor: "transparent",
+                            color: "primary.main",
                         },
                     }}
                     onClick={() => handleTabChange("history")}
@@ -47,15 +56,15 @@ const InquiriesTab: React.FC = () => {
                         pb: 1.5,
                         pt: 1,
                         borderBottom: "2px solid",
-                        borderBottomColor: activeTab === "new" ? "#f38b24" : "transparent",
-                        color: activeTab === "new" ? "#f38b24" : "#9c7349",
+                        borderBottomColor: activeTab === "new" ? "primary.main" : "transparent",
+                        color: activeTab === "new" ? "primary.main" : "text.secondary",
                         fontSize: "0.875rem",
                         fontWeight: 600,
                         borderRadius: 0,
+                        transition: "all 0.2s ease",
                         "&:hover": {
                             backgroundColor: "transparent",
-                            color: "#f38b24",
-                            borderBottomColor: activeTab === "new" ? "#f38b24" : "rgba(243, 139, 36, 0.5)",
+                            color: "primary.main",
                         },
                     }}
                     onClick={() => handleTabChange("new")}
