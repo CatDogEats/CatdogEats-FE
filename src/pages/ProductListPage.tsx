@@ -1,5 +1,5 @@
 // src/pages/ProductListPage.tsx
-
+import { useParams, useNavigate } from "react-router-dom";
 import React, { useState, useEffect, useCallback } from "react";
 import {
     Container, Box, Grid, Button, useTheme, useMediaQuery,
@@ -16,6 +16,7 @@ import ProductFilters from "@/components/ProductList/components/ProductFilters";
 import { fetchProducts } from "@/service/product/ProductListAPI";
 import type { Product } from "@/types/Product";
 import type { ProductFilters as ProductFiltersType } from "@/types/Product";
+import type { PetType, ProductType } from "@/types/Product";
 
 // 백엔드 → 프론트 Product 변환 함수
 function mapProduct(item: any): Product {
@@ -43,14 +44,30 @@ function mapProduct(item: any): Product {
 
 const PRODUCTS_PER_PAGE = 8;
 
+function getFiltersFromParams(params: { pet?: string; type?: string }): ProductFiltersType {
+    let petType: PetType | null = null;
+    let productType: ProductType | null = null;
+    if (params.pet === "dog") petType = "강아지";
+    if (params.pet === "cat") petType = "고양이";
+    if (params.type === "handmade") productType = "수제품";
+    if (params.type === "finished") productType = "완제품";
+    return { petType, productType };
+}
+
 const ProductListPage: React.FC = () => {
     const theme = useTheme();
     const isMobile = useMediaQuery(theme.breakpoints.down("md"));
 
-    const [filters, setFilters] = useState<ProductFiltersType>({
-        petType: null,
-        productType: null,
-    });
+    const params = useParams(); // { pet: 'dog'|'cat', type: 'handmade'|'finished' }
+    const navigate = useNavigate();
+
+    // URL 파라미터로부터 필터값 세팅
+    const [filters, setFilters] = useState<ProductFiltersType>(() => getFiltersFromParams(params));
+
+    // URL 파라미터가 바뀌면 filters도 바뀌게
+    useEffect(() => {
+        setFilters(getFiltersFromParams(params));
+    }, [params.pet, params.type]);
 
     const [sortBy, setSortBy] = useState<"CREATED_AT" | "PRICE" | "AVERAGE_STAR">("CREATED_AT");
     const [sortDirection] = useState<"asc" | "desc">("desc"); // 백엔드에서 내림차순만 우선 지원
@@ -103,8 +120,15 @@ const ProductListPage: React.FC = () => {
 
     // 필터 핸들러
     const handleFiltersChange = (newFilters: ProductFiltersType) => {
-        setFilters(newFilters);
-        setCurrentPage(1);
+        let path = "/productsList";
+        if (newFilters.petType === "강아지") path += "/dog";
+        else if (newFilters.petType === "고양이") path += "/cat";
+
+        if (newFilters.productType === "수제품") path += "/handmade";
+        else if (newFilters.productType === "완제품") path += "/finished";
+
+        navigate(path);
+        // setFilters는 URL 바뀌면 자동 반영됨
     };
 
     const handleSortChange = (newSortBy: string) => {
@@ -133,6 +157,7 @@ const ProductListPage: React.FC = () => {
                         sortBy={sortBy}
                         sortDirection={sortDirection}
                         totalCount={totalCount}
+                        filters={filters}
                         onSortChange={handleSortChange}
                         onSortDirectionChange={() => {}}
                     />

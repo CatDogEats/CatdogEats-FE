@@ -10,12 +10,16 @@ import {
   useTheme,
 } from "@mui/material";
 
-import { SORT_OPTIONS } from "@/components/ProductList/types/product.types";
+import {PetType, ProductType, SORT_OPTIONS} from "@/components/ProductList/types/product.types";
 
 interface ProductSortingProps {
   sortBy: string;
   sortDirection: "asc" | "desc";
   totalCount: number;
+  filters: {
+      petType: PetType | null;
+      productType: ProductType | null;
+  };
   onSortChange: (sortBy: string) => void;
   onSortDirectionChange: (direction: "asc" | "desc") => void;
 }
@@ -23,10 +27,20 @@ interface ProductSortingProps {
 const ProductSorting: React.FC<ProductSortingProps> = ({
   sortBy,
   totalCount,
+  filters,
   onSortChange,
 }) => {
   const theme = useTheme();
 
+    let title = "";
+    if (filters.petType) {
+        title += filters.petType + " 간식";
+        if (filters.productType) {
+            title += " / " + filters.productType;
+        }
+    } else {
+        title = "전체 간식";
+    }
   // const handleSortChange = (event: SelectChangeEvent) => {
   //   onSortChange(event.target.value);
   // };
@@ -71,7 +85,7 @@ const ProductSorting: React.FC<ProductSortingProps> = ({
             fontFamily: theme.typography.fontFamily,
           }}
         >
-          강아지 간식
+            {title}
         </Typography>
         <Typography
           variant="body2"

@@ -1,35 +1,34 @@
-import React from "react"
+import React from "react";
 import {
     Box,
     List,
     ListItem,
     ListItemText,
-} from "@mui/material"
-import { ChevronRight as ChevronRightIcon } from "@mui/icons-material"
-import { useNavigate } from "react-router-dom"
+} from "@mui/material";
+import { ChevronRight as ChevronRightIcon } from "@mui/icons-material";
+import { useNavigate } from "react-router-dom";
 
 interface SubItem {
-    label: string
-    path: string
-    subItems?: SubItem[]
+    label: string;
+    path?: string;
+    subItems?: SubItem[];
 }
 
 interface NavigationItem {
-    label: string
-    path?: string
-    action?: () => void
-    subItems?: SubItem[]
+    label: string;
+    path?: string;
+    action?: () => void;
+    subItems?: SubItem[];
 }
 
 interface DropdownMenuProps {
-    navigationItems: NavigationItem[]
-    menuOpen: boolean
-    hoveredCategory: string | null
-    hoveredSubCategory: string | null
-    setHoveredCategory: (category: string | null) => void
-    setHoveredSubCategory: (subCategory: string | null) => void
-    setMenuOpen: (open: boolean) => void
-    onNavigationClick: (item: NavigationItem) => void
+    navigationItems: NavigationItem[];
+    menuOpen: boolean;
+    hoveredCategory: string | null;
+    hoveredSubCategory: string | null;
+    setHoveredCategory: (category: string | null) => void;
+    setHoveredSubCategory: (subCategory: string | null) => void;
+    setMenuOpen: (open: boolean) => void;
 }
 
 const DropdownMenu: React.FC<DropdownMenuProps> = ({
@@ -40,11 +39,10 @@ const DropdownMenu: React.FC<DropdownMenuProps> = ({
                                                        setHoveredCategory,
                                                        setHoveredSubCategory,
                                                        setMenuOpen,
-                                                       onNavigationClick,
                                                    }) => {
-    const navigate = useNavigate()
+    const navigate = useNavigate();
 
-    if (!menuOpen) return null
+    if (!menuOpen) return null;
 
     return (
         <Box
@@ -52,9 +50,7 @@ const DropdownMenu: React.FC<DropdownMenuProps> = ({
                 position: "absolute",
                 top: "100%",
                 left: 0,
-                width: "fit-content",
                 minWidth: "180px",
-                height: "calc(100vh - 64px)",
                 backgroundColor: "white",
                 boxShadow: "0 4px 12px rgba(0,0,0,0.1)",
                 zIndex: 1000,
@@ -66,35 +62,33 @@ const DropdownMenu: React.FC<DropdownMenuProps> = ({
             <List sx={{ py: 0 }}>
                 {navigationItems.map((item, index) => (
                     <Box key={item.label} sx={{ position: "relative" }}>
-                        {/* 1차 메뉴 아이템 */}
+                        {/* 1차 메뉴 */}
                         <ListItem
                             onClick={() => {
-                                if (!item.subItems) {
-                                    onNavigationClick(item)
-                                    setMenuOpen(false)
+                                if (item.action) item.action();
+                                if (item.path) {
+                                    navigate(item.path);
                                 }
+                                setMenuOpen(false);
+                                setHoveredCategory(null);
+                                setHoveredSubCategory(null);
                             }}
                             onMouseEnter={() => {
-                                if (item.subItems) {
-                                    setHoveredCategory(item.label)
-                                }
+                                if (item.subItems) setHoveredCategory(item.label);
                             }}
                             onMouseLeave={() => {
                                 if (item.subItems) {
-                                    setHoveredCategory(null)
-                                    setHoveredSubCategory(null)
+                                    setHoveredCategory(null);
+                                    setHoveredSubCategory(null);
                                 }
                             }}
                             sx={{
                                 cursor: "pointer",
                                 py: 2,
                                 px: 3,
-                                borderBottom:
-                                    index < navigationItems.length - 1 ? "1px solid" : "none",
+                                borderBottom: index < navigationItems.length - 1 ? "1px solid" : "none",
                                 borderBottomColor: "grey.100",
-                                "&:hover": {
-                                    backgroundColor: "grey.50",
-                                },
+                                "&:hover": { backgroundColor: "grey.50" },
                                 whiteSpace: "nowrap",
                                 display: "flex",
                                 justifyContent: "space-between",
@@ -121,7 +115,6 @@ const DropdownMenu: React.FC<DropdownMenuProps> = ({
                                     position: "absolute",
                                     top: 0,
                                     left: "100%",
-                                    width: "fit-content",
                                     minWidth: "150px",
                                     backgroundColor: "white",
                                     boxShadow: "0 4px 12px rgba(0,0,0,0.1)",
@@ -132,8 +125,8 @@ const DropdownMenu: React.FC<DropdownMenuProps> = ({
                                 }}
                                 onMouseEnter={() => setHoveredCategory(item.label)}
                                 onMouseLeave={() => {
-                                    setHoveredCategory(null)
-                                    setHoveredSubCategory(null)
+                                    setHoveredCategory(null);
+                                    setHoveredSubCategory(null);
                                 }}
                             >
                                 <List sx={{ py: 0 }}>
@@ -141,35 +134,27 @@ const DropdownMenu: React.FC<DropdownMenuProps> = ({
                                         <Box key={subItem.label} sx={{ position: "relative" }}>
                                             <ListItem
                                                 onClick={() => {
-                                                    if (!subItem.subItems) {
-                                                        navigate(subItem.path)
-                                                        setMenuOpen(false)
-                                                        setHoveredCategory(null)
-                                                        setHoveredSubCategory(null)
+                                                    if (subItem.path) {
+                                                        navigate(subItem.path);
                                                     }
+                                                    setMenuOpen(false);
+                                                    setHoveredCategory(null);
+                                                    setHoveredSubCategory(null);
                                                 }}
                                                 onMouseEnter={() => {
-                                                    if (subItem.subItems) {
-                                                        setHoveredSubCategory(subItem.label)
-                                                    }
+                                                    if (subItem.subItems) setHoveredSubCategory(subItem.label);
                                                 }}
                                                 onMouseLeave={() => {
-                                                    if (subItem.subItems) {
-                                                        setHoveredSubCategory(null)
-                                                    }
+                                                    if (subItem.subItems) setHoveredSubCategory(null);
                                                 }}
                                                 sx={{
                                                     cursor: "pointer",
                                                     py: 1.5,
                                                     px: 2.5,
-                                                    borderBottom:
-                                                        subIndex < (item.subItems || []).length - 1
-                                                            ? "1px solid"
-                                                            : "none",
+                                                    borderBottom: subIndex < (item.subItems || []).length - 1
+                                                        ? "1px solid" : "none",
                                                     borderBottomColor: "grey.100",
-                                                    "&:hover": {
-                                                        backgroundColor: "grey.50",
-                                                    },
+                                                    "&:hover": { backgroundColor: "grey.50" },
                                                     whiteSpace: "nowrap",
                                                     display: "flex",
                                                     justifyContent: "space-between",
@@ -190,7 +175,6 @@ const DropdownMenu: React.FC<DropdownMenuProps> = ({
                                                     />
                                                 )}
                                             </ListItem>
-
                                             {/* 2차 서브메뉴 */}
                                             {hoveredSubCategory === subItem.label && (
                                                 <Box
@@ -198,7 +182,6 @@ const DropdownMenu: React.FC<DropdownMenuProps> = ({
                                                         position: "absolute",
                                                         top: 0,
                                                         left: "100%",
-                                                        width: "fit-content",
                                                         minWidth: "120px",
                                                         backgroundColor: "white",
                                                         boxShadow: "0 4px 12px rgba(0,0,0,0.1)",
@@ -220,10 +203,12 @@ const DropdownMenu: React.FC<DropdownMenuProps> = ({
                                                                 <ListItem
                                                                     key={subSubItem.label}
                                                                     onClick={() => {
-                                                                        navigate(subSubItem.path)
-                                                                        setMenuOpen(false)
-                                                                        setHoveredCategory(null)
-                                                                        setHoveredSubCategory(null)
+                                                                        if (subSubItem.path) {
+                                                                            navigate(subSubItem.path);
+                                                                        }
+                                                                        setMenuOpen(false);
+                                                                        setHoveredCategory(null);
+                                                                        setHoveredSubCategory(null);
                                                                     }}
                                                                     sx={{
                                                                         cursor: "pointer",
@@ -264,7 +249,7 @@ const DropdownMenu: React.FC<DropdownMenuProps> = ({
                 ))}
             </List>
         </Box>
-    )
-}
+    );
+};
 
-export default DropdownMenu
+export default DropdownMenu;
