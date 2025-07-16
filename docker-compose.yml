@@ -1,16 +1,15 @@
 version: '3.8'
-
 services:
-  backend:
-    image: ${DOCKERHUB_USERNAME}/${REPO_NAME_LOWER}-server:latest
+  frontend:
+    image: euegenechoi/aibe1-finalproject-todayscommit_fe-client:latest
     ports:
-      - "3000:3000"
+      - "5173:5173"
     env_file:
       - .env.production
 
-  frontend:
-    image: ${DOCKERHUB_USERNAME}/${REPO_NAME_LOWER}-client:latest
+  backend:
+    image: euegenechoi/aibe1-finalproject-todayscommit_fe-server:latest
     ports:
-      - "5173:5173"
+      - "3000:3000"
     env_file:
       - .env.production
