@@ -15,7 +15,7 @@ import {
   Alert,
 } from "@mui/material";
 import { Search } from "@mui/icons-material";
-import { useBuyerOrderList } from "@/hooks/useBuyerOrders";
+import { useBuyerOrderManagement } from "@/hooks/useBuyerOrders";
 import type { OrdersViewProps } from "./index";
 import OrderItem from "./OrderItem";
 import CustomStepIcon from "./CustomStepIcon";
@@ -35,31 +35,60 @@ const OrdersView: React.FC<OrdersViewProps> = ({
   const itemsPerPage = 5;
 
   // 1) API 연동
-  const { prototypeOrders, loading, error, refreshOrders } =
-    useBuyerOrderList();
+  const { prototypeOrders, ordersLoading, ordersError, refreshOrders } =
+    useBuyerOrderManagement();
 
-  // 2) 로딩 및 에러 처리
-  if (loading) {
+  // 2) 상태별 로딩/에러 처리
+  if (ordersLoading) {
     return (
       <Box sx={{ display: "flex", justifyContent: "center", p: 4 }}>
         <CircularProgress />
       </Box>
     );
   }
-  if (error) {
+  if (ordersError) {
     return (
       <Box sx={{ p: 2 }}>
-        <Alert severity="error">{error}</Alert>
+        <Alert severity="error">{ordersError}</Alert>
       </Box>
     );
   }
 
-  // 3) API 데이터가 있으면 사용, 없으면 mockOrders 사용
-  const orders = prototypeOrders.length > 0 ? prototypeOrders : mockOrders;
+  // 3) 상태 색상 맵핑 함수
+  const getStatusColor = (status: string) => {
+    const colorMap: Record<string, string> = {
+      payment_completed: "info",
+      preparing: "warning",
+      ready_for_delivery: "primary",
+      in_transit: "secondary",
+      delivered: "success",
+      order_cancelled: "error",
+    };
+    return colorMap[status] || "default";
+  };
 
-  // 4) 검색 및 기간 필터링
+  // 4) API 데이터와 Mock 데이터 타입 통일 함수
+  const normalizeOrders = (apiOrders: any[], mockOrders: any[]) => {
+    if (apiOrders.length > 0) {
+      return apiOrders.map((order) => ({
+        ...order,
+        status: order.shippingStatus || "payment_completed",
+        statusColor: getStatusColor(
+          order.shippingStatus || "payment_completed"
+        ),
+        deliveryDate: order.orderDate,
+      }));
+    } else {
+      return mockOrders;
+    }
+  };
+
+  // 병합된 주문 목록
+  const orders = normalizeOrders(prototypeOrders, mockOrders);
+
+  // 5) 검색 및 기간 필터링 (타입 안전 처리)
   const filteredOrders = useMemo(() => {
-    let filtered = orders;
+    let filtered = orders as any[];
 
     if (searchQuery.trim()) {
       filtered = filtered.filter((order: any) =>
@@ -78,7 +107,7 @@ const OrdersView: React.FC<OrdersViewProps> = ({
     return filtered;
   }, [searchQuery, selectedPeriod, orders]);
 
-  // 5) 페이지네이션
+  // 6) 페이지네이션
   const paginatedOrders = useMemo(() => {
     const startIndex = (currentPage - 1) * itemsPerPage;
     return filteredOrders.slice(startIndex, startIndex + itemsPerPage);
@@ -88,7 +117,7 @@ const OrdersView: React.FC<OrdersViewProps> = ({
     setCurrentPage(page);
   };
 
-  // 6) 주문 삭제 핸들러 (삭제 후 목록 새로고침)
+  // 7) 주문 삭제 핸들러 (삭제 후 목록 새로고침)
   const handleDelete = async (order: any) => {
     try {
       await handleOrderAction("delete", order);
