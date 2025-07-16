@@ -15,7 +15,7 @@ import {
 const SellerInfoPage: React.FC = () => {
     const {
         data,
-        originalData, // 🔧 추가: 원본 데이터
+        originalData,
         isLoading,
         error,
         updateField,
@@ -25,7 +25,7 @@ const SellerInfoPage: React.FC = () => {
         handleCustomerViewClick,
         handleImageUpload,
         handleImageDelete,
-        addressValidation, // 🔧 추가: 주소 유효성 검사 결과
+        addressValidation,
     } = useSellerInfo();
 
     return (
@@ -102,8 +102,8 @@ const SellerInfoPage: React.FC = () => {
                                             ? `${data.closedDays.join(', ')} 휴무`
                                             : data.operatingHours.holidayInfo
                                     }}
-                                    deliveryFee={data.deliveryFee} // 🔧 새로 추가
-                                    freeShippingThreshold={data.freeShippingThreshold} // 🔧 새로 추가
+                                    deliveryFee={data.deliveryFee}
+                                    freeShippingThreshold={data.freeShippingThreshold}
                                 />
                             </Grid>
 
@@ -132,20 +132,20 @@ const SellerInfoPage: React.FC = () => {
                                 deliveryFee: data.deliveryFee,
                                 freeShippingThreshold: data.freeShippingThreshold,
                                 profileImage: data.profileImage,
-                                _addressData: data._addressData, // 🔧 추가: 주소 데이터 전달
+                                _addressData: data._addressData,
                             }}
                             onChange={updateField}
                             onBusinessNumberVerify={handleBusinessNumberVerify}
                             onImageUpload={handleImageUpload}
                             onImageDelete={handleImageDelete}
-                            addressValidation={addressValidation} // 🔧 추가: 주소 유효성 검사 결과 전달
+                            addressValidation={addressValidation}
                         />
 
                         <FormActions
                             onSave={handleSave}
                             onCancel={handleCancel}
                             isLoading={isLoading}
-                            addressValidation={addressValidation} // 🔧 추가: 주소 유효성 검사 결과 전달
+                            addressValidation={addressValidation}
                         />
                     </Box>
                 </Paper>

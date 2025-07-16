@@ -1,14 +1,26 @@
 // src/components/SellerDashboard/SellerInfo/FormComponents.tsx
 
 import React from "react";
-import { Box, Typography, TextField, Stack, Grid, FormControl, FormGroup, FormControlLabel, Checkbox, InputAdornment, Alert } from "@mui/material";
-import { BRAND_COLORS, PrimaryButton, SecondaryButton } from "./constants";
-import { FormField } from "./BasicComponents";
+import {
+    Box,
+    Typography,
+    TextField,
+    Stack,
+    Grid,
+    FormControl,
+    FormGroup,
+    FormControlLabel,
+    Checkbox,
+    InputAdornment,
+    Alert
+} from "@mui/material";
+import {BRAND_COLORS, PrimaryButton, SecondaryButton} from "./constants";
+import {FormField} from "./BasicComponents";
 import ProfileImageUpload from "./ProfileImageUpload";
 import TagInput from "./TagInput";
 import OperatingHours from "./OperatingHours";
 import AddressInputSection from "./AddressInputSection";
-import { WEEKDAYS } from "@/service/seller/SellerInfoAPI";
+import {WEEKDAYS} from "@/service/seller/SellerInfoAPI";
 
 // ==================== 확장된 폼 데이터 타입 ====================
 export interface BasicInfoFormData {
@@ -52,7 +64,7 @@ interface ClosedDaysInputProps {
     onChange: (closedDays: string[]) => void;
 }
 
-const ClosedDaysInput: React.FC<ClosedDaysInputProps> = ({ closedDays, onChange }) => {
+const ClosedDaysInput: React.FC<ClosedDaysInputProps> = ({closedDays, onChange}) => {
     const handleDayChange = (day: string, checked: boolean) => {
         if (checked) {
             onChange([...closedDays, day]);
@@ -153,7 +165,7 @@ const DeliveryInfoInput: React.FC<DeliveryInfoInputProps> = ({
                             "& .MuiOutlinedInput-root": {
                                 backgroundColor: BRAND_COLORS.BACKGROUND_INPUT,
                                 borderRadius: 2,
-                                "&.Mui-focused fieldset": { borderColor: BRAND_COLORS.PRIMARY }
+                                "&.Mui-focused fieldset": {borderColor: BRAND_COLORS.PRIMARY}
                             }
                         }}
                     />
@@ -172,7 +184,7 @@ const DeliveryInfoInput: React.FC<DeliveryInfoInputProps> = ({
                             "& .MuiOutlinedInput-root": {
                                 backgroundColor: BRAND_COLORS.BACKGROUND_INPUT,
                                 borderRadius: 2,
-                                "&.Mui-focused fieldset": { borderColor: BRAND_COLORS.PRIMARY }
+                                "&.Mui-focused fieldset": {borderColor: BRAND_COLORS.PRIMARY}
                             }
                         }}
                     />
@@ -224,7 +236,7 @@ const SettlementInfoInput: React.FC<SettlementInfoInputProps> = ({
                             "& .MuiOutlinedInput-root": {
                                 backgroundColor: BRAND_COLORS.BACKGROUND_INPUT,
                                 borderRadius: 2,
-                                "&.Mui-focused fieldset": { borderColor: BRAND_COLORS.PRIMARY }
+                                "&.Mui-focused fieldset": {borderColor: BRAND_COLORS.PRIMARY}
                             }
                         }}
                     />
@@ -240,7 +252,7 @@ const SettlementInfoInput: React.FC<SettlementInfoInputProps> = ({
                             "& .MuiOutlinedInput-root": {
                                 backgroundColor: BRAND_COLORS.BACKGROUND_INPUT,
                                 borderRadius: 2,
-                                "&.Mui-focused fieldset": { borderColor: BRAND_COLORS.PRIMARY }
+                                "&.Mui-focused fieldset": {borderColor: BRAND_COLORS.PRIMARY}
                             }
                         }}
                     />
@@ -260,12 +272,29 @@ const SettlementInfoInput: React.FC<SettlementInfoInputProps> = ({
 
 // ==================== 향상된 기본 정보 폼 ====================
 interface BasicInfoFormProps {
-    data: BasicInfoFormData;
-    onChange: (field: keyof BasicInfoFormData, value: any) => void;
-    onBusinessNumberVerify?: () => void;
-    onImageUpload?: (file: File) => Promise<void>;
-    onImageDelete?: () => Promise<void>;
-    addressValidation?: AddressValidation; // 🔧 추가: 주소 유효성 검사 결과
+    data: BasicInfoFormData,
+    onChange: (field: keyof BasicInfoFormData, value: any) => void,
+    onBusinessNumberVerify?: () => void,
+    onImageUpload?: (file: File) => Promise<void>,
+    onImageDelete?: () => Promise<void>,
+    addressValidation?: AddressValidation,
+    data?: {
+        vendorName: string;
+        businessNumber: string;
+        settlementBank: string;
+        settlementAcc: string;
+        postalCode: string;
+        roadAddress: string;
+        detailAddress: string;
+        phoneNumber: string;
+        tags: string[];
+        operatingHours: { start: string; end: string; breakTime?: string; holidayInfo: string };
+        closedDays: string[];
+        deliveryFee: number;
+        freeShippingThreshold: number;
+        profileImage: string | null;
+        _addressData: { city: string; district: string; neighborhood: string; streetAddress: string } | undefined
+    }
 }
 
 export const BasicInfoForm: React.FC<BasicInfoFormProps> = ({
@@ -274,7 +303,8 @@ export const BasicInfoForm: React.FC<BasicInfoFormProps> = ({
                                                                 onBusinessNumberVerify,
                                                                 onImageUpload,
                                                                 onImageDelete,
-                                                                addressValidation = { isValid: true, message: "" } // 🔧 추가
+                                                                addressValidation = {isValid: true, message: ""},
+                                                                data
                                                             }) => {
     const handleAddressChange = (field: 'postalCode' | 'roadAddress' | 'detailAddress', value: string) => {
         onChange(field, value);
@@ -355,7 +385,7 @@ export const BasicInfoForm: React.FC<BasicInfoFormProps> = ({
                                     "& .MuiOutlinedInput-root": {
                                         backgroundColor: BRAND_COLORS.BACKGROUND_INPUT,
                                         borderRadius: 2,
-                                        "&.Mui-focused fieldset": { borderColor: BRAND_COLORS.PRIMARY }
+                                        "&.Mui-focused fieldset": {borderColor: BRAND_COLORS.PRIMARY}
                                     }
                                 }}
                             />
@@ -368,14 +398,14 @@ export const BasicInfoForm: React.FC<BasicInfoFormProps> = ({
                                 fontWeight="500"
                                 color="transparent"
                                 mb={1}
-                                sx={{ height: '20px' }}
+                                sx={{height: '20px'}}
                             >
                                 사업자 등록번호
                             </Typography>
                             <SecondaryButton
                                 fullWidth
                                 onClick={onBusinessNumberVerify}
-                                sx={{ height: 56 }}
+                                sx={{height: 56}}
                             >
                                 인증요청
                             </SecondaryButton>
@@ -395,7 +425,7 @@ export const BasicInfoForm: React.FC<BasicInfoFormProps> = ({
 
                     {/* 🔧 추가: 주소 유효성 검사 메시지 표시 */}
                     {addressValidation.message && (
-                        <Box sx={{ mt: 1 }}>
+                        <Box sx={{mt: 1}}>
                             <Alert
                                 severity={addressValidation.isValid ? "success" : "warning"}
                                 sx={{
@@ -459,13 +489,13 @@ export const FormActions: React.FC<FormActionsProps> = ({
                                                             onSave,
                                                             onCancel,
                                                             isLoading = false,
-                                                            addressValidation = { isValid: true, message: "" }
+                                                            addressValidation = {isValid: true, message: ""}
                                                         }) => (
     <Box pt={4} borderTop={`1px solid ${BRAND_COLORS.BORDER}`} mt={4}>
         {/* 🔧 추가: 주소 유효성 검사 실패 시 경고 메시지 */}
         {!addressValidation.isValid && (
-            <Box sx={{ mb: 2 }}>
-                <Alert severity="error" sx={{ fontSize: "0.875rem" }}>
+            <Box sx={{mb: 2}}>
+                <Alert severity="error" sx={{fontSize: "0.875rem"}}>
                     저장하기 전에 주소 정보를 완전히 입력해주세요.
                 </Alert>
             </Box>
@@ -475,7 +505,7 @@ export const FormActions: React.FC<FormActionsProps> = ({
             <SecondaryButton
                 onClick={onCancel}
                 disabled={isLoading}
-                sx={{ minWidth: 120, px: 3, py: 1.5 }}
+                sx={{minWidth: 120, px: 3, py: 1.5}}
             >
                 변경 취소
             </SecondaryButton>
