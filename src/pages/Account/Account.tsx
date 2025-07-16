@@ -1,3 +1,4 @@
+// src/pages/Account/Account.tsx
 "use client";
 
 import { useState } from "react";
@@ -6,7 +7,6 @@ import { ThemeProvider } from "@mui/material/styles";
 import OrdersView from "@/components/Account/OrdersView";
 import ShippingDetailView from "@/components/Account/ShippingDetailView";
 import OrderDetail from "@/components/Account/OrderDetail";
-// 기존 컴포넌트들
 import ReviewsView from "@/components/Account/ReviewsView";
 import ReturnInquiryView from "@/components/Account/ReturnInquiryView";
 import AddressesView from "@/components/Account/AddressesView";
@@ -17,14 +17,11 @@ import ReviewWriteView from "@/components/Account/ReviewWriteView";
 import CancelDetailView from "@/components/Account/CancelDetailView";
 import AddressDialog from "@/components/Account/AddressDialog";
 import PetDialog from "@/components/Account/PetDialog";
-
-// 새로운 회원 탈퇴 관련 컴포넌트들
+import { buyerOrderApi } from "@/service/api/buyerOrderApi";
 import UpdatedSidebar from "@/components/Account/Sidebar";
 import AccountWithdrawalView from "@/components/Account/accountWithdrawalView";
 import WithdrawalConfirmationModal from "@/components/Account/withdrawalConfirmationModal";
 import WithdrawalSuccessView from "@/components/Account/withdrawalSuccessView";
-
-// 타입 및 데이터
 import type { Address, Pet, Order } from "components/Account";
 import { mockOrders } from "@/data/mock-data";
 import { theme } from "@/theme";
@@ -42,10 +39,8 @@ export default function MyPage() {
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
   const [returnTab, setReturnTab] = useState(0);
 
-  // 회원 탈퇴 관련 상태
   const [withdrawalModalOpen, setWithdrawalModalOpen] = useState(false);
-
-  const [, setIsWithdrawalComplete] = useState(false); // 나중에 isWithdrawalComplete 추가해야함
+  const [, setIsWithdrawalComplete] = useState(false);
 
   const [newAddress, setNewAddress] = useState({
     label: "",
@@ -67,47 +62,40 @@ export default function MyPage() {
     specialRequests: "",
   });
 
-  // 기존 핸들러 함수들
   const handleMenuChange = (menuId: string) => {
     setActiveMenu(menuId);
     setDetailView(null);
   };
 
-  const handleOrderAction = (action: string, order: Order) => {
-    switch (action) {
-      case "detail":
-        setSelectedOrder(order);
-        setDetailView("detail");
-        break;
-      case "shipping":
-        setSelectedOrder(order);
-        setDetailView("shipping");
-        break;
-      case "review":
-        setSelectedOrder(order);
-        setDetailView("review");
-        break;
-      case "return":
-        setSelectedOrder(order);
-        setDetailView("return");
-        break;
-      case "refresh":
-        // Enhanced 컴포넌트에서 목록 새로고침 요청 시 처리
-        // 별도 처리 없이 Enhanced 컴포넌트에서 자동 처리됨
-        break;
-      case "delete":
-        // Enhanced 컴포넌트에서 삭제 완료 시 선택된 주문 초기화
-        if (detailView) {
-          setDetailView(null);
-          setSelectedOrder(null);
-        }
-        break;
-      default:
-        break;
+  // ✅ 수정된 handleOrderAction
+  const handleOrderAction = async (action: string, order: Order) => {
+    if (action === "view_detail") {
+      setSelectedOrder(order);
+      setDetailView("detail");
+    } else if (action === "view_shipping") {
+      setSelectedOrder(order);
+      setDetailView("shipping");
+    } else if (action === "write_review") {
+      setSelectedOrder(order);
+      setDetailView("review");
+    } else if (action === "request_return") {
+      setSelectedOrder(order);
+      setDetailView("return");
+    } else if (action === "delete") {
+      try {
+        await buyerOrderApi.deleteBuyerOrder({
+          orderNumber: order.orderNumber,
+        });
+        // 목록 새로고침은 OrdersView에서 처리됩니다.
+      } catch (error: any) {
+        console.error("주문 삭제 실패:", error);
+        alert(error.message);
+      }
+    } else if (action === "refresh") {
+      // OrdersView가 자체적으로 새로고침하므로 별도 처리 불필요
     }
   };
 
-  // 회원 탈퇴 관련 핸들러
   const handleWithdrawalRequest = () => {
     setWithdrawalModalOpen(true);
   };
@@ -115,7 +103,7 @@ export default function MyPage() {
   const handleWithdrawalConfirm = () => {
     setWithdrawalModalOpen(false);
     setIsWithdrawalComplete(true);
-    setActiveMenu("withdrawal-success"); // 추가
+    setActiveMenu("withdrawal-success");
     window.location.href = "/withdraw";
   };
 
@@ -123,7 +111,6 @@ export default function MyPage() {
     setWithdrawalModalOpen(false);
   };
 
-  // 기존 핸들러들 (생략 - 원본과 동일)
   const handleAddressSubmit = () => {
     if (editingAddress) {
       setAddresses(
@@ -169,21 +156,15 @@ export default function MyPage() {
     setAddresses(addresses.filter((addr) => addr.id !== id));
   };
 
-  // 메인 컨텐츠 렌더링
   const renderContent = () => {
-    // 회원 탈퇴 완료 화면 (기존 유지)
     if (activeMenu === "withdrawal-success") {
       return <WithdrawalSuccessView />;
     }
-
-    // 회원 탈퇴 화면 (기존 유지)
     if (activeMenu === "withdrawal") {
       return (
         <AccountWithdrawalView onWithdrawalRequest={handleWithdrawalRequest} />
       );
     }
-
-    // 상세 뷰들 - Enhanced 컴포넌트로 교체
     if (detailView === "shipping" && selectedOrder) {
       return (
         <ShippingDetailView
@@ -192,7 +173,6 @@ export default function MyPage() {
         />
       );
     }
-
     if (detailView === "return" && selectedOrder) {
       return <ReturnRequestView setDetailView={setDetailView} />;
     }
@@ -212,7 +192,6 @@ export default function MyPage() {
       return <CancelDetailView setDetailView={setDetailView} />;
     }
 
-    // 기존 메인 메뉴들
     switch (activeMenu) {
       case "orders":
         return (
@@ -221,19 +200,14 @@ export default function MyPage() {
             setSearchQuery={setSearchQuery}
             selectedPeriod={selectedPeriod}
             setSelectedPeriod={setSelectedPeriod}
-            mockOrders={mockOrders} // ✅ mockOrders props 복원
+            mockOrders={mockOrders}
             handleOrderAction={handleOrderAction}
           />
         );
-
       case "reviews":
         return (
-          <ReviewsView
-            mockOrders={[]} // 기존 컴포넌트이므로 빈 배열 전달
-            handleOrderAction={handleOrderAction}
-          />
+          <ReviewsView mockOrders={[]} handleOrderAction={handleOrderAction} />
         );
-
       case "return-inquiry":
         return (
           <ReturnInquiryView
@@ -242,7 +216,6 @@ export default function MyPage() {
             setDetailView={setDetailView}
           />
         );
-
       case "addresses":
         return (
           <AddressesView
@@ -252,13 +225,10 @@ export default function MyPage() {
             setAddressDialogOpen={setAddressDialogOpen}
           />
         );
-
       case "pets":
         return <PetsView />;
-
       case "coupons":
         return <CouponsView />;
-
       default:
         return <div>메뉴를 선택해주세요.</div>;
     }
@@ -269,15 +239,12 @@ export default function MyPage() {
       <Box sx={{ bgcolor: "background.default", minHeight: "100vh" }}>
         <Container maxWidth="xl" sx={{ py: 4 }}>
           <Grid container spacing={4}>
-            {/* 업데이트된 사이드바 */}
             <Grid size={{ xs: 12, md: 3 }}>
               <UpdatedSidebar
                 activeMenu={activeMenu}
                 onMenuChange={handleMenuChange}
               />
             </Grid>
-
-            {/* 메인 컨텐츠 */}
             <Grid size={{ xs: 12, md: 9 }}>
               <Card>
                 <CardContent sx={{ p: 4 }}>{renderContent()}</CardContent>
@@ -286,7 +253,6 @@ export default function MyPage() {
           </Grid>
         </Container>
 
-        {/* 기존 다이얼로그들 */}
         <AddressDialog
           open={addressDialogOpen}
           onClose={() => setAddressDialogOpen(false)}
@@ -303,7 +269,6 @@ export default function MyPage() {
           newPet={newPet}
           setNewPet={setNewPet}
           onSuccess={() => {
-            // 성공 시 다이얼로그 닫기만 하면 됨 (PetsView에서 자체 새로고침)
             setPetDialogOpen(false);
             setEditingPet(null);
             setNewPet({
@@ -319,7 +284,6 @@ export default function MyPage() {
           }}
         />
 
-        {/* 회원 탈퇴 확인 모달 */}
         <WithdrawalConfirmationModal
           open={withdrawalModalOpen}
           onClose={handleWithdrawalCancel}

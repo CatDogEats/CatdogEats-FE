@@ -1,27 +1,33 @@
 // src/components/Account/OrdersView.tsx
 "use client";
 
-import React, { useMemo, useState } from "react";
+import React from "react";
 import {
   Box,
   Typography,
+  Button,
   Paper,
   TextField,
   Chip,
-  Stepper,
-  Step,
-  StepLabel,
+  TableContainer,
+  Table,
+  TableHead,
+  TableRow,
+  TableCell,
+  TableBody,
   CircularProgress,
   Alert,
 } from "@mui/material";
-import { Search } from "@mui/icons-material";
 import { useBuyerOrderManagement } from "@/hooks/useBuyerOrders";
-import type { OrdersViewProps } from "./index";
-import OrderItem from "./OrderItem";
-import CustomStepIcon from "./CustomStepIcon";
-import ArrowConnector from "./ArrowConnector";
-import Pagination from "../common/Pagination";
-import GuideView from "@/components/Account/GuideView.tsx";
+
+interface OrdersViewProps {
+  searchQuery: string;
+  setSearchQuery: (q: string) => void;
+  selectedPeriod: string;
+  setSelectedPeriod: (p: string) => void;
+  mockOrders: any[];
+  handleOrderAction: (action: string, order: any) => Promise<void>;
+}
 
 const OrdersView: React.FC<OrdersViewProps> = ({
   searchQuery,
@@ -31,32 +37,13 @@ const OrdersView: React.FC<OrdersViewProps> = ({
   mockOrders,
   handleOrderAction,
 }) => {
-  const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 5;
-
-  // 1) API 연동
+  // ✅ 모든 훅을 맨 처음에 호출 (조건문 없이)
   const { prototypeOrders, ordersLoading, ordersError, refreshOrders } =
     useBuyerOrderManagement();
 
-  // 2) 상태별 로딩/에러 처리
-  if (ordersLoading) {
-    return (
-      <Box sx={{ display: "flex", justifyContent: "center", p: 4 }}>
-        <CircularProgress />
-      </Box>
-    );
-  }
-  if (ordersError) {
-    return (
-      <Box sx={{ p: 2 }}>
-        <Alert severity="error">{ordersError}</Alert>
-      </Box>
-    );
-  }
-
-  // 3) 상태 색상 맵핑 함수
+  // ✅ 모든 함수와 변수들을 정의 (훅 호출 후)
   const getStatusColor = (status: string) => {
-    const colorMap: Record<string, string> = {
+    const colorMap: Record<string, any> = {
       payment_completed: "info",
       preparing: "warning",
       ready_for_delivery: "primary",
@@ -67,7 +54,6 @@ const OrdersView: React.FC<OrdersViewProps> = ({
     return colorMap[status] || "default";
   };
 
-  // 4) API 데이터와 Mock 데이터 타입 통일 함수
   const normalizeOrders = (apiOrders: any[], mockOrders: any[]) => {
     if (apiOrders.length > 0) {
       return apiOrders.map((order) => ({
@@ -83,159 +69,127 @@ const OrdersView: React.FC<OrdersViewProps> = ({
     }
   };
 
-  // 병합된 주문 목록
   const orders = normalizeOrders(prototypeOrders, mockOrders);
 
-  // 5) 검색 및 기간 필터링 (타입 안전 처리)
-  const filteredOrders = useMemo(() => {
-    let filtered = orders as any[];
-
-    if (searchQuery.trim()) {
-      filtered = filtered.filter((order: any) =>
-        order.products.some((product: any) =>
-          product.name.toLowerCase().includes(searchQuery.toLowerCase())
-        )
-      );
-    }
-
-    if (selectedPeriod !== "최근 6개월") {
-      filtered = filtered.filter((order: any) =>
-        order.date.includes(selectedPeriod)
-      );
-    }
-
-    return filtered;
-  }, [searchQuery, selectedPeriod, orders]);
-
-  // 6) 페이지네이션
-  const paginatedOrders = useMemo(() => {
-    const startIndex = (currentPage - 1) * itemsPerPage;
-    return filteredOrders.slice(startIndex, startIndex + itemsPerPage);
-  }, [filteredOrders, currentPage]);
-
-  const handlePageChange = (page: number) => {
-    setCurrentPage(page);
-  };
-
-  // 7) 주문 삭제 핸들러 (삭제 후 목록 새로고침)
   const handleDelete = async (order: any) => {
     try {
       await handleOrderAction("delete", order);
       await refreshOrders();
-    } catch (err) {
-      console.error("주문 삭제 실패:", err);
+    } catch (error) {
+      console.error("주문 삭제 실패:", error);
     }
   };
 
-  // 배송 단계 정보
-  const shippingSteps = [
-    "결제 완료",
-    "상품 준비중",
-    "배송 준비 완료",
-    "배송중",
-    "배송 완료",
-  ];
-  const descriptions = [
-    "주문 결제가\n완료되었습니다.",
-    "판매자가 발송할\n상품을 준비중입니다.",
-    "상품 준비가 완료되어\n택배를 배송 예정입니다.",
-    "상품이 고객님께\n배송중입니다.",
-    "상품이 주문자에게\n전달 완료되었습니다.",
-  ];
+  const filteredOrders = (orders as any[]).filter((order: any) => {
+    // 검색 필터
+    if (searchQuery) {
+      const searchLower = searchQuery.toLowerCase();
+      const productNames = order.products
+        ? order.products.map((p: any) => p.name).join(" ")
+        : order.productName || "";
+      if (!productNames.toLowerCase().includes(searchLower)) {
+        return false;
+      }
+    }
+
+    // 기간 필터
+    if (selectedPeriod !== "전체") {
+      const orderDate = new Date(order.date || order.orderDate);
+      const now = new Date();
+
+      if (selectedPeriod === "최근 6개월") {
+        const sixMonthsAgo = new Date();
+        sixMonthsAgo.setMonth(now.getMonth() - 6);
+        if (orderDate < sixMonthsAgo) return false;
+      } else if (selectedPeriod === "2025년") {
+        if (orderDate.getFullYear() !== 2025) return false;
+      } else if (selectedPeriod === "2024년") {
+        if (orderDate.getFullYear() !== 2024) return false;
+      }
+    }
+
+    return true;
+  });
 
   return (
     <Box>
-      <Typography
-        variant="h4"
-        sx={{ fontWeight: "bold", mb: 4, color: "text.primary" }}
-      >
-        주문/배송 조회
-      </Typography>
-
-      <Paper sx={{ p: 3, mb: 4, bgcolor: "#fef3e2" }}>
-        <Box sx={{ display: "flex", gap: 2, alignItems: "flex-end", mb: 3 }}>
-          <TextField
-            fullWidth
-            placeholder="주문한 상품을 검색할 수 있어요!"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            variant="outlined"
-            InputProps={{
-              endAdornment: <Search color="action" />,
-            }}
-          />
+      {ordersLoading ? (
+        <Box sx={{ display: "flex", justifyContent: "center", p: 4 }}>
+          <CircularProgress />
         </Box>
-        <Box sx={{ display: "flex", gap: 1, flexWrap: "wrap" }}>
-          {["최근 6개월", "2025", "2024", "2023", "2022", "2021", "2020"].map(
-            (period) => (
-              <Chip
+      ) : ordersError ? (
+        <Box sx={{ p: 2 }}>
+          <Alert severity="error">{ordersError}</Alert>
+        </Box>
+      ) : (
+        <Box>
+          {/* 검색 UI */}
+          <Box sx={{ mb: 3 }}>
+            <TextField
+              placeholder="주문번호, 상품명으로 검색"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              fullWidth
+            />
+          </Box>
+
+          {/* 기간 선택 UI */}
+          <Box sx={{ mb: 3 }}>
+            {["최근 6개월", "2025년", "2024년", "전체"].map((period) => (
+              <Button
                 key={period}
-                label={period}
-                color={selectedPeriod === period ? "primary" : "default"}
-                variant={selectedPeriod === period ? "filled" : "outlined"}
+                variant={selectedPeriod === period ? "contained" : "outlined"}
                 onClick={() => setSelectedPeriod(period)}
-                size="small"
-              />
-            )
-          )}
-        </Box>
-      </Paper>
-
-      {/* 페이지네이션된 주문 목록 */}
-      <Box sx={{ mb: 4 }}>
-        {paginatedOrders.map((order: any) => (
-          <OrderItem
-            key={order.id}
-            order={order}
-            handleOrderAction={handleDelete}
-          />
-        ))}
-      </Box>
-
-      {/* 페이지네이션 컨트롤 */}
-      <Box sx={{ mb: 4 }}>
-        <Pagination
-          currentPage={currentPage}
-          totalItems={filteredOrders.length}
-          itemsPerPage={itemsPerPage}
-          onPageChange={handlePageChange}
-        />
-      </Box>
-
-      {/* 배송 단계 안내 */}
-      <Paper sx={{ p: 3, mb: 4 }}>
-        <Typography variant="h6" sx={{ fontWeight: 600, mb: 2 }}>
-          배송상품 주문상태 안내
-        </Typography>
-        <Stepper
-          activeStep={-1}
-          alternativeLabel
-          connector={<ArrowConnector />}
-          sx={{ mb: 3 }}
-        >
-          {shippingSteps.map((label, index) => (
-            <Step key={label}>
-              <StepLabel
-                StepIconComponent={CustomStepIcon}
-                StepIconProps={{ icon: index + 1 }}
+                sx={{ mr: 1 }}
               >
-                <Typography variant="body2" sx={{ fontWeight: 600 }}>
-                  {label}
-                </Typography>
-                <Typography
-                  variant="caption"
-                  color="text.secondary"
-                  sx={{ whiteSpace: "pre-line", textAlign: "center" }}
-                >
-                  {descriptions[index]}
-                </Typography>
-              </StepLabel>
-            </Step>
-          ))}
-        </Stepper>
-      </Paper>
+                {period}
+              </Button>
+            ))}
+          </Box>
 
-      <GuideView />
+          {/* 주문 목록 테이블 */}
+          <TableContainer component={Paper}>
+            <Table>
+              <TableHead>
+                <TableRow>
+                  <TableCell>상품정보</TableCell>
+                  <TableCell>주문일</TableCell>
+                  <TableCell>주문상태</TableCell>
+                  <TableCell>작업</TableCell>
+                </TableRow>
+              </TableHead>
+              <TableBody>
+                {filteredOrders.map((order: any) => (
+                  <TableRow key={order.id || order.orderNumber}>
+                    <TableCell>
+                      {order.products
+                        ? order.products.map((product: any) => (
+                            <Typography key={product.name}>
+                              {product.name}
+                            </Typography>
+                          ))
+                        : order.productName}
+                    </TableCell>
+                    <TableCell>{order.orderDate || order.date}</TableCell>
+                    <TableCell>
+                      <Chip label={order.status} color={order.statusColor} />
+                    </TableCell>
+                    <TableCell>
+                      <Button
+                        onClick={() => handleDelete(order)}
+                        color="error"
+                        size="small"
+                      >
+                        삭제
+                      </Button>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </TableContainer>
+        </Box>
+      )}
     </Box>
   );
 };
