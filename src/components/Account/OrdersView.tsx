@@ -15,8 +15,7 @@ import {
   Alert,
 } from "@mui/material";
 import { Search } from "@mui/icons-material";
-import { useBuyerOrders } from "@/hooks/useBuyerOrders";
-import { convertAPIDataToPrototype } from "@/types/buyerOrder.types";
+import { useBuyerOrderList } from "@/hooks/useBuyerOrders";
 import type { OrdersViewProps } from "./index";
 import OrderItem from "./OrderItem";
 import CustomStepIcon from "./CustomStepIcon";
@@ -35,14 +34,11 @@ const OrdersView: React.FC<OrdersViewProps> = ({
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 5;
 
-  // 1) API 연동 추가
-  const { prototypeOrders, loading, error, refreshOrders } = useBuyerOrders();
-  // (만약 API 데이터 변환이 필요하다면 convertAPIDataToPrototype을 여기서 사용)
+  // 1) API 연동
+  const { prototypeOrders, loading, error, refreshOrders } =
+    useBuyerOrderList();
 
-  // 2) API 데이터가 있으면 사용, 없으면 mockOrders 사용 (fallback)
-  const orders = prototypeOrders.length > 0 ? prototypeOrders : mockOrders;
-
-  // 3) 로딩 및 에러 처리
+  // 2) 로딩 및 에러 처리
   if (loading) {
     return (
       <Box sx={{ display: "flex", justifyContent: "center", p: 4 }}>
@@ -50,7 +46,6 @@ const OrdersView: React.FC<OrdersViewProps> = ({
       </Box>
     );
   }
-
   if (error) {
     return (
       <Box sx={{ p: 2 }}>
@@ -59,20 +54,23 @@ const OrdersView: React.FC<OrdersViewProps> = ({
     );
   }
 
-  // 4) 검색 및 기간 필터링 (orders로 변경)
+  // 3) API 데이터가 있으면 사용, 없으면 mockOrders 사용
+  const orders = prototypeOrders.length > 0 ? prototypeOrders : mockOrders;
+
+  // 4) 검색 및 기간 필터링
   const filteredOrders = useMemo(() => {
     let filtered = orders;
 
     if (searchQuery.trim()) {
-      filtered = filtered.filter((order) =>
-        order.products.some((product) =>
+      filtered = filtered.filter((order: any) =>
+        order.products.some((product: any) =>
           product.name.toLowerCase().includes(searchQuery.toLowerCase())
         )
       );
     }
 
     if (selectedPeriod !== "최근 6개월") {
-      filtered = filtered.filter((order) =>
+      filtered = filtered.filter((order: any) =>
         order.date.includes(selectedPeriod)
       );
     }
@@ -91,7 +89,7 @@ const OrdersView: React.FC<OrdersViewProps> = ({
   };
 
   // 6) 주문 삭제 핸들러 (삭제 후 목록 새로고침)
-  const handleDelete = async (order) => {
+  const handleDelete = async (order: any) => {
     try {
       await handleOrderAction("delete", order);
       await refreshOrders();
@@ -120,36 +118,25 @@ const OrdersView: React.FC<OrdersViewProps> = ({
     <Box>
       <Typography
         variant="h4"
-        style={{ fontWeight: "bold", marginBottom: 32, color: "text.primary" }}
+        sx={{ fontWeight: "bold", mb: 4, color: "text.primary" }}
       >
         주문/배송 조회
       </Typography>
 
-      <Paper
-        style={{ padding: 24, marginBottom: 32, backgroundColor: "#fef3e2" }}
-      >
-        <Box
-          style={{
-            display: "flex",
-            gap: 16,
-            alignItems: "end",
-            marginBottom: 24,
-          }}
-        >
+      <Paper sx={{ p: 3, mb: 4, bgcolor: "#fef3e2" }}>
+        <Box sx={{ display: "flex", gap: 2, alignItems: "flex-end", mb: 3 }}>
           <TextField
             fullWidth
             placeholder="주문한 상품을 검색할 수 있어요!"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             variant="outlined"
-            slotProps={{
-              input: {
-                endAdornment: <Search color="action" />,
-              },
+            InputProps={{
+              endAdornment: <Search color="action" />,
             }}
           />
         </Box>
-        <Box style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+        <Box sx={{ display: "flex", gap: 1, flexWrap: "wrap" }}>
           {["최근 6개월", "2025", "2024", "2023", "2022", "2021", "2020"].map(
             (period) => (
               <Chip
@@ -166,8 +153,8 @@ const OrdersView: React.FC<OrdersViewProps> = ({
       </Paper>
 
       {/* 페이지네이션된 주문 목록 */}
-      <Box style={{ marginBottom: 32 }}>
-        {paginatedOrders.map((order) => (
+      <Box sx={{ mb: 4 }}>
+        {paginatedOrders.map((order: any) => (
           <OrderItem
             key={order.id}
             order={order}
@@ -176,8 +163,8 @@ const OrdersView: React.FC<OrdersViewProps> = ({
         ))}
       </Box>
 
-      {/* 페이지네이션 */}
-      <Box style={{ marginBottom: 32 }}>
+      {/* 페이지네이션 컨트롤 */}
+      <Box sx={{ mb: 4 }}>
         <Pagination
           currentPage={currentPage}
           totalItems={filteredOrders.length}
@@ -186,38 +173,30 @@ const OrdersView: React.FC<OrdersViewProps> = ({
         />
       </Box>
 
-      <Paper style={{ padding: 24, marginBottom: 32 }}>
-        <Box
-          style={{
-            display: "flex",
-            justifyContent: "space-between",
-            alignItems: "center",
-            marginBottom: 24,
-          }}
-        >
-          <Typography variant="h6" style={{ fontWeight: 600 }}>
-            배송상품 주문상태 안내
-          </Typography>
-        </Box>
+      {/* 배송 단계 안내 */}
+      <Paper sx={{ p: 3, mb: 4 }}>
+        <Typography variant="h6" sx={{ fontWeight: 600, mb: 2 }}>
+          배송상품 주문상태 안내
+        </Typography>
         <Stepper
           activeStep={-1}
           alternativeLabel
           connector={<ArrowConnector />}
-          style={{ marginBottom: 32 }}
+          sx={{ mb: 3 }}
         >
           {shippingSteps.map((label, index) => (
             <Step key={label}>
               <StepLabel
-                slots={{ stepIcon: CustomStepIcon }}
-                slotProps={{ stepIcon: { icon: index + 1 } }}
+                StepIconComponent={CustomStepIcon}
+                StepIconProps={{ icon: index + 1 }}
               >
-                <Typography variant="body2" style={{ fontWeight: 600 }}>
+                <Typography variant="body2" sx={{ fontWeight: 600 }}>
                   {label}
                 </Typography>
                 <Typography
                   variant="caption"
                   color="text.secondary"
-                  style={{ textAlign: "center", whiteSpace: "pre-line" }}
+                  sx={{ whiteSpace: "pre-line", textAlign: "center" }}
                 >
                   {descriptions[index]}
                 </Typography>

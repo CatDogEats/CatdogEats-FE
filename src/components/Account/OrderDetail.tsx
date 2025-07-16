@@ -22,6 +22,7 @@ import { ChevronRight, MoreVert } from "@mui/icons-material";
 import type { Order } from "./index";
 import { useBuyerOrderDetail } from "@/hooks/useBuyerOrders";
 import { buyerOrderApi } from "@/service/api/buyerOrderApi";
+import { ORDER_STATUS_INFO_MAP } from "@/types/buyerOrder.types";
 
 interface OrderDetailProps {
   selectedOrder: Order | null;
@@ -34,9 +35,9 @@ const OrderDetail: React.FC<OrderDetailProps> = ({
   setDetailView,
   handleOrderAction,
 }) => {
-  // API 연동
+  // API 연동: orderNumber가 undefined일 때 빈 문자열로 대체
   const { orderDetail, loading, error } = useBuyerOrderDetail(
-    selectedOrder?.orderNumber
+    selectedOrder?.orderNumber || ""
   );
 
   // 로딩 상태
@@ -81,6 +82,9 @@ const OrderDetail: React.FC<OrderDetailProps> = ({
     }
   };
 
+  // 주문 날짜 (YYYY-MM-DD)
+  const displayDate = orderDetail.orderDate.split("T")[0];
+
   return (
     <Box sx={{ p: 3 }}>
       <Typography variant="h4" sx={{ fontWeight: "bold", mb: 4 }}>
@@ -88,7 +92,7 @@ const OrderDetail: React.FC<OrderDetailProps> = ({
       </Typography>
 
       <Typography variant="h6" sx={{ mb: 1 }}>
-        {orderDetail.orderDate}
+        {displayDate}
       </Typography>
       <Typography variant="body2" color="text.secondary" sx={{ mb: 4 }}>
         주문번호: {orderDetail.orderNumber}
@@ -109,6 +113,7 @@ const OrderDetail: React.FC<OrderDetailProps> = ({
                   pr: 3,
                 }}
               >
+                {/* 주문 상태 및 도착일 */}
                 <Box
                   sx={{
                     display: "flex",
@@ -122,18 +127,17 @@ const OrderDetail: React.FC<OrderDetailProps> = ({
                       variant="h6"
                       sx={{ fontWeight: 600, color: "#111111" }}
                     >
-                      {orderDetail.status}
+                      {orderDetail.orderStatus}
                     </Typography>
                     <Typography
                       variant="body2"
                       sx={{
                         color:
-                          orderDetail.statusColor === "success"
-                            ? "#008C00"
-                            : "text.secondary",
+                          ORDER_STATUS_INFO_MAP[orderDetail.orderStatus]
+                            ?.color || "text.secondary",
                       }}
                     >
-                      {orderDetail.deliveryDate} 도착
+                      {displayDate} 도착
                     </Typography>
                   </Box>
                   <IconButton size="small">
@@ -141,9 +145,10 @@ const OrderDetail: React.FC<OrderDetailProps> = ({
                   </IconButton>
                 </Box>
 
+                {/* 주문 상품 목록 */}
                 {orderDetail.orderItems.map((item) => (
                   <Box
-                    key={item.id}
+                    key={item.orderItemId}
                     sx={{
                       display: "flex",
                       alignItems: "flex-start",
@@ -152,7 +157,7 @@ const OrderDetail: React.FC<OrderDetailProps> = ({
                     }}
                   >
                     <Avatar
-                      src={item.image}
+                      src={item.productImage}
                       variant="rounded"
                       sx={{ width: 80, height: 80 }}
                     />
@@ -175,12 +180,12 @@ const OrderDetail: React.FC<OrderDetailProps> = ({
                           }}
                         >
                           <Typography variant="body1" sx={{ fontWeight: 500 }}>
-                            {item.name}
+                            {item.productName}
                           </Typography>
                         </Box>
                         <Typography variant="body2" color="text.secondary">
-                          {item.price > 0
-                            ? `${item.price.toLocaleString()}원`
+                          {item.unitPrice > 0
+                            ? `${item.unitPrice.toLocaleString()}원`
                             : "0원"}{" "}
                           {item.quantity}개
                         </Typography>
@@ -201,6 +206,7 @@ const OrderDetail: React.FC<OrderDetailProps> = ({
                 ))}
               </TableCell>
 
+              {/* 액션 버튼 영역 */}
               <TableCell
                 sx={{
                   verticalAlign: "middle",
@@ -245,6 +251,7 @@ const OrderDetail: React.FC<OrderDetailProps> = ({
         </Table>
       </TableContainer>
 
+      {/* 받는사람 정보 */}
       <Typography variant="h6" sx={{ fontWeight: 600, mb: 2 }}>
         받는사람 정보
       </Typography>
@@ -281,6 +288,7 @@ const OrderDetail: React.FC<OrderDetailProps> = ({
         </Table>
       </TableContainer>
 
+      {/* 결제 정보 */}
       <Typography variant="h6" sx={{ fontWeight: 600, mb: 2 }}>
         결제 정보
       </Typography>
@@ -316,6 +324,7 @@ const OrderDetail: React.FC<OrderDetailProps> = ({
         </Table>
       </TableContainer>
 
+      {/* 결제영수증 정보 */}
       <Typography variant="h6" sx={{ fontWeight: 600, mb: 2 }}>
         결제영수증 정보
       </Typography>
@@ -330,6 +339,7 @@ const OrderDetail: React.FC<OrderDetailProps> = ({
         </Box>
       </Paper>
 
+      {/* 하단 버튼 */}
       <Box sx={{ display: "flex", gap: 2, justifyContent: "space-between" }}>
         <Button
           variant="outlined"

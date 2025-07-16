@@ -79,8 +79,7 @@ const ShippingDetailView: React.FC<ShippingDetailViewProps> = ({
 
       <Paper sx={{ p: 4, mb: 4, bgcolor: "#f5f5f5", textAlign: "center" }}>
         <Typography variant="h5" sx={{ fontWeight: 600, mb: 2 }}>
-          {shipmentDetail.deliveryDate} {/* 예: "2025-05-29(목)" */}{" "}
-          {shipmentDetail.deliveryStatus}
+          {shipmentDetail.deliveredAt} {shipmentDetail.deliveryStatus}
         </Typography>
         <Typography variant="body1" color="text.secondary">
           고객님이 주문하신 상품이 {shipmentDetail.deliveryStatus} 되었습니다.
@@ -88,7 +87,7 @@ const ShippingDetailView: React.FC<ShippingDetailViewProps> = ({
       </Paper>
 
       <Grid container spacing={4}>
-        <Grid item xs={12} md={6}>
+        <Grid size={{ xs: 12, md: 6 }}>
           <Box sx={{ display: "flex", alignItems: "center", gap: 2, mb: 3 }}>
             <Avatar sx={{ bgcolor: "primary.main" }}>
               <LocalShipping />
@@ -110,7 +109,7 @@ const ShippingDetailView: React.FC<ShippingDetailViewProps> = ({
           </Box>
         </Grid>
 
-        <Grid item xs={12} md={6}>
+        <Grid size={{ xs: 12, md: 6 }}>
           <Box>
             <Typography variant="body2" sx={{ mb: 1 }}>
               <strong>받는사람:</strong> 홍길동
