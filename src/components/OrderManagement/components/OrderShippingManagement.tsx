@@ -1344,7 +1344,60 @@ const OrderShippingManagement: React.FC = () => {
                       </Typography>
                     )}
                   </Grid>
-
+                  {/* ===== 반려동물 정보 섹션 (새로 추가) ===== */}
+                  {orderDetail?.petInfo && (
+                    <Grid size={{ xs: 12 }}>
+                      <Typography
+                        variant="subtitle1"
+                        sx={{ fontWeight: 600, mb: 1 }}
+                      >
+                        반려동물 정보
+                      </Typography>
+                      <Typography variant="body2" sx={{ mb: 1 }}>
+                        이름: {orderDetail.petInfo.name}
+                      </Typography>
+                      <Typography variant="body2" sx={{ mb: 1 }}>
+                        종류:{" "}
+                        {orderDetail.petInfo.category === "dogs"
+                          ? "강아지"
+                          : "고양이"}
+                      </Typography>
+                      {orderDetail.petInfo.breed && (
+                        <Typography variant="body2" sx={{ mb: 1 }}>
+                          품종: {orderDetail.petInfo.breed}
+                        </Typography>
+                      )}
+                      {orderDetail.petInfo.age && (
+                        <Typography variant="body2" sx={{ mb: 1 }}>
+                          나이: {orderDetail.petInfo.age}세
+                        </Typography>
+                      )}
+                      {orderDetail.petInfo.gender && (
+                        <Typography variant="body2" sx={{ mb: 1 }}>
+                          성별:{" "}
+                          {orderDetail.petInfo.gender === "male"
+                            ? "수컷"
+                            : "암컷"}
+                        </Typography>
+                      )}
+                      {orderDetail.petInfo.hasAllergies !== undefined && (
+                        <Typography variant="body2" sx={{ mb: 1 }}>
+                          알레르기:{" "}
+                          {orderDetail.petInfo.hasAllergies ? "있음" : "없음"}
+                        </Typography>
+                      )}
+                      {orderDetail.petInfo.healthCondition && (
+                        <Typography variant="body2" sx={{ mb: 1 }}>
+                          건강상태: {orderDetail.petInfo.healthCondition}
+                        </Typography>
+                      )}
+                      {orderDetail.petInfo.specialRequests && (
+                        <Typography variant="body2" sx={{ mb: 1 }}>
+                          특별요청: {orderDetail.petInfo.specialRequests}
+                        </Typography>
+                      )}
+                    </Grid>
+                  )}
                   <Grid size={{ xs: 12 }}>
                     <Typography
                       variant="subtitle1"
@@ -1389,7 +1442,9 @@ const OrderShippingManagement: React.FC = () => {
                     </Typography>
                     <Typography variant="body2" sx={{ mb: 1 }}>
                       배송비:{" "}
-                      {orderDetail.orderSummary.deliveryFee.toLocaleString()}원
+                      {orderDetail.orderSummary.deliveryFee === 0
+                        ? "무료배송"
+                        : `${orderDetail.orderSummary.deliveryFee.toLocaleString()}원`}
                     </Typography>
                     <Typography variant="body1" sx={{ fontWeight: 600 }}>
                       총 결제 금액:{" "}

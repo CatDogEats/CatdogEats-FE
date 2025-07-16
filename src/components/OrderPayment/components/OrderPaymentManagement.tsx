@@ -180,12 +180,14 @@ const OrderPaymentManagement: React.FC = () => {
 
   //  클라이언트 사이드 검증 함수
   const validateOrderForm = (): string | null => {
-    // 반려동물 정보 검증
     if (!petInfo.name.trim()) {
       return "반려동물 이름을 입력해주세요.";
     }
     if (!petInfo.category) {
       return "반려동물 종류를 선택해주세요.";
+    }
+    if (!petInfo.id) {
+      return "반려동물을 선택해주세요. 저장된 반려동물 목록에서 선택하거나 새로 등록해주세요.";
     }
 
     // 배송 정보 검증
@@ -243,6 +245,7 @@ const OrderPaymentManagement: React.FC = () => {
           detailAddress: detail,
           deliveryNote: "배송 요청사항",
         },
+        petId: petInfo.id, // ✅ 추가: 선택된 반려동물 ID
       };
 
       // ✅ 수정: createOrder API 응답을 받아서 Toss 결제 페이지로 리다이렉트

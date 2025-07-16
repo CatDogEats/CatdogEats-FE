@@ -88,6 +88,7 @@ export interface OrderCreateRequest {
     detailAddress: string;
     deliveryNote?: string;
   };
+  petId: string;
 }
 
 export interface OrderCreateResponse {
