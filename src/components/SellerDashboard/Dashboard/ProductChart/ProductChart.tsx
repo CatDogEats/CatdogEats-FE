@@ -87,15 +87,13 @@ export const ProductChart: React.FC<ProductChartProps> = ({
                                                               title = "월간 상품 매출 순위 (TOP 10)",
                                                               period = "이번 달",
                                                               totalProducts = "0개",
-                                                              changeRate = "0%",
                                                               data = [],
                                                               loading = false,
                                                               itemsPerPage = 5 // 기본 5개씩 표시
                                                           }) => {
     const [currentPage, setCurrentPage] = useState(0);
 
-    const changeColor = changeRate.startsWith('+') ? "#6FCF97" :
-        changeRate.startsWith('-') ? "#EB5757" : "#A59A8E";
+
 
     // 페이징 계산
     const totalPages = Math.ceil(data.length / itemsPerPage);
@@ -219,9 +217,7 @@ export const ProductChart: React.FC<ProductChartProps> = ({
                 <Typography variant="h4" sx={{ fontWeight: 700, color: "#2d2a27" }}>
                     {totalProducts}
                 </Typography>
-                <Typography sx={{ color: changeColor, fontWeight: 500 }}>
-                    {changeRate}
-                </Typography>
+
             </Box>
 
             {/* 페이징 정보 */}
