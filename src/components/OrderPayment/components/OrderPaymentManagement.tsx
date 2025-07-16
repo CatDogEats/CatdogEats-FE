@@ -25,8 +25,9 @@ import type {
   SavedPet,
   SavedAddress,
   Coupon,
-  OrderCreateRequest,
 } from "../types/orderPayment.types";
+
+import type { OrderCreateRequest } from "@/types/buyerApi.types";
 
 import { orderItems } from "@/data/mock-data";
 import { useBuyerOrderData } from "@/hooks/useBuyerData";
@@ -43,6 +44,7 @@ const OrderPaymentManagement: React.FC = () => {
     healthCondition: "",
     specialRequests: "",
   });
+  const [selectedPetId, setSelectedPetId] = useState<string>("");
   const [shippingInfo, setShippingInfo] = useState<ShippingInfo>({
     fullName: "",
     address: "",
@@ -136,7 +138,19 @@ const OrderPaymentManagement: React.FC = () => {
     }));
 
   const handleLoadPet = (pet: SavedPet) => {
-    setPetInfo({ ...pet });
+    setPetInfo({
+      name: pet.name,
+      category: pet.category,
+      breed: pet.breed,
+      age: pet.age,
+      gender: pet.gender,
+      hasAllergies: pet.hasAllergies,
+      healthCondition: pet.healthCondition,
+      specialRequests: pet.specialRequests,
+    });
+
+    setSelectedPetId(pet.id);
+
     setPetModalOpen(false);
   };
 
@@ -186,7 +200,7 @@ const OrderPaymentManagement: React.FC = () => {
     if (!petInfo.category) {
       return "반려동물 종류를 선택해주세요.";
     }
-    if (!petInfo.id) {
+    if (!selectedPetId) {
       return "반려동물을 선택해주세요. 저장된 반려동물 목록에서 선택하거나 새로 등록해주세요.";
     }
 
@@ -245,7 +259,7 @@ const OrderPaymentManagement: React.FC = () => {
           detailAddress: detail,
           deliveryNote: "배송 요청사항",
         },
-        petId: petInfo.id, // ✅ 추가: 선택된 반려동물 ID
+        petId: selectedPetId, // ✅ 추가: 선택된 반려동물 ID
       };
 
       // ✅ 수정: createOrder API 응답을 받아서 Toss 결제 페이지로 리다이렉트
