@@ -104,6 +104,7 @@ jobs:
           mkdir -p deploy
           cp docker-compose.yml deploy/
           cd deploy
+          ls -lah
           zip -r deploy.zip .
 
       - name: Copy bundle to EC2
@@ -123,10 +124,22 @@ jobs:
           key: ${{ secrets.EC2_SSH_KEY }}
           script: |
             cd /home/${{ secrets.EC2_USER }}/app
+            echo ">>> 현재 디렉터리 파일 >>>"
+            ls -lah
+            if [ ! -f deploy.zip ]; then
+              echo "::error::deploy.zip not found!"
+              exit 1
+            fi
+            sudo apt update && sudo apt install -y unzip
+            
             unzip -o deploy.zip
+            echo ">>> 풀린 파일 목록 >>>"
+            ls -lah
+            
             cat << 'EOF' > .env.production
             ${{ secrets.ENV_FILE }}
             EOF
+            ls -lah .env.production
             docker compose --env-file .env.production down
             docker compose --env-file .env.production pull
             docker compose --env-file .env.production up -d --build
