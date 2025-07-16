@@ -5,10 +5,12 @@ import { Box, Typography, Chip, Button, Divider, Paper } from "@mui/material"
 import ArrowBackIcon from "@mui/icons-material/ArrowBack"
 import VisibilityIcon from "@mui/icons-material/Visibility"
 import CalendarTodayIcon from "@mui/icons-material/CalendarToday"
+import { noticeApi } from "@/service/support/notice/noticeApi"
+
 
 interface AnnouncementDetailProps {
     announcement: {
-        id: number
+        id: string;  // number에서 string으로 변경
         title: string
         content: string
         category: string
@@ -18,6 +20,7 @@ interface AnnouncementDetailProps {
         views: number
         importance: "일반" | "중요" | "긴급"
         attachments?: {
+            fileId: string  // 추가
             name: string
             url: string
         }[]
@@ -120,10 +123,20 @@ const AnnouncementDetail: React.FC<AnnouncementDetailProps> = ({ announcement, o
                         {announcement.attachments.map((file, index) => (
                             <Box
                                 key={index}
-                                component="a"
-                                href={file.url}
-                                target="_blank"
-                                rel="noopener noreferrer"
+                                component="button"
+                                onClick={async () => {
+                                    try {
+                                        // noticeApi의 downloadFileToDevice 메서드 사용
+                                        await noticeApi.downloadFileToDevice(
+                                            announcement.id,
+                                            file.fileId,
+                                            file.name
+                                        );
+                                    } catch (error) {
+                                        console.error('파일 다운로드 실패:', error);
+                                        alert('파일 다운로드에 실패했습니다.');
+                                    }
+                                }}
                                 sx={{
                                     display: "flex",
                                     alignItems: "center",
@@ -132,6 +145,10 @@ const AnnouncementDetail: React.FC<AnnouncementDetailProps> = ({ announcement, o
                                     borderRadius: 1,
                                     color: "#1c140d",
                                     textDecoration: "none",
+                                    border: "none",
+                                    width: "100%",
+                                    textAlign: "left",
+                                    cursor: "pointer",
                                     "&:hover": {
                                         bgcolor: "#e8dbce",
                                     },

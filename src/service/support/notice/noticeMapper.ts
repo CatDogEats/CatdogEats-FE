@@ -12,6 +12,7 @@ export interface Announcement {
     views: number;
     importance: "일반" | "중요" | "긴급";
     attachments?: {
+        fileId: string;  // 추가
         name: string;
         url: string;
     }[];
@@ -32,6 +33,7 @@ export const convertNoticeToAnnouncement = (notice: Notice): Announcement => {
         views: notice.viewCount,
         importance: "일반", // 백엔드에 중요도가 없으므로 기본값
         attachments: notice.attachments?.map(file => ({
+            fileId: file.fileId,  // fileId 추가
             name: file.fileName,
             url: file.fileUrl
         })) || []
