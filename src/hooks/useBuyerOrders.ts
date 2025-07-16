@@ -102,13 +102,11 @@ export const useBuyerOrderManagement = (): UseBuyerOrderManagementReturn => {
         pagination.page,
         pagination.size
       );
-
+      console.log("백엔드에서 받은 실제 주문 데이터:", response.data);
       if (response.success && response.data && response.data.orders) {
-        // ✅ 해결 1: response.data에서 'orders' 배열만 정확히 추출하여 상태에 저장합니다.
+        // response.data를 그대로 전달하는 것은 맞지만,
+        // 내부 로직이 content를 사용하도록 수정 필요
         setOrders(response.data);
-
-        // ✅ 해결 2: 변환 함수에도 'orders' 배열을 직접 전달합니다.
-        // 'length' 오류는 아마 여기서 발생했을 겁니다.
         const convertedOrders = convertAPIDataToPrototype(response.data);
         setPrototypeOrders(convertedOrders);
       } else {

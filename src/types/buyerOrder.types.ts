@@ -58,10 +58,11 @@ export interface BuyerOrderListResponse {
 export interface BuyerOrderSummary {
   orderNumber: string;
   orderStatus: OrderStatus;
-  orderDate: string; // ISO string
-  orderItems: BuyerOrderItem[];
-  orderSummary: OrderSummaryInfo;
-  shipmentInfo: ShipmentBasicInfo;
+  orderDate: string;
+  orderItemsInfo: string;
+  totalAmount: number;
+  courier?: string; // [수정] shipmentInfo 객체 제거, 최상위로 이동
+  trackingNumber?: string; // [수정] shipmentInfo 객체 제거, 최상위로 이동
 }
 
 /**
@@ -310,31 +311,40 @@ export const convertAPIDataToPrototype = (
 ): Order[] => {
   if (!apiResponse?.orders) return [];
 
-  return apiResponse.orders.map((orderSummary: BuyerOrderSummary) => ({
-    id: orderSummary.orderNumber,
-    orderNumber: orderSummary.orderNumber,
-    orderDate: orderSummary.orderDate.split("T")[0],
-    customerName: "", // 구매자 본인이므로 빈 값
-    productName:
-      orderSummary.orderItems.length > 1
-        ? `${orderSummary.orderItems[0].productName} 외 ${orderSummary.orderItems.length - 1}건`
-        : orderSummary.orderItems[0]?.productName || "",
-    quantity: orderSummary.orderSummary.itemCount,
-    amount: orderSummary.orderSummary.totalAmount,
-    total: orderSummary.orderSummary.totalAmount,
-    shippingStatus: mapAPIStatusToPrototype(orderSummary.orderStatus),
-    trackingNumber: orderSummary.shipmentInfo.trackingNumber,
-    shippingCompany: orderSummary.shipmentInfo.courier,
-    products: orderSummary.orderItems.map((item) => ({
-      name: item.productName,
-      quantity: item.quantity,
-      price: item.unitPrice,
-    })),
-    date: orderSummary.orderDate,
-    shippingAddress: "", // 목록에서는 필요 없음
-  }));
-};
+  return apiResponse.orders.map((orderSummary: BuyerOrderSummary) => {
+    let itemCount = 1;
+    if (orderSummary.orderItemsInfo.includes(" 외 ")) {
+      try {
+        const parts = orderSummary.orderItemsInfo.split(" 외 ");
+        const numberPart = parts[1].split("건")[0];
+        const extraCount = parseInt(numberPart.trim(), 10);
+        if (!isNaN(extraCount)) {
+          itemCount += extraCount;
+        }
+      } catch {}
+    }
 
+    return {
+      id: orderSummary.orderNumber,
+      orderNumber: orderSummary.orderNumber,
+      orderDate: orderSummary.orderDate.split("T")[0],
+      date: orderSummary.orderDate,
+      customerName: "",
+      productName: orderSummary.orderItemsInfo,
+      quantity: itemCount,
+      amount: orderSummary.totalAmount,
+      total: orderSummary.totalAmount,
+      shippingStatus: mapAPIStatusToPrototype(orderSummary.orderStatus),
+
+      // [수정] shipmentInfo 객체 없이 바로 접근
+      trackingNumber: orderSummary.trackingNumber,
+      shippingCompany: orderSummary.courier,
+
+      products: [],
+      shippingAddress: "",
+    };
+  });
+};
 /**
  * API 상태를 프로토타입 상태로 변환
  */

@@ -147,41 +147,44 @@ export const createEnhancedOrderDetail = (legacyProps: any) => {
 
 /**
  * 기존 mockOrders를 API 응답 형태로 변환하는 헬퍼
- * (테스트 및 마이그레이션 과정에서 사용)
+ * (테스트 및 마이그레이션 과정에서 사용) - 최종 수정
  */
 export const convertMockOrdersToAPIResponse = (
   mockOrders: any[]
 ): BuyerOrderListResponse => {
-  const orders: BuyerOrderSummary[] = mockOrders.map((mockOrder, index) => ({
-    orderNumber:
-      mockOrder.orderNumber || `ORD${String(index + 1).padStart(6, "0")}`,
-    orderStatus:
-      mockOrder.shippingStatus === "delivered"
-        ? "DELIVERED"
-        : "PAYMENT_COMPLETED",
-    orderDate:
-      mockOrder.date || mockOrder.orderDate || new Date().toISOString(),
-    orderItems:
-      mockOrder.products?.map((product: any, idx: number) => ({
-        orderItemId: `item_${index}_${idx}`,
-        productId: `prod_${index}_${idx}`,
-        productName: product.name,
-        productImage: undefined,
-        quantity: product.quantity || 1,
-        unitPrice: product.price || 0,
-        totalPrice: (product.price || 0) * (product.quantity || 1),
-      })) || [],
-    orderSummary: {
-      itemCount: mockOrder.quantity || 1,
+  const orders: BuyerOrderSummary[] = mockOrders.map((mockOrder, index) => {
+    const products = mockOrder.products || [];
+    const firstProduct = products[0];
+    const productCount = products.length;
+
+    const orderItemsInfo =
+      productCount > 1
+        ? `${firstProduct.name} 외 ${productCount - 1}건`
+        : firstProduct?.name || "상품 정보 없음";
+
+    return {
+      orderNumber:
+        mockOrder.orderNumber || `ORD${String(index + 1).padStart(6, "0")}`,
+      orderStatus:
+        mockOrder.shippingStatus === "delivered"
+          ? "DELIVERED"
+          : "PAYMENT_COMPLETED",
+      orderDate:
+        mockOrder.date || mockOrder.orderDate || new Date().toISOString(),
+
+      orderItemsInfo: orderItemsInfo,
+
+      // [수정] orderSummary 객체를 제거하고 totalAmount를 직접 할당
       totalAmount: mockOrder.amount || mockOrder.total || 0,
-    },
-    shipmentInfo: {
-      courier: mockOrder.shippingCompany,
-      trackingNumber: mockOrder.trackingNumber,
-      isShipped: !!mockOrder.trackingNumber,
-      shippedAt: mockOrder.shippedAt,
-    },
-  }));
+
+      shipmentInfo: {
+        courier: mockOrder.shippingCompany,
+        trackingNumber: mockOrder.trackingNumber,
+        isShipped: !!mockOrder.trackingNumber,
+        shippedAt: mockOrder.shippedAt,
+      },
+    };
+  });
 
   return {
     orders,
@@ -193,7 +196,6 @@ export const convertMockOrdersToAPIResponse = (
     hasPrevious: false,
   };
 };
-
 /**
  * 에러 메시지 표준화 헬퍼
  */
