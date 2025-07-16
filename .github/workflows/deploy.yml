@@ -1,0 +1,125 @@
+name: Frontend CI/CD Pipeline
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  packages: write
+
+jobs:
+  build:
+    name: Install & Build
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Use Node.js 18
+        uses: actions/setup-node@v3
+        with:
+          node-version: 18
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Build client & server
+        run: npm run build
+
+  publish-docker-images:
+    name: Build & Push Docker images
+    needs: build
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v2
+        with:
+          registry: docker.io
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_PASSWORD }}
+
+      - name: Prepare image names
+        id: prep
+        run: |
+          REPO=${{ secrets.DOCKERHUB_USERNAME }}/${{ github.repository_name }}
+          IMAGE_CLIENT="$REPO-client:${GITHUB_SHA}"
+          IMAGE_CLIENT_LATEST="$REPO-client:latest"
+          IMAGE_SERVER="$REPO-server:${GITHUB_SHA}"
+          IMAGE_SERVER_LATEST="$REPO-server:latest"
+          echo "IMAGE_CLIENT=$IMAGE_CLIENT"           >> $GITHUB_OUTPUT
+          echo "IMAGE_CLIENT_LATEST=$IMAGE_CLIENT_LATEST" >> $GITHUB_OUTPUT
+          echo "IMAGE_SERVER=$IMAGE_SERVER"           >> $GITHUB_OUTPUT
+          echo "IMAGE_SERVER_LATEST=$IMAGE_SERVER_LATEST" >> $GITHUB_OUTPUT
+
+      - name: Build & push client image
+        uses: docker/build-push-action@v4
+        with:
+          context: .
+          file: Dockerfile.client
+          push: true
+          tags: |
+            ${{ steps.prep.outputs.IMAGE_CLIENT }}
+            ${{ steps.prep.outputs.IMAGE_CLIENT_LATEST }}
+
+      - name: Build & push server image
+        uses: docker/build-push-action@v4
+        with:
+          context: .
+          file: Dockerfile.server
+          push: true
+          tags: |
+            ${{ steps.prep.outputs.IMAGE_SERVER }}
+            ${{ steps.prep.outputs.IMAGE_SERVER_LATEST }}
+
+  deploy-to-ec2:
+    name: Deploy to EC2
+    needs: publish-docker-images
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Generate deploy bundle
+        run: |
+          mkdir -p deploy
+          # copy compose + nginx config
+          cp docker-compose.yml deploy/
+          cp .platform/nginx/conf.d/*.conf deploy/
+          # generate .env.production from secret
+          printf '%s\n' "${{ secrets.ENV_FILE }}" > deploy/.env.production
+          cd deploy
+          zip -r deploy.zip .
+
+      - name: Copy bundle to EC2
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ${{ secrets.EC2_USER }}
+          key: ${{ secrets.EC2_SSH_KEY }}
+          source: "deploy/deploy.zip"
+          target: "/home/${{ secrets.EC2_USER }}/app"
+
+      - name: SSH & run Docker Compose
+        uses: appleboy/ssh-action@v0.1.10
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ${{ secrets.EC2_USER }}
+          key: ${{ secrets.EC2_SSH_KEY }}
+          script: |
+            cd /home/${{ secrets.EC2_USER }}/app
+            unzip -o deploy.zip
+            docker compose --env-file .env.production down
+            docker compose --env-file .env.production pull
+            docker compose --env-file .env.production up -d --build
