@@ -244,8 +244,26 @@ const OrdersViewEnhanced: React.FC<OrdersViewEnhancedProps> = ({
         </Stepper>
       </Paper>
 
-      {/* 주문 목록 */}
-      {paginatedOrders.length > 0 ? (
+      {/* 1. 로딩 중일 때 (가장 먼저 체크) */}
+      {ordersLoading && (
+        <Box
+          sx={{
+            display: "flex",
+            justifyContent: "center",
+            py: 5,
+            alignItems: "center",
+            minHeight: "200px",
+          }}
+        >
+          <CircularProgress />
+        </Box>
+      )}
+
+      {/* 2. 로딩이 끝났지만, 필터링된 주문이 없을 때 */}
+      {!ordersLoading && filteredOrders.length === 0 && <GuideView />}
+
+      {/* 3. 로딩이 끝났고, 필터링된 주문이 있을 때만 목록과 페이지네이션을 표시 */}
+      {!ordersLoading && filteredOrders.length > 0 && (
         <>
           {paginatedOrders.map((order: Order) => {
             const status = order.shippingStatus.toLowerCase();
@@ -257,13 +275,12 @@ const OrdersViewEnhanced: React.FC<OrdersViewEnhancedProps> = ({
                   status,
                   statusColor: getStatusColor(status),
                   deliveryDate: order.orderDate,
-                  // ✅ 기존 products를 Product 타입에 맞게 변환 (최소한의 수정)
                   products: order.products.map((product, index) => ({
-                    id: `${order.id}-${index}`, // 임시 ID (기존 동작 유지)
+                    id: `${order.id}-${index}`,
                     name: product.name,
                     price: product.price,
                     quantity: product.quantity,
-                    image: "", // 빈 문자열 (null 대신 - 기존 방식 유지)
+                    image: "",
                   })),
                 }}
                 handleOrderAction={handleOrderActionEnhanced}
@@ -274,15 +291,9 @@ const OrdersViewEnhanced: React.FC<OrdersViewEnhancedProps> = ({
             currentPage={currentPage}
             totalItems={filteredOrders.length}
             itemsPerPage={itemsPerPage}
-            onPageChange={handlePageChange} // ✅ 함수 직접 전달
+            onPageChange={handlePageChange}
           />
         </>
-      ) : ordersLoading ? (
-        <Box sx={{ display: "flex", justifyContent: "center", py: 4 }}>
-          <CircularProgress />
-        </Box>
-      ) : (
-        <GuideView />
       )}
 
       {/* 에러 메시지 스낵바 */}

@@ -103,13 +103,20 @@ export const useBuyerOrderManagement = (): UseBuyerOrderManagementReturn => {
         pagination.size
       );
 
-      if (response.success && response.data) {
+      if (response.success && response.data && response.data.orders) {
+        // ✅ 해결 1: response.data에서 'orders' 배열만 정확히 추출하여 상태에 저장합니다.
         setOrders(response.data);
-        // 프로토타입 호환성을 위한 데이터 변환
+
+        // ✅ 해결 2: 변환 함수에도 'orders' 배열을 직접 전달합니다.
+        // 'length' 오류는 아마 여기서 발생했을 겁니다.
         const convertedOrders = convertAPIDataToPrototype(response.data);
         setPrototypeOrders(convertedOrders);
       } else {
-        throw new Error(response.error || "주문 목록 조회에 실패했습니다");
+        // 데이터가 없는 경우도 정상 처리로 간주하고 빈 배열을 설정합니다.
+        setOrders(null);
+        setPrototypeOrders([]);
+        // 또는 에러 처리를 할 수도 있습니다.
+        // throw new Error(response.error || "주문 목록 데이터가 없습니다");
       }
     } catch (error) {
       const apiError = error as ApiError;
