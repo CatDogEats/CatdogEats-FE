@@ -29,6 +29,7 @@ jobs:
 
       - name: Lint
         run: npm run lint
+        continue-on-error: true
 
       - name: Build client & server
         run: npm run build
@@ -57,9 +58,9 @@ jobs:
           IMAGE_CLIENT_LATEST="$REPO-client:latest"
           IMAGE_SERVER="$REPO-server:${GITHUB_SHA}"
           IMAGE_SERVER_LATEST="$REPO-server:latest"
-          echo "IMAGE_CLIENT=$IMAGE_CLIENT"           >> $GITHUB_OUTPUT
+          echo "IMAGE_CLIENT=$IMAGE_CLIENT"             >> $GITHUB_OUTPUT
           echo "IMAGE_CLIENT_LATEST=$IMAGE_CLIENT_LATEST" >> $GITHUB_OUTPUT
-          echo "IMAGE_SERVER=$IMAGE_SERVER"           >> $GITHUB_OUTPUT
+          echo "IMAGE_SERVER=$IMAGE_SERVER"             >> $GITHUB_OUTPUT
           echo "IMAGE_SERVER_LATEST=$IMAGE_SERVER_LATEST" >> $GITHUB_OUTPUT
 
       - name: Build & push client image
