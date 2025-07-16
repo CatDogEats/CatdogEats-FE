@@ -20,146 +20,146 @@ import OrdersManagementPage from "@/pages/SellerDashboardPage/OrderManagementPag
 import ShoppingCartPage from "@/pages/ShoppingCartPage";
 import CustomerServiceCenterPageServicePage from "@/pages/CusServiceCenterPage/CustomerServiceCenterPage.tsx";
 import WithdrawalSuccessPage from "@/pages/Account/WidrawSuccess.tsx";
-import AuthGuard from "@/routes/AuthGuard.tsx"
-
+import AuthGuard from "@/routes/AuthGuard.tsx";
+import PaymentSuccessPage from "../pages/PaymentSuccessPage";
+import PaymentFailPage from "../pages/PaymentFailPage";
 
 // React Router 7 사용
 const router = createBrowserRouter([
-    {
-        path: "/",
-        element: <BuyerLayout />, // 구매자용 레이아웃 (BuyerHeader + Outlet + BuyerFooter)
-        children: [
-            // 메인페이지
-            { index: true, element: <HomePage /> },
+  {
+    path: "/",
+    element: <BuyerLayout />, // 구매자용 레이아웃 (BuyerHeader + Outlet + BuyerFooter)
+    children: [
+      // 메인페이지
+      { index: true, element: <HomePage /> },
 
+      { path: "productsList", element: <ProductListPage /> }, // 상품 목록 페이지
 
+      // 상품 상세 페이지
+      {
+        path: "product-detail",
+        element: <ProductDetailPage />,
+      },
 
-            { path: "productsList", element: <ProductListPage /> }, // 상품 목록 페이지
+      // 마이페이지
+      {
+        path: "account",
+        element: <AuthGuard allowedRoles="ROLE_BUYER" />,
+        children: [{ index: true, element: <MyPage /> }],
+      },
 
+      // 장바구니
+      {
+        path: "cart",
+        element: <AuthGuard allowedRoles="ROLE_BUYER" />,
+        children: [{ index: true, element: <ShoppingCartPage /> }],
+      },
 
-            // 상품 상세 페이지
-            {
-                path: 'product-detail',
-                element: <ProductDetailPage />,
-            },
+      { path: "support", element: <CustomerServiceCenterPageServicePage /> },
 
+      // 판매자 스토어 페이지 (구매자가 보는 판매자 정보)
+      { path: "seller/:sellerId", element: <SellerStorePage /> },
 
-            // 마이페이지
-            {
-                path: 'account',
-                element: <AuthGuard allowedRoles='ROLE_BUYER'/>,
-                children: [
-                    { index: true, element: <MyPage /> }
-                ]
-            },
+      // 로그인 & 역할선택
+      { path: "login", element: <LoginPage /> },
+      {
+        path: "role-selection",
+        element: <RoleSelectionPage />,
+      },
 
-            // 장바구니
-            {
-                path: "cart",
-                element: <AuthGuard allowedRoles='ROLE_BUYER'/>,
-                children: [
-                    {index: true, element: <ShoppingCartPage/>}
-                ]
-            },
+      // 결제 및 계정 관련 페이지
+      {
+        path: "orderpayment",
+        element: <AuthGuard allowedRoles="ROLE_BUYER" />,
+        children: [{ index: true, element: <OrderPayPage /> }],
+      },
+      {
+        path: "payment-success",
+        element: <PaymentSuccessPage />,
+      },
+      {
+        path: "payment-fail",
+        element: <PaymentFailPage />,
+      },
 
-            {path: "support", element: <CustomerServiceCenterPageServicePage />},
-
-            // 판매자 스토어 페이지 (구매자가 보는 판매자 정보)
-            { path: 'seller/:sellerId', element: <SellerStorePage /> },
-
-            // 로그인 & 역할선택
-            { path: 'login', element: <LoginPage /> },
-            {
-                path: 'role-selection', element:<RoleSelectionPage/>
-            },
-
-            // 결제 및 계정 관련 페이지
-            {   path: "orderpayment",
-                element: <AuthGuard allowedRoles='ROLE_BUYER'/>,
-                children: [
-                    {index: true, element: <OrderPayPage/>}
-                ]
-            },
-
-            // 404 페이지
-            { path: "*", element: <NotFoundPage /> },
-        ],
-    },
-    {
+      // 404 페이지
+      { path: "*", element: <NotFoundPage /> },
+    ],
+  },
+  {
+    path: "/seller",
+    element: <SellerLayout />, // 판매자용 레이아웃 (SellerHeader + Sidebar + Outlet)
+    children: [
+      {
         path: "/seller",
-        element: <SellerLayout />, // 판매자용 레이아웃 (SellerHeader + Sidebar + Outlet)
+        element: <AuthGuard allowedRoles="ROLE_SELLER" />,
         children: [
-            {
-                path: "/seller",
-                element: <AuthGuard allowedRoles='ROLE_SELLER'/>,
-                children: [
-                        {
-                            index:true,
-                            element: <SellerDashboardDashboardPage />
-                        },
-                ]
-            },
-            {
-                path: "products",
-                element: <AuthGuard allowedRoles='ROLE_SELLER'/>,
-                children:   [
-                        {
-                            index: true,
-                            element:<ProductManagementPage />
-                        }
-                    ]// todo 상품관리 탭
-            },
-            {
-                path: "orders",
-                element: <AuthGuard allowedRoles='ROLE_SELLER'/> , //todo 주문배송 페이지 탭
-                children: [
-                    {
-                        index: true,
-                        element: <OrdersManagementPage />
-                    }
-                ]
-            },
-            {
-                path: "settlement",
-                element: <AuthGuard allowedRoles='ROLE_SELLER'/>, // 정산탭
-                children: [
-                    {
-                        index: true,
-                        element: <SettlementPage />
-                    }
-                ]
-            },
-            {
-                path: "customers",
-                element: <AuthGuard allowedRoles='ROLE_SELLER'/>,
-                children: [
-                    {
-                        index: true,
-                        element: <CustomerManagementPage />
-                    }
-                ]
-            },
-            {
-                path: "info",
-                element: <AuthGuard allowedRoles='ROLE_SELLER'/>,
-                children: [
-                    {
-                        index: true,
-                        element: <SellerInfoPage />
-                    }
-                ]
-            },
+          {
+            index: true,
+            element: <SellerDashboardDashboardPage />,
+          },
         ],
-    },
-    {
-        path: "/withdraw",
-        element: <WithdrawalSuccessPage></WithdrawalSuccessPage>
-
-    },
+      },
+      {
+        path: "products",
+        element: <AuthGuard allowedRoles="ROLE_SELLER" />,
+        children: [
+          {
+            index: true,
+            element: <ProductManagementPage />,
+          },
+        ], // todo 상품관리 탭
+      },
+      {
+        path: "orders",
+        element: <AuthGuard allowedRoles="ROLE_SELLER" />, //todo 주문배송 페이지 탭
+        children: [
+          {
+            index: true,
+            element: <OrdersManagementPage />,
+          },
+        ],
+      },
+      {
+        path: "settlement",
+        element: <AuthGuard allowedRoles="ROLE_SELLER" />, // 정산탭
+        children: [
+          {
+            index: true,
+            element: <SettlementPage />,
+          },
+        ],
+      },
+      {
+        path: "customers",
+        element: <AuthGuard allowedRoles="ROLE_SELLER" />,
+        children: [
+          {
+            index: true,
+            element: <CustomerManagementPage />,
+          },
+        ],
+      },
+      {
+        path: "info",
+        element: <AuthGuard allowedRoles="ROLE_SELLER" />,
+        children: [
+          {
+            index: true,
+            element: <SellerInfoPage />,
+          },
+        ],
+      },
+    ],
+  },
+  {
+    path: "/withdraw",
+    element: <WithdrawalSuccessPage></WithdrawalSuccessPage>,
+  },
 ]);
 
 const AppRouter = () => {
-    return <RouterProvider router={router} />;
+  return <RouterProvider router={router} />;
 };
 
 export default AppRouter;

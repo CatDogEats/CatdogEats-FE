@@ -277,8 +277,8 @@ const OrderPaymentManagement: React.FC = () => {
               },
               orderId: tossOrderId,
               orderName: orderName,
-              successUrl: `${window.location.origin}/v1/buyers/payments/success`,
-              failUrl: `${window.location.origin}/v1/buyers/payments/fail`,
+              successUrl: `${window.location.origin}/payment-success`,
+              failUrl: `${window.location.origin}/payment-fail`,
               customerEmail: customerEmail,
               customerName: customerName,
             })

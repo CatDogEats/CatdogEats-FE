@@ -11,7 +11,10 @@ import type {
   OrderCreateResponse,
   ApiError,
 } from "@/types/buyerApi.types";
-
+import {
+  PaymentConfirmRequest,
+  PaymentConfirmResponse,
+} from "../types/paymentTypes";
 // API 기본 URL 설정
 const API_BASE_URL =
   import.meta.env.MODE === "development"
@@ -220,6 +223,36 @@ export const buyerApi = {
       return extractApiData(response.data);
     } catch (error) {
       console.error("주문 생성 실패:", error);
+      throw handleApiError(error);
+    }
+  },
+
+  // ⬇️ 여기에 추가 ⬇️
+  /**
+   * 결제 확인
+   * API: GET /v1/buyers/payments/success
+   */
+  confirmPayment: async (
+    paymentData: PaymentConfirmRequest
+  ): Promise<PaymentConfirmResponse> => {
+    try {
+      const response = await axios.get<APIResponse<PaymentConfirmResponse>>(
+        `${API_BASE_URL}/v1/buyers/payments/success`,
+        {
+          params: {
+            paymentKey: paymentData.paymentKey,
+            orderId: paymentData.orderId,
+            amount: paymentData.amount,
+          },
+          headers: {
+            "Content-Type": "application/json",
+          },
+        }
+      );
+
+      return extractApiData(response.data);
+    } catch (error) {
+      console.error("결제 확인 실패:", error);
       throw handleApiError(error);
     }
   },
