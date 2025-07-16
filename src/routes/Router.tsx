@@ -47,6 +47,18 @@ const router = createBrowserRouter([
         element: <AuthGuard allowedRoles="ROLE_BUYER" />,
         children: [{ index: true, element: <MyPage /> }],
       },
+      {
+        path: "productsList",
+        element: <ProductListPage />,
+      },
+      {
+        path: "productsList/:pet",
+        element: <ProductListPage />,
+      },
+      {
+        path: "productsList/:pet/:type",
+        element: <ProductListPage />,
+      }, // 상품 목록 페이지
 
       // 장바구니
       {
@@ -56,6 +68,11 @@ const router = createBrowserRouter([
       },
 
       { path: "support", element: <CustomerServiceCenterPageServicePage /> },
+      // 상품 상세 페이지
+      {
+        path: "products/:productNumber",
+        element: <ProductDetailPage />,
+      },
 
       // 판매자 스토어 페이지 (구매자가 보는 판매자 정보)
       { path: "seller/:sellerId", element: <SellerStorePage /> },

@@ -44,13 +44,13 @@ const ProductCard: React.FC<ProductCardProps> = ({
         event.preventDefault();
         event.stopPropagation();
         setIsFavorite(!isFavorite);
-        onFavoriteToggle?.(product.id);
+        onFavoriteToggle?.(product.productNumber);
     };
 
     const handleCardClick = () => {
         // 네비게이션이 비활성화되지 않았다면 상품 상세 페이지로 이동
         if (!disableNavigation) {
-            navigate(`/product-detail?id=${product.id}`);
+            navigate(`/products/${product.productNumber}`);
         }
 
         // 커스텀 클릭 핸들러가 있으면 추가로 실행 (네비게이션 후)
@@ -59,7 +59,11 @@ const ProductCard: React.FC<ProductCardProps> = ({
         }
     };
 
-    const formatPrice = (price: number): string => {
+    const formatPrice = (price: number | null | undefined): string => {
+        // null, undefined, 또는 숫자가 아닌 값 처리
+        if (price == null || isNaN(price)) {
+            return '₩0';
+        }
         return `₩${price.toLocaleString()}`;
     };
 
@@ -291,9 +295,9 @@ const ProductCard: React.FC<ProductCardProps> = ({
                     </Typography>
                 </Box>
 
-                {/* 가격 */}
+                {/* 가격  */}
                 <Box sx={{ display: "flex", alignItems: "baseline", mb: 1, gap: 1 }}>
-                    {product.originalPrice && (
+                    {product.originalPrice && product.originalPrice !== product.price && (
                         <Typography
                             variant="body2"
                             sx={{
