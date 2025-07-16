@@ -1059,15 +1059,20 @@ const OrderShippingManagement: React.FC = () => {
                           variant="contained"
                           size="small"
                           onClick={() => handleEditStatus(order)}
-                          disabled={order.shippingStatus === "delivered"} // 📍 추가: 배송완료시 비활성화
+                          disabled={
+                            order.shippingStatus === "delivered" ||
+                            order.shippingStatus === "order_cancelled"
+                          } // 📍 추가: 배송완료시 비활성화
                           sx={{
                             backgroundColor:
-                              order.shippingStatus === "delivered"
+                              order.shippingStatus === "delivered" ||
+                              order.shippingStatus === "order_cancelled"
                                 ? "#cccccc" // 📍 추가: 비활성화 색상
                                 : "#ef9942",
                             "&:hover": {
                               backgroundColor:
-                                order.shippingStatus === "delivered"
+                                order.shippingStatus === "delivered" ||
+                                order.shippingStatus === "order_cancelled"
                                   ? "#cccccc" // 📍 추가: 비활성화 호버 색상
                                   : "#d6853c",
                             },
