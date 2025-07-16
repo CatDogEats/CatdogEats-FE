@@ -103,6 +103,7 @@ jobs:
         run: |
           mkdir -p deploy
           cp docker-compose.yml deploy/
+          cp Dockerfile.frontend Dockerfile.backend deploy/
           cd deploy
           ls -lah
           zip -r deploy.zip .
@@ -143,4 +144,4 @@ jobs:
             ls -lah .env.production
             docker compose --env-file .env.production down
             docker compose --env-file .env.production pull
-            docker compose --env-file .env.production up -d --build
+            docker compose --env-file .env.production up -d
