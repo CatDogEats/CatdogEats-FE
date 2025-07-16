@@ -1,7 +1,7 @@
 // src/components/SellerDashboard/SellerInfo/FormComponents.tsx
 
 import React from "react";
-import { Box, Typography, TextField, Stack, Grid, FormControl, FormGroup, FormControlLabel, Checkbox, InputAdornment } from "@mui/material";
+import { Box, Typography, TextField, Stack, Grid, FormControl, FormGroup, FormControlLabel, Checkbox, InputAdornment, Alert } from "@mui/material";
 import { BRAND_COLORS, PrimaryButton, SecondaryButton } from "./constants";
 import { FormField } from "./BasicComponents";
 import ProfileImageUpload from "./ProfileImageUpload";
@@ -38,6 +38,12 @@ export interface BasicInfoFormData {
         neighborhood: string;
         streetAddress: string;
     };
+}
+
+// ==================== 주소 유효성 검사 타입 ====================
+export interface AddressValidation {
+    isValid: boolean;
+    message: string;
 }
 
 // ==================== 휴무일 선택 컴포넌트 ====================
@@ -259,6 +265,7 @@ interface BasicInfoFormProps {
     onBusinessNumberVerify?: () => void;
     onImageUpload?: (file: File) => Promise<void>;
     onImageDelete?: () => Promise<void>;
+    addressValidation?: AddressValidation; // 🔧 추가: 주소 유효성 검사 결과
 }
 
 export const BasicInfoForm: React.FC<BasicInfoFormProps> = ({
@@ -266,7 +273,8 @@ export const BasicInfoForm: React.FC<BasicInfoFormProps> = ({
                                                                 onChange,
                                                                 onBusinessNumberVerify,
                                                                 onImageUpload,
-                                                                onImageDelete
+                                                                onImageDelete,
+                                                                addressValidation = { isValid: true, message: "" } // 🔧 추가
                                                             }) => {
     const handleAddressChange = (field: 'postalCode' | 'roadAddress' | 'detailAddress', value: string) => {
         onChange(field, value);
@@ -376,13 +384,32 @@ export const BasicInfoForm: React.FC<BasicInfoFormProps> = ({
                 </Grid>
 
                 {/* 주소 입력 섹션 */}
-                <AddressInputSection
-                    postalCode={data.postalCode}
-                    roadAddress={data.roadAddress}
-                    detailAddress={data.detailAddress}
-                    onChange={handleAddressChange}
-                    onAddressDataChange={handleAddressDataChange}
-                />
+                <Box>
+                    <AddressInputSection
+                        postalCode={data.postalCode}
+                        roadAddress={data.roadAddress}
+                        detailAddress={data.detailAddress}
+                        onChange={handleAddressChange}
+                        onAddressDataChange={handleAddressDataChange}
+                    />
+
+                    {/* 🔧 추가: 주소 유효성 검사 메시지 표시 */}
+                    {addressValidation.message && (
+                        <Box sx={{ mt: 1 }}>
+                            <Alert
+                                severity={addressValidation.isValid ? "success" : "warning"}
+                                sx={{
+                                    fontSize: "0.875rem",
+                                    '& .MuiAlert-message': {
+                                        fontSize: "0.875rem"
+                                    }
+                                }}
+                            >
+                                {addressValidation.message}
+                            </Alert>
+                        </Box>
+                    )}
+                </Box>
 
                 {/* 정산 계좌 정보 */}
                 <SettlementInfoInput
@@ -425,14 +452,25 @@ interface FormActionsProps {
     onSave: () => void;
     onCancel: () => void;
     isLoading?: boolean;
+    addressValidation?: AddressValidation; // 🔧 추가: 저장 버튼 비활성화 조건
 }
 
 export const FormActions: React.FC<FormActionsProps> = ({
                                                             onSave,
                                                             onCancel,
-                                                            isLoading = false
+                                                            isLoading = false,
+                                                            addressValidation = { isValid: true, message: "" }
                                                         }) => (
     <Box pt={4} borderTop={`1px solid ${BRAND_COLORS.BORDER}`} mt={4}>
+        {/* 🔧 추가: 주소 유효성 검사 실패 시 경고 메시지 */}
+        {!addressValidation.isValid && (
+            <Box sx={{ mb: 2 }}>
+                <Alert severity="error" sx={{ fontSize: "0.875rem" }}>
+                    저장하기 전에 주소 정보를 완전히 입력해주세요.
+                </Alert>
+            </Box>
+        )}
+
         <Box display="flex" justifyContent="flex-end" gap={2} flexWrap="wrap">
             <SecondaryButton
                 onClick={onCancel}
@@ -443,8 +481,13 @@ export const FormActions: React.FC<FormActionsProps> = ({
             </SecondaryButton>
             <PrimaryButton
                 onClick={onSave}
-                disabled={isLoading}
-                sx={{ minWidth: 120, px: 3, py: 1.5 }}
+                disabled={isLoading || !addressValidation.isValid} // 🔧 수정: 주소 유효성 검사 실패 시 비활성화
+                sx={{
+                    minWidth: 120,
+                    px: 3,
+                    py: 1.5,
+                    opacity: (!addressValidation.isValid && !isLoading) ? 0.6 : 1
+                }}
             >
                 {isLoading ? "저장 중..." : "저장하기"}
             </PrimaryButton>

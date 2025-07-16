@@ -15,6 +15,7 @@ import {
 const SellerInfoPage: React.FC = () => {
     const {
         data,
+        originalData, // 🔧 추가: 원본 데이터
         isLoading,
         error,
         updateField,
@@ -24,6 +25,7 @@ const SellerInfoPage: React.FC = () => {
         handleCustomerViewClick,
         handleImageUpload,
         handleImageDelete,
+        addressValidation, // 🔧 추가: 주소 유효성 검사 결과
     } = useSellerInfo();
 
     return (
@@ -66,6 +68,7 @@ const SellerInfoPage: React.FC = () => {
                     </Box>
                 )}
 
+
                 <Paper
                     sx={{
                         p: { xs: 3, sm: 4, md: 5 },
@@ -84,7 +87,7 @@ const SellerInfoPage: React.FC = () => {
                     {/* 카드 섹션 */}
                     <Box sx={{ mb: 5 }}>
                         <Grid container spacing={3}>
-                            {/* 프로필 미리보기 카드 */}
+                            {/* 프로필 미리보기 카드 - 🔧 배송정보 추가 */}
                             <Grid item xs={12} lg={8}>
                                 <ProfilePreviewCard
                                     workshopName={data.vendorName || "달콤한 우리집 간식공방"}
@@ -99,6 +102,8 @@ const SellerInfoPage: React.FC = () => {
                                             ? `${data.closedDays.join(', ')} 휴무`
                                             : data.operatingHours.holidayInfo
                                     }}
+                                    deliveryFee={data.deliveryFee} // 🔧 새로 추가
+                                    freeShippingThreshold={data.freeShippingThreshold} // 🔧 새로 추가
                                 />
                             </Grid>
 
@@ -127,17 +132,20 @@ const SellerInfoPage: React.FC = () => {
                                 deliveryFee: data.deliveryFee,
                                 freeShippingThreshold: data.freeShippingThreshold,
                                 profileImage: data.profileImage,
+                                _addressData: data._addressData, // 🔧 추가: 주소 데이터 전달
                             }}
                             onChange={updateField}
                             onBusinessNumberVerify={handleBusinessNumberVerify}
                             onImageUpload={handleImageUpload}
                             onImageDelete={handleImageDelete}
+                            addressValidation={addressValidation} // 🔧 추가: 주소 유효성 검사 결과 전달
                         />
 
                         <FormActions
                             onSave={handleSave}
                             onCancel={handleCancel}
                             isLoading={isLoading}
+                            addressValidation={addressValidation} // 🔧 추가: 주소 유효성 검사 결과 전달
                         />
                     </Box>
                 </Paper>
@@ -151,6 +159,12 @@ const SellerInfoPage: React.FC = () => {
                         <Box component="ul" sx={{ pl: 2, color: BRAND_COLORS.TEXT_SECONDARY }}>
                             <Typography component="li" variant="body2" mb={1}>
                                 <strong>프로필 완성도:</strong> 모든 필수 정보를 입력하면 더 많은 고객에게 노출됩니다.
+                            </Typography>
+                            <Typography component="li" variant="body2" mb={1}>
+                                <strong>주소 정보:</strong> 주소를 입력하시려면 모든 주소 필드(우편번호, 도로명주소, 상세주소, 전화번호)를 완전히 입력해주세요.
+                            </Typography>
+                            <Typography component="li" variant="body2" mb={1}>
+                                <strong>프로필 이미지:</strong> 고품질 이미지(400x400px 권장)를 업로드하면 더 전문적인 인상을 줄 수 있습니다.
                             </Typography>
                             <Typography component="li" variant="body2" mb={1}>
                                 <strong>배송 정보:</strong> 적절한 배송비와 무료배송 기준을 설정하여 고객 만족도를 높이세요.

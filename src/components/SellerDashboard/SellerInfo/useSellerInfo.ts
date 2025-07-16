@@ -4,7 +4,8 @@ import { useState, useCallback, useEffect } from "react";
 import {
     sellerInfoApi,
     transformResponseToFormData,
-    SellerInfoFormData
+    SellerInfoFormData,
+    isAddressComplete
 } from "@/service/seller/SellerInfoAPI";
 
 export interface SellerInfoData {
@@ -65,14 +66,26 @@ const initialData: SellerInfoData = {
 
 export const useSellerInfo = () => {
     const [data, setData] = useState<SellerInfoData>(initialData);
+    const [originalData, setOriginalData] = useState<SellerInfoData | null>(null); // 🔧 추가: 원본 데이터 보관
     const [isLoading, setIsLoading] = useState(false);
     const [activeSection, setActiveSection] = useState("basic-info");
     const [error, setError] = useState<string | null>(null);
+
+    // 🔧 추가: 주소 유효성 검사 상태
+    const [addressValidation, setAddressValidation] = useState<{
+        isValid: boolean;
+        message: string;
+    }>({ isValid: true, message: "" });
 
     // 초기 데이터 로드
     useEffect(() => {
         loadSellerInfo();
     }, []);
+
+    // 🔧 추가: 주소 유효성 검사 실시간 업데이트
+    useEffect(() => {
+        validateAddress();
+    }, [data.postalCode, data.roadAddress, data.detailAddress, data.phoneNumber, data._addressData]);
 
     const loadSellerInfo = useCallback(async () => {
         try {
@@ -85,8 +98,8 @@ export const useSellerInfo = () => {
                 // 백엔드 응답을 프론트엔드 형식으로 변환
                 const formData = transformResponseToFormData(response);
 
-                setData(prev => ({
-                    ...prev,
+                const loadedData: SellerInfoData = {
+                    ...initialData,
                     vendorName: formData.vendorName,
                     businessNumber: formData.businessNumber,
                     settlementBank: formData.settlementBank,
@@ -99,27 +112,23 @@ export const useSellerInfo = () => {
                     operatingHours: {
                         start: formData.operatingStartTime,
                         end: formData.operatingEndTime,
-                        holidayInfo: prev.operatingHours.holidayInfo, // 기존 값 유지
+                        holidayInfo: initialData.operatingHours.holidayInfo, // 기존 값 유지
                     },
                     closedDays: formData.closedDays,
                     deliveryFee: formData.deliveryFee,
                     freeShippingThreshold: formData.freeShippingThreshold,
                     profileImage: formData.profileImage,
-                    completionRate: calculateCompletionRate({
-                        ...prev,
-                        vendorName: formData.vendorName,
-                        businessNumber: formData.businessNumber,
-                        settlementBank: formData.settlementBank,
-                        settlementAcc: formData.settlementAcc,
-                        postalCode: formData.postalCode,
-                        roadAddress: formData.roadAddress,
-                        detailAddress: formData.detailAddress,
-                        phoneNumber: formData.phoneNumber,
-                        tags: formData.tags,
-                        closedDays: formData.closedDays,
-                        profileImage: formData.profileImage,
-                    }),
-                }));
+                    _addressData: formData._addressData,
+                };
+
+                // 완성도 계산
+                loadedData.completionRate = calculateCompletionRate(loadedData);
+
+                setData(loadedData);
+                setOriginalData(loadedData); // 🔧 추가: 원본 데이터 저장
+            } else {
+                // 신규 사용자인 경우
+                setOriginalData(null);
             }
         } catch (err) {
             console.error('판매자 정보 로드 실패:', err);
@@ -128,6 +137,66 @@ export const useSellerInfo = () => {
             setIsLoading(false);
         }
     }, []);
+
+    // 🔧 추가: 주소 유효성 검사 함수
+    const validateAddress = useCallback(() => {
+        const hasAnyAddressField = !!(
+            data.postalCode ||
+            data.roadAddress ||
+            data.detailAddress ||
+            data._addressData?.city ||
+            data._addressData?.district ||
+            data._addressData?.neighborhood ||
+            data._addressData?.streetAddress
+        );
+
+        if (!hasAnyAddressField) {
+            // 주소 정보가 아무것도 없으면 유효함 (선택사항)
+            setAddressValidation({ isValid: true, message: "" });
+            return;
+        }
+
+        // 주소 정보가 하나라도 있으면 모든 필드 필수
+        const formDataForValidation: SellerInfoFormData = {
+            vendorName: data.vendorName,
+            businessNumber: data.businessNumber,
+            settlementBank: data.settlementBank,
+            settlementAcc: data.settlementAcc,
+            tags: data.tags,
+            operatingStartTime: data.operatingHours.start,
+            operatingEndTime: data.operatingHours.end,
+            closedDays: data.closedDays,
+            deliveryFee: data.deliveryFee,
+            freeShippingThreshold: data.freeShippingThreshold,
+            postalCode: data.postalCode,
+            roadAddress: data.roadAddress,
+            detailAddress: data.detailAddress,
+            phoneNumber: data.phoneNumber,
+            profileImage: data.profileImage,
+            _addressData: data._addressData,
+        };
+
+        const isComplete = isAddressComplete(formDataForValidation);
+
+        if (!isComplete) {
+            const missingFields = [];
+            if (!data.postalCode) missingFields.push("우편번호");
+            if (!data.roadAddress) missingFields.push("도로명주소");
+            if (!data.detailAddress) missingFields.push("상세주소");
+            if (!data.phoneNumber) missingFields.push("전화번호");
+            if (!data._addressData?.city) missingFields.push("시/도");
+            if (!data._addressData?.district) missingFields.push("시/군/구");
+            if (!data._addressData?.neighborhood) missingFields.push("동/읍/면");
+            if (!data._addressData?.streetAddress) missingFields.push("도로명");
+
+            setAddressValidation({
+                isValid: false,
+                message: `주소 정보를 완전히 입력해주세요. 누락된 항목: ${missingFields.join(", ")}`
+            });
+        } else {
+            setAddressValidation({ isValid: true, message: "주소 정보가 완전히 입력되었습니다." });
+        }
+    }, [data]);
 
     const updateField = useCallback((field: keyof SellerInfoData, value: any) => {
         setData(prev => {
@@ -150,9 +219,6 @@ export const useSellerInfo = () => {
             data.businessNumber,
             data.settlementBank,
             data.settlementAcc,
-            data.roadAddress,
-            data.detailAddress,
-            data.phoneNumber,
             data.operatingHours.start,
             data.operatingHours.end,
             data.operatingHours.holidayInfo,
@@ -163,17 +229,46 @@ export const useSellerInfo = () => {
         const deliveryBonus = data.deliveryFee > 0 ? 1 : 0;
         const closedDaysBonus = 1; // 휴무일은 선택하지 않아도 완성으로 간주
 
-        const filledFields = fields.filter(field => field && field.toString().trim() !== "").length;
-        const totalFields = fields.length + 4; // 이미지, 태그, 배송비, 휴무일 포함
+        // 주소 완성도 보너스 (완전한 주소인 경우에만)
+        const formDataForValidation: SellerInfoFormData = {
+            vendorName: data.vendorName,
+            businessNumber: data.businessNumber,
+            settlementBank: data.settlementBank,
+            settlementAcc: data.settlementAcc,
+            tags: data.tags,
+            operatingStartTime: data.operatingHours.start,
+            operatingEndTime: data.operatingHours.end,
+            closedDays: data.closedDays,
+            deliveryFee: data.deliveryFee,
+            freeShippingThreshold: data.freeShippingThreshold,
+            postalCode: data.postalCode,
+            roadAddress: data.roadAddress,
+            detailAddress: data.detailAddress,
+            phoneNumber: data.phoneNumber,
+            profileImage: data.profileImage,
+            _addressData: data._addressData,
+        };
+        const addressBonus = isAddressComplete(formDataForValidation) ? 3 : 0; // 주소는 더 높은 가중치
 
-        return Math.round(((filledFields + imageBonus + tagBonus + deliveryBonus + closedDaysBonus) / totalFields) * 100);
+        const filledFields = fields.filter(field => field && field.toString().trim() !== "").length;
+        const totalFields = fields.length + 7; // 이미지, 태그, 배송비, 휴무일, 주소(3점) 포함
+
+        return Math.round(((filledFields + imageBonus + tagBonus + deliveryBonus + closedDaysBonus + addressBonus) / totalFields) * 100);
     }, []);
 
+    // 🔧 수정: PATCH 최적화된 저장 함수
     const handleSave = useCallback(async () => {
         setIsLoading(true);
         setError(null);
 
         try {
+            // 주소 유효성 검사
+            if (!addressValidation.isValid) {
+                alert('주소 정보를 완전히 입력해주세요.');
+                setIsLoading(false);
+                return;
+            }
+
             // 프론트엔드 데이터를 백엔드 형식으로 변환
             const formData: SellerInfoFormData = {
                 vendorName: data.vendorName,
@@ -194,12 +289,35 @@ export const useSellerInfo = () => {
                 _addressData: data._addressData,
             };
 
-            // API 호출
-            const response = await sellerInfoApi.upsertSellerInfo(formData);
+            // 원본 데이터도 같은 형식으로 변환
+            const originalFormData: SellerInfoFormData | null = originalData ? {
+                vendorName: originalData.vendorName,
+                businessNumber: originalData.businessNumber,
+                settlementBank: originalData.settlementBank,
+                settlementAcc: originalData.settlementAcc,
+                tags: originalData.tags,
+                operatingStartTime: originalData.operatingHours.start,
+                operatingEndTime: originalData.operatingHours.end,
+                closedDays: originalData.closedDays,
+                deliveryFee: originalData.deliveryFee,
+                freeShippingThreshold: originalData.freeShippingThreshold,
+                postalCode: originalData.postalCode,
+                roadAddress: originalData.roadAddress,
+                detailAddress: originalData.detailAddress,
+                phoneNumber: originalData.phoneNumber,
+                profileImage: originalData.profileImage,
+                _addressData: originalData._addressData,
+            } : null;
+
+            // 🔧 PATCH 최적화된 API 호출
+            const response = await sellerInfoApi.upsertSellerInfo(formData, originalFormData);
 
             console.log('판매자 정보 저장 성공:', response);
 
-            // 성공 시 완성도 업데이트
+            // 성공 시 원본 데이터 업데이트
+            setOriginalData({ ...data });
+
+            // 완성도 업데이트
             const newCompletionRate = calculateCompletionRate(data);
             setData(prev => ({ ...prev, completionRate: newCompletionRate }));
 
@@ -212,13 +330,18 @@ export const useSellerInfo = () => {
         } finally {
             setIsLoading(false);
         }
-    }, [data, calculateCompletionRate]);
+    }, [data, originalData, calculateCompletionRate, addressValidation]);
 
     const handleCancel = useCallback(() => {
-        setData(initialData);
+        if (originalData) {
+            // 원본 데이터로 되돌리기
+            setData({ ...originalData });
+        } else {
+            // 신규 사용자인 경우 초기값으로
+            setData({ ...initialData });
+        }
         setError(null);
-        loadSellerInfo(); // 원래 데이터로 되돌리기
-    }, [loadSellerInfo]);
+    }, [originalData]);
 
     const handleBusinessNumberVerify = useCallback(async () => {
         if (!data.businessNumber) {
@@ -322,6 +445,7 @@ export const useSellerInfo = () => {
 
     return {
         data,
+        originalData, // 🔧 추가: 원본 데이터 노출
         isLoading,
         error,
         activeSection,
@@ -334,5 +458,6 @@ export const useSellerInfo = () => {
         handleImageUpload,
         handleImageDelete,
         loadSellerInfo,
+        addressValidation, // 🔧 추가: 주소 유효성 검사 결과 노출
     };
 };

@@ -73,22 +73,6 @@ const OperatingHours: React.FC<OperatingHoursProps> = ({ hours, onChange }) => {
                         }}
                     />
                 </Grid>
-                <Grid item xs={6}>
-                    <TextField
-                        fullWidth
-                        label="휴무정보"
-                        placeholder="예: 주말 및 공휴일 휴무"
-                        value={hours.holidayInfo}
-                        onChange={(e) => onChange({ ...hours, holidayInfo: e.target.value })}
-                        sx={{
-                            "& .MuiOutlinedInput-root": {
-                                backgroundColor: BRAND_COLORS.BACKGROUND_INPUT,
-                                borderRadius: 2,
-                                "&.Mui-focused fieldset": { borderColor: BRAND_COLORS.PRIMARY }
-                            }
-                        }}
-                    />
-                </Grid>
             </Grid>
         </Box>
     );
