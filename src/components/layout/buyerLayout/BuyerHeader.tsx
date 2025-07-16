@@ -333,7 +333,7 @@ const BuyerHeader = () => {
                                     <>
                                         <Button
                                             variant="text"
-                                            onClick={() => navigate('/login')}
+                                            onClick={() => navigate("/login")}
                                             sx={{
                                                 fontSize: "0.875rem",
                                                 fontWeight: 400,
