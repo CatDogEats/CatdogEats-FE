@@ -152,8 +152,8 @@ const OrderPaymentManagement: React.FC = () => {
   };
 
   // 8) 쿠폰 할인 계산
-  const subtotal = orderItems.reduce((sum, i) => sum + i.price, 0);
-  const shipping = 5.0;
+  const subtotal = orderItems.reduce((sum, i) => sum + i.price * i.quantity, 0);
+  const shipping = 3000;
   const [selectedCoupon, setSelectedCoupon] = useState<string>("");
   const getSelectedCoupon = () =>
     availableCoupons.find((c) => c.id === selectedCoupon);

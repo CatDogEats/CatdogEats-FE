@@ -2,15 +2,8 @@
 "use client";
 
 import type React from "react";
-import {
-  Container,
-  Breadcrumbs,
-  Link,
-  Typography,
-  Box,
-  Chip,
-} from "@mui/material";
-import { Schedule, NavigateNext } from "@mui/icons-material";
+import { Container, Breadcrumbs, Link, Typography, Box } from "@mui/material";
+import { NavigateNext } from "@mui/icons-material";
 import { ThemeProvider } from "@mui/material/styles";
 
 // 메인 컴포넌트 import
@@ -77,12 +70,6 @@ const OrderPaymentPage: React.FC = () => {
             >
               주문/결제
             </Typography>
-            <Chip
-              icon={<Schedule />}
-              label="예상 소요시간: 2 ~ 3일"
-              color="primary"
-              variant="outlined"
-            />
           </Box>
 
           {/* 메인 컴포넌트 - 모든 비즈니스 로직은 여기서 처리 */}

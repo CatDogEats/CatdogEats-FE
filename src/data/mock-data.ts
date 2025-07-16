@@ -613,7 +613,7 @@ export const orderItems: OrderItem[] = [
   {
     id: "a111a111-a111-a111-a111-a111a111a111",
     name: "[유기농] 강아지 소고기 육포 100g",
-    quantity: 2,
+    quantity: 1,
     price: 15000,
     image: "/placeholder.svg?height=64&width=64",
   },
