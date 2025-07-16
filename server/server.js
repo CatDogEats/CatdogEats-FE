@@ -29,9 +29,9 @@ app.get('/auth/check', (req, res) => {
     const refreshTokenId = req.cookies.refreshTokenId
 
     if (token && refreshTokenId) {
-        res.status(200).json({ authenticated: true })
+        res.status(200).json({ isAuthenticated: true })
     } else {
-        res.status(401).json({ authenticated: false })
+        res.status(401).json({ isAuthenticated: false })
     }
 })
 
