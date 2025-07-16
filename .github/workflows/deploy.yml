@@ -74,7 +74,7 @@ jobs:
         uses: docker/build-push-action@v4
         with:
           context: .
-          file: Dockerfile.client
+          file: Dockerfile.frontend
           push: true
           tags: |
             ${{ steps.prep.outputs.IMAGE_CLIENT }}
@@ -84,7 +84,7 @@ jobs:
         uses: docker/build-push-action@v4
         with:
           context: .
-          file: Dockerfile.server
+          file: Dockerfile.backend
           push: true
           tags: |
             ${{ steps.prep.outputs.IMAGE_SERVER }}
