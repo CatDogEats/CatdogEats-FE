@@ -1,13 +1,6 @@
 // src/components/SellerDashboard/Dashboard/types.ts
 
-// 통계 카드 타입
-export interface StatItem {
-    title: string;
-    value: string;
-    color: string;
-}
-
-// 수요 예측 아이템 타입 (기존 DemandForecastItem 대체)
+// 수요 예측 아이템 타입
 export interface DemandForecastItem {
     id: string;
     productId: string;
@@ -16,20 +9,6 @@ export interface DemandForecastItem {
     predictedQuantity: number;
     status: "재주문 필요" | "충분";
     confidenceScore: number;
-}
-
-// 상품 차트 데이터 타입
-export interface ProductData {
-    name: string;
-    value: number;
-    color: string;
-}
-
-// 주간 매출 차트 데이터 타입
-export interface SalesData {
-    date: string;
-    amount: number;
-    displayDate: string;
 }
 
 // 헬퍼 함수들

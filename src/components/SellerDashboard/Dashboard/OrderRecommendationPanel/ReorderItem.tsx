@@ -1,4 +1,4 @@
-// src/components/SellerDashboard/Dashboard/ReorderPanel/ReorderItem.tsx
+// src/components/SellerDashboard/Dashboard/OrderRecommendationPanel/ReorderItem.tsx
 import React from "react";
 import { Box, Typography, LinearProgress } from "@mui/material";
 import { DemandForecastItem, getStatusColor } from "../SellerDashboardData";
