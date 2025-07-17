@@ -67,32 +67,38 @@ export default function MyPage() {
     setDetailView(null);
   };
 
-  // ✅ 수정된 handleOrderAction
   const handleOrderAction = async (action: string, order: Order) => {
-    if (action === "view_detail") {
-      setSelectedOrder(order);
-      setDetailView("detail");
-    } else if (action === "view_shipping") {
-      setSelectedOrder(order);
-      setDetailView("shipping");
-    } else if (action === "write_review") {
-      setSelectedOrder(order);
-      setDetailView("review");
-    } else if (action === "request_return") {
-      setSelectedOrder(order);
-      setDetailView("return");
-    } else if (action === "delete") {
-      try {
-        await buyerOrderApi.deleteBuyerOrder({
-          orderNumber: order.orderNumber,
-        });
-        // 목록 새로고침은 OrdersView에서 처리됩니다.
-      } catch (error: any) {
-        console.error("주문 삭제 실패:", error);
-        alert(error.message);
-      }
-    } else if (action === "refresh") {
-      // OrdersView가 자체적으로 새로고침하므로 별도 처리 불필요
+    setSelectedOrder(order);
+    switch (action) {
+      case "view_detail":
+      case "detail":
+        setDetailView("detail");
+        break;
+      case "view_shipping":
+      case "shipping":
+        setDetailView("shipping");
+        break;
+      case "write_review":
+      case "review":
+        setDetailView("review");
+        break;
+      case "request_return":
+      case "return":
+        setDetailView("return");
+        break;
+      case "delete":
+        try {
+          await buyerOrderApi.deleteBuyerOrder({
+            orderNumber: order.orderNumber,
+          });
+          // 주문 목록 새로고침 로직 추가 가능
+        } catch (error: any) {
+          alert(error.message);
+        }
+        break;
+      case "refresh":
+        // 새로고침 로직 (필요시 추가)
+        break;
     }
   };
 
@@ -169,7 +175,7 @@ export default function MyPage() {
       return (
         <ShippingDetailView
           setDetailView={setDetailView}
-          selectedOrder={selectedOrder} // selectedOrder props 추가
+          selectedOrder={selectedOrder}
         />
       );
     }
@@ -239,13 +245,13 @@ export default function MyPage() {
       <Box sx={{ bgcolor: "background.default", minHeight: "100vh" }}>
         <Container maxWidth="xl" sx={{ py: 4 }}>
           <Grid container spacing={4}>
-            <Grid size={{ xs: 12, md: 3 }}>
+            <Grid item xs={12} md={3}>
               <UpdatedSidebar
                 activeMenu={activeMenu}
                 onMenuChange={handleMenuChange}
               />
             </Grid>
-            <Grid size={{ xs: 12, md: 9 }}>
+            <Grid item xs={12} md={9}>
               <Card>
                 <CardContent sx={{ p: 4 }}>{renderContent()}</CardContent>
               </Card>

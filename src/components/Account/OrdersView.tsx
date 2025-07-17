@@ -1,7 +1,7 @@
 // src/components/Account/OrdersView.tsx
 "use client";
 
-import React from "react";
+import React, { useState } from "react";
 import {
   Box,
   Typography,
@@ -9,16 +9,17 @@ import {
   Paper,
   TextField,
   Chip,
-  TableContainer,
-  Table,
-  TableHead,
-  TableRow,
-  TableCell,
-  TableBody,
   CircularProgress,
   Alert,
+  Stepper,
+  Step,
+  StepLabel,
+  Pagination,
 } from "@mui/material";
 import { useBuyerOrderManagement } from "@/hooks/useBuyerOrders";
+import OrderItem from "./OrderItem";
+import CustomStepIcon from "./CustomStepIcon";
+import ArrowConnector from "./ArrowConnector";
 
 interface OrdersViewProps {
   searchQuery: string;
@@ -37,11 +38,11 @@ const OrdersView: React.FC<OrdersViewProps> = ({
   mockOrders,
   handleOrderAction,
 }) => {
-  // ✅ 모든 훅을 맨 처음에 호출 (조건문 없이)
+  // 모든 훅을 맨 처음에 호출
   const { prototypeOrders, ordersLoading, ordersError, refreshOrders } =
     useBuyerOrderManagement();
 
-  // ✅ 모든 함수와 변수들을 정의 (훅 호출 후)
+  // 주문 상태별 컬러 맵핑
   const getStatusColor = (status: string) => {
     const colorMap: Record<string, any> = {
       payment_completed: "info",
@@ -54,6 +55,7 @@ const OrdersView: React.FC<OrdersViewProps> = ({
     return colorMap[status] || "default";
   };
 
+  // API 데이터 및 모크 데이터 정규화
   const normalizeOrders = (apiOrders: any[], mockOrders: any[]) => {
     if (apiOrders.length > 0) {
       return apiOrders.map((order) => ({
@@ -71,6 +73,28 @@ const OrdersView: React.FC<OrdersViewProps> = ({
 
   const orders = normalizeOrders(prototypeOrders, mockOrders);
 
+  // 페이지네이션 상태
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 5;
+
+  // 배송 상태 Stepper 데이터
+  const shippingSteps = [
+    "결제 완료",
+    "상품 준비중",
+    "배송 준비 완료",
+    "배송중",
+    "배송 완료",
+  ];
+
+  const descriptions = [
+    "주문 결제가\n완료되었습니다.",
+    "판매자가 발송할\n상품을 준비중입니다.",
+    "상품 준비가 완료되어\n택배를 배송 예정입니다.",
+    "상품이 고객님께\n배송중입니다.",
+    "상품이 주문자에게\n전달 완료되었습니다.",
+  ];
+
+  // 주문 삭제 처리
   const handleDelete = async (order: any) => {
     try {
       await handleOrderAction("delete", order);
@@ -80,8 +104,8 @@ const OrdersView: React.FC<OrdersViewProps> = ({
     }
   };
 
+  // 검색 및 기간 필터링
   const filteredOrders = (orders as any[]).filter((order: any) => {
-    // 검색 필터
     if (searchQuery) {
       const searchLower = searchQuery.toLowerCase();
       const productNames = order.products
@@ -92,7 +116,6 @@ const OrdersView: React.FC<OrdersViewProps> = ({
       }
     }
 
-    // 기간 필터
     if (selectedPeriod !== "전체") {
       const orderDate = new Date(order.date || order.orderDate);
       const now = new Date();
@@ -147,68 +170,74 @@ const OrdersView: React.FC<OrdersViewProps> = ({
             ))}
           </Box>
 
-          {/* 주문 목록 테이블 */}
-          <TableContainer component={Paper}>
-            <Table>
-              <TableHead>
-                <TableRow>
-                  <TableCell>상품정보</TableCell>
-                  <TableCell>주문일</TableCell>
-                  <TableCell>주문상태</TableCell>
-                  <TableCell>작업</TableCell>
-                </TableRow>
-              </TableHead>
-              <TableBody>
-                {filteredOrders.map((order: any) => (
-                  <TableRow key={order.id || order.orderNumber}>
-                    <TableCell>
-                      {order.products
-                        ? order.products.map((product: any) => (
-                            <Typography key={product.name}>
-                              {product.name}
-                            </Typography>
-                          ))
-                        : order.productName}
-                    </TableCell>
-                    <TableCell>{order.orderDate || order.date}</TableCell>
-                    <TableCell>
-                      <Chip label={order.status} color={order.statusColor} />
-                    </TableCell>
-                    <TableCell>
-                      {/* 주문 상세보기 버튼 추가 */}
-                      <Button
-                        onClick={() => handleOrderAction("view_detail", order)}
-                        color="primary"
-                        size="small"
-                        sx={{ mr: 1 }}
+          {/* 배송 상태 안내 Stepper */}
+          <Paper sx={{ p: 4, mb: 4 }}>
+            <Typography variant="h6" sx={{ mb: 3, fontWeight: 600 }}>
+              배송 상태 안내
+            </Typography>
+            <Stepper
+              activeStep={-1}
+              alternativeLabel
+              connector={<ArrowConnector />}
+            >
+              {shippingSteps.map((label, index) => (
+                <Step key={label}>
+                  <StepLabel StepIconComponent={CustomStepIcon}>
+                    <Box sx={{ textAlign: "center" }}>
+                      <Typography variant="body2" sx={{ fontWeight: 600 }}>
+                        {label}
+                      </Typography>
+                      <Typography
+                        variant="caption"
+                        sx={{
+                          color: "text.secondary",
+                          whiteSpace: "pre-line",
+                          mt: 0.5,
+                          display: "block",
+                        }}
                       >
-                        상세보기
-                      </Button>
-                      {/* 배송조회 버튼 추가 */}
-                      <Button
-                        onClick={() =>
-                          handleOrderAction("view_shipping", order)
-                        }
-                        color="info"
-                        size="small"
-                        sx={{ mr: 1 }}
-                      >
-                        배송조회
-                      </Button>
-                      {/* 기존 삭제 버튼 */}
-                      <Button
-                        onClick={() => handleDelete(order)}
-                        color="error"
-                        size="small"
-                      >
-                        삭제
-                      </Button>
-                    </TableCell>
-                  </TableRow>
+                        {descriptions[index]}
+                      </Typography>
+                    </Box>
+                  </StepLabel>
+                </Step>
+              ))}
+            </Stepper>
+          </Paper>
+
+          {/* 주문 목록 카드들 */}
+          {filteredOrders.length === 0 ? (
+            <Paper sx={{ p: 4, textAlign: "center" }}>
+              <Typography variant="body1" color="text.secondary">
+                주문 내역이 없습니다.
+              </Typography>
+            </Paper>
+          ) : (
+            <>
+              {filteredOrders
+                .slice(
+                  (currentPage - 1) * itemsPerPage,
+                  currentPage * itemsPerPage
+                )
+                .map((order: any) => (
+                  <OrderItem
+                    key={order.id || order.orderNumber}
+                    order={order}
+                    handleOrderAction={handleOrderAction}
+                  />
                 ))}
-              </TableBody>
-            </Table>
-          </TableContainer>
+
+              {/* 페이지네이션 */}
+              <Box sx={{ display: "flex", justifyContent: "center", mt: 4 }}>
+                <Pagination
+                  count={Math.ceil(filteredOrders.length / itemsPerPage)}
+                  page={currentPage}
+                  onChange={(event, value) => setCurrentPage(value)}
+                  color="primary"
+                />
+              </Box>
+            </>
+          )}
         </Box>
       )}
     </Box>
