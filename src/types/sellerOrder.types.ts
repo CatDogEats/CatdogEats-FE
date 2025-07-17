@@ -109,6 +109,7 @@ export interface SellerOrderDetailResponse {
   orderStatus: OrderStatus;
   orderDate: string; // ISO string
   shippingAddress: ShippingAddress;
+  petInfo: PetInfo; // ✅ 추가: 반려동물 정보
   orderItems: SellerOrderDetailItem[];
   orderSummary: OrderSummary;
   shipmentInfo?: ShipmentInfo;
@@ -154,7 +155,19 @@ export interface ShippingAddress {
   fullAddress: string;
   deliveryRequest?: string;
 }
-
+/**
+ * 반려동물 정보
+ */
+export interface PetInfo {
+  name: string;
+  category: string;
+  breed: string;
+  age: string;
+  gender: string;
+  hasAllergies: boolean;
+  healthCondition: string;
+  specialRequests: string;
+}
 /**
  * 수령인 정보
  */
