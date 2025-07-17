@@ -52,20 +52,17 @@ const OrdersView: React.FC<OrdersViewProps> = ({
     return colorMap[status] || "default";
   };
 
-  const normalizeOrders = (apiOrders: any[], mockOrders: any[]) => {
-    if (apiOrders.length > 0) {
-      return apiOrders.map((order) => ({
-        ...order,
-        status: order.shippingStatus || "payment_completed",
-        statusColor: getStatusColor(
-          order.shippingStatus || "payment_completed"
-        ),
-        deliveryDate: order.orderDate,
-      }));
-    } else {
-      return mockOrders;
-    }
-  };
+  const normalizeOrders = (apiOrders: any[], mockOrders: any[]) =>
+    apiOrders.length > 0
+      ? apiOrders.map((order) => ({
+          ...order,
+          status: order.shippingStatus || "payment_completed",
+          statusColor: getStatusColor(
+            order.shippingStatus || "payment_completed"
+          ),
+          deliveryDate: order.orderDate,
+        }))
+      : mockOrders;
 
   const orders = normalizeOrders(prototypeOrders, mockOrders);
 
@@ -98,11 +95,9 @@ const OrdersView: React.FC<OrdersViewProps> = ({
         return false;
       }
     }
-
     if (selectedPeriod !== "전체") {
       const orderDate = new Date(order.date || order.orderDate);
       const now = new Date();
-
       if (selectedPeriod === "최근 6개월") {
         const sixMonthsAgo = new Date();
         sixMonthsAgo.setMonth(now.getMonth() - 6);
@@ -113,7 +108,6 @@ const OrdersView: React.FC<OrdersViewProps> = ({
         if (orderDate.getFullYear() !== 2024) return false;
       }
     }
-
     return true;
   });
 
@@ -153,41 +147,6 @@ const OrdersView: React.FC<OrdersViewProps> = ({
             ))}
           </Box>
 
-          {/* 배송 상태 안내 Stepper */}
-          <Paper sx={{ p: 4, mb: 4 }}>
-            <Typography variant="h6" sx={{ mb: 3, fontWeight: 600 }}>
-              배송 상태 안내
-            </Typography>
-            <Stepper
-              activeStep={-1}
-              alternativeLabel
-              connector={<ArrowConnector />}
-            >
-              {shippingSteps.map((label, index) => (
-                <Step key={label}>
-                  <StepLabel StepIconComponent={CustomStepIcon}>
-                    <Box sx={{ textAlign: "center" }}>
-                      <Typography variant="body2" sx={{ fontWeight: 600 }}>
-                        {label}
-                      </Typography>
-                      <Typography
-                        variant="caption"
-                        sx={{
-                          color: "text.secondary",
-                          whiteSpace: "pre-line",
-                          mt: 0.5,
-                          display: "block",
-                        }}
-                      >
-                        {descriptions[index]}
-                      </Typography>
-                    </Box>
-                  </StepLabel>
-                </Step>
-              ))}
-            </Stepper>
-          </Paper>
-
           {/* 주문 목록 카드들 */}
           {filteredOrders.length === 0 ? (
             <Paper sx={{ p: 4, textAlign: "center" }}>
@@ -221,6 +180,41 @@ const OrdersView: React.FC<OrdersViewProps> = ({
               </Box>
             </>
           )}
+
+          {/* 배송 상태 안내 Stepper - 새로운 위치 */}
+          <Paper sx={{ p: 4, mt: 4 }}>
+            <Typography variant="h6" sx={{ mb: 3, fontWeight: 600 }}>
+              배송 상태 안내
+            </Typography>
+            <Stepper
+              activeStep={-1}
+              alternativeLabel
+              connector={<ArrowConnector />}
+            >
+              {shippingSteps.map((label, index) => (
+                <Step key={label}>
+                  <StepLabel StepIconComponent={CustomStepIcon}>
+                    <Box sx={{ textAlign: "center" }}>
+                      <Typography variant="body2" sx={{ fontWeight: 600 }}>
+                        {label}
+                      </Typography>
+                      <Typography
+                        variant="caption"
+                        sx={{
+                          color: "text.secondary",
+                          whiteSpace: "pre-line",
+                          mt: 0.5,
+                          display: "block",
+                        }}
+                      >
+                        {descriptions[index]}
+                      </Typography>
+                    </Box>
+                  </StepLabel>
+                </Step>
+              ))}
+            </Stepper>
+          </Paper>
         </Box>
       )}
     </Box>

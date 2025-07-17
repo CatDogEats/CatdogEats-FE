@@ -1,170 +1,131 @@
-"use client"
+// src/components/Account/OrderItem.tsx
+"use client";
 
-import type React from "react"
-import {
-    Box,
-    Typography,
-    Button,
-    Paper,
-    Avatar,
-    IconButton,
-    Divider,
-    Table,
-    TableBody,
-    TableCell,
-    TableContainer,
-    TableRow,
-} from "@mui/material"
-import { ChevronRight, MoreVert } from "@mui/icons-material"
-import type { Order } from "./index"
+import React from "react";
+import { Box, Typography, Button, Paper } from "@mui/material";
+import type { Order } from "./index";
 
 interface OrderItemProps {
-    order: Order
-    handleOrderAction: (action: string, order: Order) => void
+  order: Order;
+  handleOrderAction: (action: string, order: Order) => void;
 }
 
 const OrderItem: React.FC<OrderItemProps> = ({ order, handleOrderAction }) => {
-    return (
-        <Paper style={{ marginBottom: 16 }}>
-            <Box style={{ padding: 24 }}>
-                <Box style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
-                    <Typography variant="h6" style={{ fontWeight: 600 }}>
-                        {order.date} 주문
-                    </Typography>
-                    <Button
-                        variant="text"
-                        color="primary"
-                        size="small"
-                        endIcon={<ChevronRight />}
-                        onClick={() => handleOrderAction("detail", order)}
-                    >
-                        주문 상세보기
-                    </Button>
-                </Box>
-                <Divider style={{ marginBottom: 16 }} />
+  // 상태별 한글 레이블 매핑
+  const statusLabel = (() => {
+    switch (order.shippingStatus) {
+      case "DELIVERED":
+        return "배송완료";
+      case "IN_DELIVERY":
+        return "배송중";
+      case "PREPARING":
+        return "상품준비중";
+      default:
+        return "결제완료";
+    }
+  })();
 
-                <TableContainer>
-                    <Table style={{ minWidth: 650, borderCollapse: "separate" }}>
-                        <TableBody>
-                            <TableRow>
-                                <TableCell style={{ verticalAlign: "top", width: "70%", borderBottom: "none" }}>
-                                    <Box
-                                        style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 16 }}
-                                    >
-                                        <Box style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                                            <Typography variant="h6" style={{ fontWeight: 600, color: "#111111" }}>
-                                                배송완료
-                                            </Typography>
-                                            <Typography variant="body2" style={{ color: "#008C00" }}>
-                                                {order.deliveryDate} 도착
-                                            </Typography>
-                                        </Box>
-                                        <IconButton size="small">
-                                            <MoreVert />
-                                        </IconButton>
-                                    </Box>
+  // 도착일 요일 한글
+  const weekdayKor = ["일", "월", "화", "수", "목", "금", "토"];
 
-                                    {order.products.map((product, index) => (
-                                        <Box key={product.id}>
-                                            <Box style={{ display: "flex", alignItems: "flex-start", gap: 24, marginBottom: 24 }}>
-                                                <Avatar
-                                                    src={product.image}
-                                                    variant="rounded"
-                                                    style={{ width: 80, height: 80, backgroundColor: "#f5f5f5" }}
-                                                />
-                                                <Box
-                                                    style={{
-                                                        flexGrow: 1,
-                                                        display: "flex",
-                                                        flexDirection: "column",
-                                                        justifyContent: "space-between",
-                                                        minHeight: "80px",
-                                                    }}
-                                                >
-                                                    <Box>
-                                                        <Box style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8 }}>
-                                                            <Typography variant="body1" style={{ fontWeight: 500 }}>
-                                                                {product.name}
-                                                            </Typography>
-                                                        </Box>
-                                                        <Typography variant="body2" color="text.secondary">
-                                                            {product.price > 0 ? `${product.price.toLocaleString()}원` : "0원"} {product.quantity}개
-                                                        </Typography>
-                                                    </Box>
-                                                    <Box style={{ display: "flex", justifyContent: "flex-end", width: "100%" }}>
-                                                        <Button
-                                                            variant="outlined"
-                                                            size="small"
-                                                            style={{
-                                                                borderColor: "#ff9800",
-                                                                color: "#ff9800",
-                                                            }}
-                                                        >
-                                                            장바구니 담기
-                                                        </Button>
-                                                    </Box>
-                                                </Box>
-                                            </Box>
-                                            {index < order.products.length - 1 && <Divider style={{ marginBottom: 16 }} />}
-                                        </Box>
-                                    ))}
-                                </TableCell>
+  return (
+    <Paper sx={{ p: 3, mb: 2, borderRadius: 2 }}>
+      {/* 주문일자 */}
+      <Typography variant="h6" sx={{ fontWeight: "bold", mb: 1 }}>
+        {order.orderDate.split("T")[0]} 주문
+      </Typography>
 
-                                <TableCell
-                                    style={{
-                                        verticalAlign: "middle",
-                                        width: "30%",
-                                        borderLeft: "1px solid rgba(224, 224, 224, 1)",
-                                        paddingLeft: 24,
-                                        borderBottom: "none",
-                                    }}
-                                >
-                                    <Box style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-                                        <Button
-                                            variant="outlined"
-                                            size="small"
-                                            onClick={() => handleOrderAction("shipping", order)}
-                                            style={{
-                                                borderColor: "#ff9800",
-                                                color: "#ff9800",
-                                                padding: "8px 16px",
-                                            }}
-                                        >
-                                            배송조회
-                                        </Button>
-                                        <Button
-                                            variant="outlined"
-                                            size="small"
-                                            onClick={() => handleOrderAction("return", order)}
-                                            style={{
-                                                borderColor: "#ff9800",
-                                                color: "#ff9800",
-                                                padding: "8px 16px",
-                                            }}
-                                        >
-                                            교환, 반품 신청
-                                        </Button>
-                                        <Button
-                                            variant="outlined"
-                                            size="small"
-                                            onClick={() => handleOrderAction("review", order)}
-                                            style={{
-                                                borderColor: "#ff9800",
-                                                color: "#ff9800",
-                                                padding: "8px 16px",
-                                            }}
-                                        >
-                                            리뷰 작성하기
-                                        </Button>
-                                    </Box>
-                                </TableCell>
-                            </TableRow>
-                        </TableBody>
-                    </Table>
-                </TableContainer>
-            </Box>
-        </Paper>
-    )
-}
+      {/* 배송상태 */}
+      <Typography
+        variant="h6"
+        sx={{ fontWeight: "bold", mb: 1, color: "primary.main" }}
+      >
+        {statusLabel}
+      </Typography>
 
-export default OrderItem
+      {/* 도착일 (배송완료인 경우) */}
+      {order.shippingStatus === "DELIVERED" && order.deliveredAt && (
+        <Typography variant="body2" sx={{ mb: 2, color: "text.secondary" }}>
+          {`${new Date(order.deliveredAt).getMonth() + 1}/${new Date(
+            order.deliveredAt
+          ).getDate()}(${weekdayKor[new Date(order.deliveredAt).getDay()]}) 도착`}
+        </Typography>
+      )}
+
+      {/* 상품 정보 영역 */}
+      <Box sx={{ display: "flex", alignItems: "flex-start", gap: 2, mb: 2 }}>
+        {/* 이미지 플레이스홀더 */}
+        <Box
+          sx={{
+            width: 60,
+            height: 60,
+            backgroundColor: "#f5f5f5",
+            borderRadius: 1,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            flexShrink: 0,
+          }}
+        >
+          <Box
+            sx={{
+              width: 40,
+              height: 40,
+              backgroundColor: "#ddd",
+              borderRadius: 0.5,
+            }}
+          />
+        </Box>
+
+        {/* 상품명 */}
+        <Box sx={{ flexGrow: 1 }}>
+          <Typography
+            variant="body1"
+            sx={{ fontWeight: "bold", lineHeight: 1.4 }}
+          >
+            {order.orderItemsInfo || order.productName || "상품명 정보 없음"}
+          </Typography>
+        </Box>
+      </Box>
+
+      {/* 결제 금액 */}
+      <Typography variant="body1" sx={{ fontWeight: "bold", mb: 2 }}>
+        {order.totalAmount
+          ? `${order.totalAmount.toLocaleString()}원 ${order.quantity || 1}개`
+          : order.amount
+            ? `${order.amount.toLocaleString()}원 ${order.quantity || 1}개`
+            : "금액 정보 없음"}
+      </Typography>
+
+      {/* 액션 버튼 */}
+      <Box sx={{ display: "flex", gap: 1 }}>
+        <Button
+          variant="outlined"
+          size="small"
+          onClick={() => handleOrderAction("shipping", order)}
+          sx={{ borderColor: "#ff9800", color: "#ff9800", px: 2 }}
+        >
+          배송조회
+        </Button>
+        <Button
+          variant="outlined"
+          size="small"
+          onClick={() => handleOrderAction("return", order)}
+          sx={{ borderColor: "#ff9800", color: "#ff9800", px: 2 }}
+        >
+          교환, 반품 신청
+        </Button>
+        <Button
+          variant="outlined"
+          size="small"
+          onClick={() => handleOrderAction("review", order)}
+          sx={{ borderColor: "#ff9800", color: "#ff9800", px: 2 }}
+        >
+          리뷰 작성하기
+        </Button>
+      </Box>
+    </Paper>
+  );
+};
+
+export default OrderItem;
