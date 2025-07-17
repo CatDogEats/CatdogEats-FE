@@ -1,199 +1,185 @@
-"use client"
+import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import {
+    Container,
+    Typography,
+    Box,
+    Paper,
+    Checkbox,
+    Button,
+    Divider,
+    IconButton,
+    Breadcrumbs,
+    Link,
+    Alert,
+    CircularProgress,
+    Snackbar
+} from '@mui/material';
+import {
+    Add as AddIcon,
+    Remove as RemoveIcon,
+    Delete as DeleteIcon,
+    NavigateNext as NavigateNextIcon,
+    ShoppingCart as ShoppingCartIcon
+} from '@mui/icons-material';
 
-import type React from "react"
-import { useState } from "react"
-import { useNavigate } from "react-router-dom"
-import { Box, Breadcrumbs, Container, Typography, Link, Button, Modal } from "@mui/material"
-import { NavigateNext as NavigateNextIcon } from "@mui/icons-material"
-import type { CartItem, RecommendedProduct } from "./types/cart.types"
-import type { Pet } from "../Account/index" // Account 타입에서 import
-import CartItemList from "./CartItemList"
-import EmptyCart from "./EmptyCart"
-import OrderSummary from "./OrderSummary"
-import RecommendedProducts from "./RecommendedProducts"
-import AIComparisonModal from "./AIComparisonModal"
+// API 연동 훅 import
+import { useCart } from '@/hooks/useCart';
+import { CartItem } from '@/service/cartApi';
 
-interface ShoppingCartProps {
-    pets?: Pet[] // props로 전달받는 펫 정보
-}
+// AI Comparison Modal import
+// import AIComparisonModal from "./AIComparisonModal";
 
-const ShoppingCart: React.FC<ShoppingCartProps> = ({ pets = [] }) => {
-    const navigate = useNavigate() // React Router 네비게이션 훅 추가
-    // 상태 관리 (CartItem에 petType 필드 추가)
-    const [cartItems, setCartItems] = useState<CartItem[]>([
-        {
-            id: "1",
-            name: "닭고기 육포 간식",
-            option: "대용량",
-            price: 12990,
-            quantity: 2,
-            image:
-                "https://lh3.googleusercontent.com/aida-public/AB6AXuCQEf71hk9m0w23j83x5tXwCamyvp3ZRQE-Gn6mURnDhwsrZ2iVxIlPzb-cIXTc2Nb06JfuTnZLas9esghplzH7niN5KZna2omsb_5oGsE_F94elQt3t7vR8aDqwuweZnhF8CN6_-2kZDZuGuwEv3eYTWWmPS7H1vyMiLoW-JUCHYCJjh1NTQGyaNWL8p18oXQ1tftvd_-xUXDPuCWj00PDJpf38YtYUsKVDhySccZYlQanbhc4yx2irM_q_q3tMZawnypnNa7SGnI",
-            selected: false,
-            petType: "강아지" // 추가된 필드
-        },
-        {
-            id: "2",
-            name: "연어 & 고구마 트릿",
-            option: "일반",
-            price: 9990,
-            quantity: 1,
-            image:
-                "https://lh3.googleusercontent.com/aida-public/AB6AXuDc-p_3A9etPWhm2pKuNp8uokcJGVXdaQFWsESe3PIIF1CvVnu_LCynYZaUz7rS-M8Z_VE5yxHvwnUWdwW5bYbT9RDYiOXhCy-_-Hfj8XZHBMYoGRWnX_qquYWlm_c17C1njRiOeISCM-pB0AWCOwn7WO6ztSY7FrxdslQhRTq0_KXd6ld2aLNLogn7HUywuT3PmibMR7ISRDEB2V7fYKy4mdWQuFEHggsy8_20bbvK7obANl4ptmYanm0qrthM7EC40-7ZccpSayY",
-            selected: false,
-            petType: "고양이" // 추가된 필드
-        },
-        {
-            id: "3",
-            name: "소고기 저키 스틱",
-            option: "중형견용",
-            price: 15990,
-            quantity: 1,
-            image:
-                "https://lh3.googleusercontent.com/aida-public/AB6AXuAin29om5OwCRLqHjfWNZuHdAMFXq-xMJdMh64LSS7pa9YFMqpezCqmuwy-IhkaZ0ft6ZTmsgR4yDJdmYsemZ5t3QzkP7APXMlSvZ4yvlfTiD_4B1VrhE-0bae07KnzqZMScfh6z2xLtJ2g8PYSX0tDnFs4y-a2jYZCxH6QVpH4vMjLebxU0ENWERJb93wGr9105HRWJy9Iq3Iw0usGGrp3ds2eVBN3EdFZJ3Lr6MFLwcRQMFPwBupQ5bnyIl_g9asnJuhUzmq5Pzw",
-            selected: false,
-            petType: "강아지" // 추가된 필드
-        },
-        {
-            id: "4",
-            name: "참치 크런치 볼",
-            option: "소형",
-            price: 8990,
-            quantity: 2,
-            image:
-                "https://lh3.googleusercontent.com/aida-public/AB6AXuDrIOlKYAPwL8tOlLcZSfZ0sTXCaAJVkCqZ3GuctaAouZ9ELKxz3oDyqR8yzxyvtejrPLjb4DP2wvUmj130lZlTfmdPkPRR9eh_1frX6piUSXIsFAS2q6BCEIu-zOGhmsq_pXaehHcNFK2a8bmEDWQXt7QxSjeGZFfy9EQUbGQK78or5vS7NPmHyePfGPfYqo08ltZNKFVHnEa-J9Ugmsm5nhEBcNWP8NJKTkxjaXeV2BLHFiFVSTk4rEVsCeZX7JEM-_yWZ4dqbtU",
-            selected: false,
-            petType: "고양이" // 추가된 필드
+const ShoppingCart: React.FC = () => {
+    const navigate = useNavigate();
+
+    // API 연동 훅 사용
+    const {
+        cartItems,
+        loading,
+        error,
+        recommendations,
+        updateQuantity,
+        removeItem,
+        clearCart,
+        fetchRecommendations,
+        getTotalPrice,
+        getTotalItemCount,
+        getSelectedItems,
+        updateItemSelection
+    } = useCart();
+
+    // 로컬 상태
+    const [selectAll, setSelectAll] = useState(true);
+    // const [comparisonOpen, setComparisonOpen] = useState(false);
+    const [snackbarOpen, setSnackbarOpen] = useState(false);
+    const [snackbarMessage, setSnackbarMessage] = useState('');
+
+    // 전체 선택 상태 업데이트
+    useEffect(() => {
+        if (cartItems.length > 0) {
+            const allSelected = cartItems.every(item => item.selected);
+            setSelectAll(allSelected);
+        } else {
+            setSelectAll(false);
         }
-    ])
+    }, [cartItems]);
 
-    const [comparisonOpen, setComparisonOpen] = useState<boolean>(false)
-    const [selectAll, setSelectAll] = useState<boolean>(false)
-
-    // 임시 펫 데이터 (props로 전달받지 않은 경우 사용)
-    const defaultPets: Pet[] = [
-        {
-            id: "1",
-            name: "뽀삐",
-            category: "dogs",
-            breed: "골든리트리버",
-            age: "3",
-            gender: "female",
-            hasAllergies: true,
-            healthCondition: "건강함, 관절 주의",
-            specialRequests: "작은 크기로 잘라서 주세요"
-        },
-        {
-            id: "2",
-            name: "나비",
-            category: "cats",
-            breed: "페르시안",
-            age: "5",
-            gender: "female",
-            hasAllergies: false,
-            healthCondition: "털빠짐 주의",
-            specialRequests: "부드러운 식감 선호"
-        }
-    ]
-
-    const userPets = pets.length > 0 ? pets : defaultPets
-
-    // 추천 상품
-    const recommendedProducts: RecommendedProduct[] = [
-        {
-            id: "rec1",
-            name: "소고기 & 당근 츄",
-            price: 14990,
-            image:
-                "https://lh3.googleusercontent.com/aida-public/AB6AXuAin29om5OwCRLqHjfWNZuHdAMFXq-xMJdMh64LSS7pa9YFMqpezCqmuwy-IhkaZ0ft6ZTmsgR4yDJdmYsemZ5t3QzkP7APXMlSvZ4yvlfTiD_4B1VrhE-0bae07KnzqZMScfh6z2xLtJ2g8PYSX0tDnFs4y-a2jYZCxH6QVpH4vMjLebxU0ENWERJb93wGr9105HRWJy9Iq3Iw0usGGrp3ds2eVBN3EdFZJ3Lr6MFLwcRQMFPwBupQ5bnyIl_g9asnJuhUzmq5Pzw",
-        },
-        {
-            id: "rec2",
-            name: "인터랙티브 퍼즐 토이",
-            price: 19990,
-            image:
-                "https://lh3.googleusercontent.com/aida-public/AB6AXuAKiHIP63C4ILgJFvv64KKOmj8o1PGzRRcZ6EojdiwpLGj5vvnwrNE85Ge3RhijiEHUHAcSQmBTKmcBd0rfaqch0WrThp5oTMdskn6Ptonq03HgUT8OpNT9tnqQqyqQh0BkUDlWB0Jp3_-y-V4zdDD8R_XBIs2p5VTlvlOOuzdWt8tkscEgIdej_-6Bg3VHdeUkH2Fb6kUGxWNtHFjVD39x-L45c8X0Y9tBMog87EldpXrJhbzEWIz5m6biR1SxIoj4i0oWz7L2VNU",
-        },
-        {
-            id: "rec3",
-            name: "그레인프리 연어 레시피",
-            price: 29990,
-            image:
-                "https://lh3.googleusercontent.com/aida-public/AB6AXuC_Ofdjs276QZH3kKvoOjQu2MlW7HEDj4p-QE75-IyviIvCO_ECVzNT8ToyM6vWBi_kCR_bW_M8V4Ay_CTxWxwHkRLdsipI0cENEOLI-3p6rD59OL3P1TKQ0aaQrVHIqbE10aPrC7IJO84ydI5uGrKJQBBhaCk29lQY089wCT1Tt_4RlFu9HWCdI0ITTyzze28XUZXR5JwwixmMdl5U5-4bAtQ0eX76IyADVQmO8ASuvVI1D6YG81L5S-aw_tSpUC2O5BPp9QQRRYU",
-        },
-        {
-            id: "rec4",
-            name: "유기농 칠면조 파테",
-            price: 11500,
-            image:
-                "https://lh3.googleusercontent.com/aida-public/AB6AXuDrIOlKYAPwL8tOlLcZSfZ0sTXCaAJVkCqZ3GuctaAouZ9ELKxz3oDyqR8yzxyvtejrPLjb4DP2wvUmj130lZlTfmdPkPRR9eh_1frX6piUSXIsFAS2q6BCEIu-zOGhmsq_pXaehHcNFK2a8bmEDWQXt7QxSjeGZFfy9EQUbGQK78or5vS7NPmHyePfGPfYqo08ltZNKFVHnEa-J9Ugmsm5nhEBcNWP8NJKTkxjaXeV2BLHFiFVSTk4rEVsCeZX7JEM-_yWZ4dqbtU",
-        },
-    ]
+    // 추천 상품 로드
+    useEffect(() => {
+        fetchRecommendations();
+    }, [fetchRecommendations]);
 
     // 전체 선택/해제
-    const handleSelectAll = () => {
-        const newSelectAll = !selectAll
-        setSelectAll(newSelectAll)
-        setCartItems((items) => items.map((item) => ({ ...item, selected: newSelectAll })))
-    }
+    const handleSelectAll = (checked: boolean) => {
+        setSelectAll(checked);
+        cartItems.forEach(item => {
+            updateItemSelection(item.id, checked);
+        });
+    };
 
     // 개별 상품 선택/해제
-    const handleItemSelect = (id: string) => {
-        setCartItems((items) => {
-            const updated = items.map((item) => (item.id === id ? { ...item, selected: !item.selected } : item))
-            setSelectAll(updated.every((item) => item.selected) && updated.length > 0)
-            return updated
-        })
-    }
+    const handleItemSelect = (cartItemId: string, checked: boolean) => {
+        updateItemSelection(cartItemId, checked);
+    };
 
     // 수량 변경
-    const handleQuantityChange = (id: string, newQuantity: number) => {
-        if (newQuantity < 1) return
-        setCartItems((items) => items.map((item) => (item.id === id ? { ...item, quantity: newQuantity } : item)))
-    }
+    const handleQuantityChange = async (cartItemId: string, newQuantity: number) => {
+        if (newQuantity < 1) return;
+
+        const success = await updateQuantity(cartItemId, newQuantity);
+        if (success) {
+            showSnackbar('수량이 변경되었습니다.');
+        }
+    };
 
     // 상품 삭제
-    const handleRemoveItem = (id: string) => {
-        setCartItems((items) => {
-            const updated = items.filter((item) => item.id !== id)
-            setSelectAll(updated.every((item) => item.selected) && updated.length > 0)
-            return updated
-        })
-    }
+    const handleRemoveItem = async (cartItemId: string) => {
+        const success = await removeItem(cartItemId);
+        if (success) {
+            showSnackbar('상품이 삭제되었습니다.');
+        }
+    };
 
     // 선택된 상품 삭제
-    const handleRemoveSelected = () => {
-        setCartItems((items) => {
-            const updated = items.filter((item) => !item.selected)
-            setSelectAll(false)
-            return updated
-        })
-    }
+    const handleRemoveSelected = async () => {
+        const selectedItems = getSelectedItems();
+        if (selectedItems.length === 0) {
+            showSnackbar('삭제할 상품을 선택해주세요.');
+            return;
+        }
 
-    // AI 상품 비교 기능 (업데이트된 버전)
-    const handleCompareSelected = () => {
-        // AI 비교 모달 열기 (제품 선택 제한 없음)
-        setComparisonOpen(true)
-    }
+        try {
+            for (const item of selectedItems) {
+                await removeItem(item.id);
+            }
+            showSnackbar('선택한 상품들이 삭제되었습니다.');
+        } catch (error) {
+            showSnackbar('상품 삭제 중 오류가 발생했습니다.');
+        }
+    };
 
-    // 가격 계산
-    const calculateTotal = () => {
-        return cartItems.reduce((sum, item) => sum + item.price * item.quantity, 0)
-    }
+    // 장바구니 비우기
+    const handleClearCart = async () => {
+        if (cartItems.length === 0) {
+            showSnackbar('장바구니가 이미 비어있습니다.');
+            return;
+        }
+
+        if (window.confirm('장바구니를 비우시겠습니까?')) {
+            const success = await clearCart();
+            if (success) {
+                showSnackbar('장바구니가 비워졌습니다.');
+            }
+        }
+    };
+
+    // // AI 상품 비교 기능
+    // const handleCompareSelected = () => {
+    //     const selectedItems = getSelectedItems();
+    //     if (selectedItems.length === 0) {
+    //         showSnackbar('비교할 상품을 선택해주세요.');
+    //         return;
+    //     }
+    //     setComparisonOpen(true);
+    // };
 
     // 결제 처리
     const handleCheckout = () => {
-        navigate("/orderpayment") // 주문 결제 페이지로 이동
-    }
+        const selectedItems = getSelectedItems();
+        if (selectedItems.length === 0) {
+            showSnackbar('결제할 상품을 선택해주세요.');
+            return;
+        }
+        navigate('/checkout', { state: { selectedItems } });
+    };
 
     // 쇼핑 계속하기
     const handleContinueShopping = () => {
-        navigate("/productsList") // 상품 목록 페이지로 이동
-    }
+        navigate('/productsList');
+    };
+
+    // 스낵바 표시
+    const showSnackbar = (message: string) => {
+        setSnackbarMessage(message);
+        setSnackbarOpen(true);
+    };
 
     // 가격 포맷팅 함수
     const formatPrice = (price: number) => {
-        return `${price.toLocaleString()}원`
+        return `${price.toLocaleString()}원`;
+    };
+
+    // 로딩 상태
+    if (loading && cartItems.length === 0) {
+        return (
+            <Container maxWidth="lg" sx={{ py: 3, mt: 2, textAlign: 'center' }}>
+                <CircularProgress size={60} />
+                <Typography variant="h6" sx={{ mt: 2 }}>
+                    장바구니를 불러오고 있습니다...
+                </Typography>
+            </Container>
+        );
     }
 
     return (
@@ -208,6 +194,7 @@ const ShoppingCart: React.FC<ShoppingCartProps> = ({ pets = [] }) => {
                         fontSize: "0.875rem",
                         color: "#666",
                     }}
+                    onClick={handleContinueShopping}
                 >
                     쇼핑
                 </Link>
@@ -228,95 +215,263 @@ const ShoppingCart: React.FC<ShoppingCartProps> = ({ pets = [] }) => {
                 장바구니
             </Typography>
 
+            {/* 에러 메시지 */}
+            {error && (
+                <Alert severity="error" sx={{ mb: 3 }}>
+                    {error}
+                </Alert>
+            )}
+
             <Box sx={{ display: "flex", flexDirection: { xs: "column", md: "row" }, gap: 3 }}>
                 {/* 장바구니 상품 목록 */}
                 <Box sx={{ flex: "1 1 65%" }}>
                     {cartItems.length > 0 ? (
-                        <>
-                            <CartItemList
-                                cartItems={cartItems}
-                                selectAll={selectAll}
-                                onSelectAll={handleSelectAll}
-                                onItemSelect={handleItemSelect}
-                                onQuantityChange={handleQuantityChange}
-                                onRemoveItem={handleRemoveItem}
-                                formatPrice={formatPrice}
-                            />
+                        <Paper elevation={2} sx={{ p: 3 }}>
+                            {/* 전체 선택 및 액션 버튼 */}
+                            <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 3 }}>
+                                <Box sx={{ display: "flex", alignItems: "center" }}>
+                                    <Checkbox
+                                        checked={selectAll}
+                                        onChange={(e) => handleSelectAll(e.target.checked)}
+                                        color="primary"
+                                    />
+                                    <Typography variant="body1" sx={{ ml: 1 }}>
+                                        전체 선택 ({cartItems.length}개)
+                                    </Typography>
+                                </Box>
+                                <Box sx={{ display: "flex", gap: 1 }}>
+                                    <Button
+                                        variant="outlined"
+                                        size="small"
+                                        onClick={handleRemoveSelected}
+                                        disabled={loading}
+                                    >
+                                        선택 삭제
+                                    </Button>
+                                    <Button
+                                        variant="outlined"
+                                        size="small"
+                                        onClick={handleClearCart}
+                                        disabled={loading}
+                                    >
+                                        전체 삭제
+                                    </Button>
+                                </Box>
+                            </Box>
 
-                            <Box sx={{ display: "flex", gap: 2, mt: 3 }}>
+                            <Divider sx={{ mb: 3 }} />
+
+                            {/* 상품 목록 */}
+                            {cartItems.map((item) => (
+                                <Box key={item.id} sx={{ mb: 3, p: 2, border: "1px solid #e0e0e0", borderRadius: 2 }}>
+                                    <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
+                                        <Checkbox
+                                            checked={item.selected || false}
+                                            onChange={(e) => handleItemSelect(item.id, e.target.checked)}
+                                            color="primary"
+                                        />
+                                        <Box
+                                            component="img"
+                                            src={item.productImage || "/api/placeholder/100/100"}
+                                            alt={item.productName}
+                                            sx={{ width: 100, height: 100, objectFit: "cover", borderRadius: 1 }}
+                                        />
+                                        <Box sx={{ flex: 1 }}>
+                                            <Typography variant="h6" sx={{ fontWeight: "bold", mb: 1 }}>
+                                                {item.productName}
+                                            </Typography>
+                                            <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
+                                                판매자: {item.sellerName}
+                                            </Typography>
+                                            <Typography variant="h6" color="primary" sx={{ fontWeight: "bold" }}>
+                                                {formatPrice(item.price)}
+                                            </Typography>
+                                        </Box>
+                                        <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                                            <IconButton
+                                                size="small"
+                                                onClick={() => handleQuantityChange(item.id, item.quantity - 1)}
+                                                disabled={item.quantity <= 1 || loading}
+                                            >
+                                                <RemoveIcon />
+                                            </IconButton>
+                                            <Typography sx={{ minWidth: 40, textAlign: "center" }}>
+                                                {item.quantity}
+                                            </Typography>
+                                            <IconButton
+                                                size="small"
+                                                onClick={() => handleQuantityChange(item.id, item.quantity + 1)}
+                                                disabled={loading}
+                                            >
+                                                <AddIcon />
+                                            </IconButton>
+                                        </Box>
+                                        <IconButton
+                                            color="error"
+                                            onClick={() => handleRemoveItem(item.id)}
+                                            disabled={loading}
+                                        >
+                                            <DeleteIcon />
+                                        </IconButton>
+                                    </Box>
+                                </Box>
+                            ))}
+
+                            {/*/!* AI 비교 버튼 *!/*/}
+                            <Box sx={{ mt: 3, textAlign: "center" }}>
+                            {/*    <Button*/}
+                            {/*        variant="outlined"*/}
+                            {/*        onClick={handleCompareSelected}*/}
+                            {/*        disabled={loading}*/}
+                            {/*        sx={{ mr: 2 }}*/}
+                            {/*    >*/}
+                            {/*        AI 상품 비교*/}
+                            {/*    </Button>*/}
                                 <Button
-                                    variant="outlined"
-                                    onClick={handleRemoveSelected}
-                                    startIcon={<span>🗑️</span>}
-                                    sx={{
-                                        borderColor: "#ddd",
-                                        color: "#666",
-                                        "&:hover": {
-                                            borderColor: "#ccc",
-                                            backgroundColor: "#f9f9f9",
-                                        },
-                                    }}
+                                    variant="text"
+                                    onClick={handleContinueShopping}
                                 >
-                                    선택한 제품 삭제
-                                </Button>
-                                <Button
-                                    variant="outlined"
-                                    onClick={handleCompareSelected}
-                                    startIcon={<span>🤖</span>}
-                                    sx={{
-                                        borderColor: "#e89830",
-                                        color: "#e89830",
-                                        backgroundColor: "#fff",
-                                        "&:hover": {
-                                            borderColor: "#d18727",
-                                            backgroundColor: "#fff8f0",
-                                        },
-                                    }}
-                                >
-                                    AI 제품 비교
+                                    쇼핑 계속하기
                                 </Button>
                             </Box>
-                        </>
+                        </Paper>
                     ) : (
-                        <EmptyCart onContinueShopping={handleContinueShopping} />
+                        <Paper elevation={2} sx={{ p: 6, textAlign: "center" }}>
+                            <ShoppingCartIcon sx={{ fontSize: 80, color: "#ccc", mb: 2 }} />
+                            <Typography variant="h5" sx={{ mb: 2, color: "#666" }}>
+                                장바구니가 비어있습니다
+                            </Typography>
+                            <Typography variant="body1" sx={{ mb: 3, color: "#999" }}>
+                                원하는 상품을 장바구니에 담아보세요!
+                            </Typography>
+                            <Button
+                                variant="contained"
+                                onClick={handleContinueShopping}
+                                sx={{ px: 4, py: 1.5 }}
+                            >
+                                상품 둘러보기
+                            </Button>
+                        </Paper>
                     )}
                 </Box>
 
                 {/* 주문 요약 */}
-                <Box sx={{ flex: "1 1 35%" }}>
-                    <OrderSummary
-                        total={calculateTotal()}
-                        formatPrice={formatPrice}
-                        onCheckout={handleCheckout}
-                        onContinueShopping={handleContinueShopping}
-                    />
-                </Box>
+                {cartItems.length > 0 && (
+                    <Box sx={{ flex: "1 1 35%" }}>
+                        <Paper elevation={2} sx={{ p: 3, position: "sticky", top: 20 }}>
+                            <Typography variant="h6" sx={{ fontWeight: "bold", mb: 3 }}>
+                                주문 요약
+                            </Typography>
+
+                            <Box sx={{ mb: 2 }}>
+                                <Box sx={{ display: "flex", justifyContent: "space-between", mb: 1 }}>
+                                    <Typography variant="body2">선택된 상품</Typography>
+                                    <Typography variant="body2">{getTotalItemCount()}개</Typography>
+                                </Box>
+                                <Box sx={{ display: "flex", justifyContent: "space-between", mb: 1 }}>
+                                    <Typography variant="body2">상품 금액</Typography>
+                                    <Typography variant="body2">{formatPrice(getTotalPrice())}</Typography>
+                                </Box>
+                                <Box sx={{ display: "flex", justifyContent: "space-between", mb: 1 }}>
+                                    <Typography variant="body2">배송비</Typography>
+                                    <Typography variant="body2" color="success.main">
+                                        무료
+                                    </Typography>
+                                </Box>
+                            </Box>
+
+                            <Divider sx={{ my: 2 }} />
+
+                            <Box sx={{ display: "flex", justifyContent: "space-between", mb: 3 }}>
+                                <Typography variant="h6" sx={{ fontWeight: "bold" }}>
+                                    총 결제 금액
+                                </Typography>
+                                <Typography variant="h6" sx={{ fontWeight: "bold", color: "primary.main" }}>
+                                    {formatPrice(getTotalPrice())}
+                                </Typography>
+                            </Box>
+
+                            <Button
+                                variant="contained"
+                                fullWidth
+                                size="large"
+                                onClick={handleCheckout}
+                                disabled={loading || getSelectedItems().length === 0}
+                                sx={{ py: 1.5, fontSize: "1.1rem", fontWeight: "bold" }}
+                            >
+                                {loading ? '처리 중...' : `${getTotalItemCount()}개 상품 주문하기`}
+                            </Button>
+
+                            {/* 추천 상품 섹션 */}
+                            {recommendations.length > 0 && (
+                                <Box sx={{ mt: 4 }}>
+                                    <Typography variant="h6" sx={{ fontWeight: "bold", mb: 2 }}>
+                                        추천 상품
+                                    </Typography>
+                                    {recommendations.slice(0, 3).map((product) => (
+                                        <Box
+                                            key={product.productId}
+                                            sx={{
+                                                display: "flex",
+                                                alignItems: "center",
+                                                mb: 2,
+                                                p: 1,
+                                                border: "1px solid #e0e0e0",
+                                                borderRadius: 1,
+                                                cursor: "pointer",
+                                                "&:hover": { backgroundColor: "#f5f5f5" }
+                                            }}
+                                            onClick={() => navigate(`/product/${product.productId}`)}
+                                        >
+                                            <Box
+                                                component="img"
+                                                src={product.productImage || "/api/placeholder/60/60"}
+                                                alt={product.productName}
+                                                sx={{ width: 60, height: 60, objectFit: "cover", borderRadius: 1, mr: 2 }}
+                                            />
+                                            <Box sx={{ flex: 1 }}>
+                                                <Typography variant="body2" sx={{ fontWeight: "bold", mb: 0.5 }}>
+                                                    {product.productName}
+                                                </Typography>
+                                                <Typography variant="caption" color="text.secondary" display="block">
+                                                    {product.sellerName}
+                                                </Typography>
+                                                <Typography variant="body2" color="primary" sx={{ fontWeight: "bold" }}>
+                                                    {formatPrice(product.price)}
+                                                </Typography>
+                                            </Box>
+                                        </Box>
+                                    ))}
+                                </Box>
+                            )}
+                        </Paper>
+                    </Box>
+                )}
             </Box>
 
-            {/* 추천 상품 섹션 */}
-            <Box sx={{ mt: 8 }}>
-                <Typography
-                    variant="h5"
-                    sx={{
-                        fontWeight: "bold",
-                        mb: 3,
-                        fontFamily: '"Plus Jakarta Sans", "Noto Sans KR", sans-serif',
-                    }}
-                >
-                    함께 구매하면 좋은 상품
-                </Typography>
-                <RecommendedProducts products={recommendedProducts} formatPrice={formatPrice} />
-            </Box>
+            {/*/!* AI 상품 비교 모달 *!/*/}
+            {/*<AIComparisonModal*/}
+            {/*    open={comparisonOpen}*/}
+            {/*    onClose={() => setComparisonOpen(false)}*/}
+            {/*    selectedProducts={getSelectedItems().map(item => ({*/}
+            {/*        id: item.productId,*/}
+            {/*        name: item.productName,*/}
+            {/*        price: item.price,*/}
+            {/*        image: item.productImage,*/}
+            {/*        seller: item.sellerName*/}
+            {/*    }))}*/}
+            {/*/>*/}
 
-            {/* AI 제품 비교 모달 */}
-            <AIComparisonModal
-                open={comparisonOpen}
-                onClose={() => setComparisonOpen(false)}
-                cartItems={cartItems}
-                pets={userPets}
+            {/* 스낵바 알림 */}
+            <Snackbar
+                open={snackbarOpen}
+                autoHideDuration={3000}
+                onClose={() => setSnackbarOpen(false)}
+                message={snackbarMessage}
+                anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
             />
         </Container>
-    )
-}
+    );
+};
 
-export default ShoppingCart
+export default ShoppingCart;

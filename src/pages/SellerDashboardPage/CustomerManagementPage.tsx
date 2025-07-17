@@ -13,11 +13,11 @@ import {
     type SelectChangeEvent,
 } from "@mui/material"
 import { ArrowBack } from "@mui/icons-material"
-import type { CustomerInquiry } from "../../types/customer"
+import type { CustomerInquiry } from "@/types/customer.ts"
 import CustomerInquiryList from "@/components/common/chat/CustomerInquiryList.tsx"
 import ChatWindow from "@/components/common/chat/ChatWindow.tsx"
 import ProductReviewList from "../../components/customer/ProductReviewList"
-import { customerInquiries as initialCustomerInquiries, productReviews } from "../../data/customerData"
+import { customerInquiries as initialCustomerInquiries} from "../../data/customerData"
 
 const CustomerManagementPage: React.FC = () => {
     const theme = useTheme()

@@ -1,106 +1,88 @@
 "use client"
 
 import type React from "react"
-import { useState } from "react"
-import { Box, InputAdornment, TextField, Typography, Button } from "@mui/material"
+import { useState, useEffect } from "react"
+import { Box, InputAdornment, TextField, Typography, Button, CircularProgress, Alert } from "@mui/material"
 import SearchIcon from "@mui/icons-material/Search"
 import AnnouncementItem from "./AnnouncementItem"
 import AnnouncementDetail from "./AnnouncementDetail"
-
-// 공지사항 타입 정의
-interface Announcement {
-    id: number
-    category: string
-    categoryColor: string
-    textColor: string
-    title: string
-    content: string
-    date: string
-    views: number
-    importance: "일반" | "중요" | "긴급"
-    attachments?: {
-        name: string
-        url: string
-    }[]
-}
+import { noticeApi } from "@/service/support/notice/noticeApi.ts"
+import { convertNoticesToAnnouncements, Announcement } from "@/service/support/notice/noticeMapper.ts"
 
 const AnnouncementsTab: React.FC = () => {
-    // 공지사항 데이터
-    const announcements: Announcement[] = [
-        {
-            id: 1,
-            category: "제품",
-            categoryColor: "#ffe5c7",
-            textColor: "#8a5318",
-            title: "신제품 출시 안내",
-            content:
-                "안녕하세요, CatDogEats 고객님!\n\n저희 CatDogEats에서 새롭게 출시된 수제 간식을 소개해드립니다.\n\n1. 닭가슴살 큐브 트릿\n- 100% 국내산 닭가슴살 사용\n- 인공 첨가물 무첨가\n- 알러지 반응이 적은 단일 단백질 간식\n\n2. 연어 소프트 쿠키\n- 노르웨이산 생연어 사용\n- 오메가3 풍부\n- 피부와 모질 개선에 도움\n\n3. 호박 믹스 비스킷\n- 소화 기능 개선에 도움\n- 저칼로리 다이어트 간식\n- 노령견, 노령묘에게 적합\n\n신제품은 5월 15일부터 정식 판매되며, 사전 예약 시 10% 할인 혜택을 드립니다.\n\n많은 관심 부탁드립니다.\n\nCatDogEats 드림",
-            date: "2024-01-15",
-            views: 1200,
-            importance: "일반",
-            attachments: [
-                {
-                    name: "신제품_카탈로그.pdf",
-                    url: "#",
-                },
-                {
-                    name: "제품_성분표.xlsx",
-                    url: "#",
-                },
-            ],
-        },
-        {
-            id: 2,
-            category: "정기배송",
-            categoryColor: "#c7eaff",
-            textColor: "#185f8a",
-            title: "정기배송 업데이트",
-            content: "정기배송 플랜에 중요한 변경 사항이 있습니다.",
-            date: "2024-02-20",
-            views: 850,
-            importance: "중요",
-        },
-        {
-            id: 3,
-            category: "배송",
-            categoryColor: "#d1f7c4",
-            textColor: "#2a7e14",
-            title: "배송 지연 안내",
-            content: "배송 지연 가능성에 대한 안내입니다.",
-            date: "2024-03-10",
-            views: 1500,
-            importance: "긴급",
-        },
-        {
-            id: 4,
-            category: "계정",
-            categoryColor: "#f7c4f6",
-            textColor: "#7e147d",
-            title: "계정 보안 안내",
-            content: "계정을 안전하게 보호하기 위한 팁입니다.",
-            date: "2024-04-05",
-            views: 900,
-            importance: "일반",
-        },
-        {
-            id: 5,
-            category: "일반",
-            categoryColor: "#e0e0e0",
-            textColor: "#575757",
-            title: "일반 공지사항",
-            content: "팀에서 전해드리는 일반 업데이트입니다.",
-            date: "2024-05-01",
-            views: 1100,
-            importance: "일반",
-        },
-    ]
-
-    // 선택된 공지사항 상태
+    // 상태 관리
+    const [announcements, setAnnouncements] = useState<Announcement[]>([])
     const [selectedAnnouncement, setSelectedAnnouncement] = useState<Announcement | null>(null)
+    const [loading, setLoading] = useState(true)
+    const [error, setError] = useState<string | null>(null)
+    const [searchTerm, setSearchTerm] = useState("")
+    const [sortBy, setSortBy] = useState<"latest" | "oldest" | "views">("latest")
 
-    // 공지사항 선택 핸들러
-    const handleSelectAnnouncement = (announcement: Announcement) => {
-        setSelectedAnnouncement(announcement)
+    // 공지사항 목록 조회
+    const fetchAnnouncements = async () => {
+        try {
+            setLoading(true)
+            setError(null)
+
+            const response = await noticeApi.getNotices({
+                page: 0,
+                size: 10, // 적당한 개수
+                search: searchTerm || undefined,
+                sortBy: sortBy
+            })
+
+            const convertedAnnouncements = convertNoticesToAnnouncements(response.notices)
+            setAnnouncements(convertedAnnouncements)
+
+            console.log('✅ 공지사항 목록 조회 성공:', response)
+        } catch (err: any) {
+            setError(`공지사항을 불러오는데 실패했습니다: ${err.message}`)
+            console.error('❌ 공지사항 목록 조회 실패:', err)
+        } finally {
+            setLoading(false)
+        }
+    }
+
+    // 공지사항 상세 조회 (조회수 증가)
+    const fetchAnnouncementDetail = async (announcement: Announcement) => {
+        try {
+            // 백엔드에서 상세 정보 조회 (조회수 증가)
+            const detailNotice = await noticeApi.getNotice(announcement.id.toString())
+
+            // 변환해서 선택된 공지사항으로 설정
+            const convertedDetail = convertNoticesToAnnouncements([detailNotice])[0]
+            setSelectedAnnouncement(convertedDetail)
+
+            // 목록도 업데이트 (조회수 반영)
+            setAnnouncements(prev =>
+                prev.map(item =>
+                    item.id === announcement.id
+                        ? { ...item, views: detailNotice.viewCount }
+                        : item
+                )
+            )
+
+            console.log('✅ 공지사항 상세 조회 성공:', detailNotice)
+        } catch (err: any) {
+            console.error('❌ 공지사항 상세 조회 실패:', err)
+            // 실패해도 기존 데이터로라도 상세 페이지는 보여주기
+            setSelectedAnnouncement(announcement)
+        }
+    }
+
+    // 검색어 변경 핸들러
+    const handleSearchChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+        setSearchTerm(event.target.value)
+    }
+
+    // 검색 실행 (엔터키 또는 디바운스)
+    const handleSearchSubmit = () => {
+        fetchAnnouncements()
+    }
+
+    // 정렬 변경 핸들러
+    const handleSortChange = (newSortBy: "latest" | "oldest" | "views") => {
+        setSortBy(newSortBy)
     }
 
     // 목록으로 돌아가기 핸들러
@@ -108,11 +90,45 @@ const AnnouncementsTab: React.FC = () => {
         setSelectedAnnouncement(null)
     }
 
+    // 컴포넌트 마운트 시 데이터 로드
+    useEffect(() => {
+        fetchAnnouncements()
+    }, []) // 빈 배열: 최초 1회만 실행
+
+    // 정렬 방식 변경 시 재조회
+    useEffect(() => {
+        if (!loading) { // 최초 로딩이 아닐 때만
+            fetchAnnouncements()
+        }
+    }, [sortBy])
+
+    // 엔터키 핸들링
+    const handleKeyPress = (event: React.KeyboardEvent) => {
+        if (event.key === 'Enter') {
+            handleSearchSubmit()
+        }
+    }
+
     return (
         <Box sx={{ pt: 3 }}>
             <Typography variant="h5" fontWeight={600} sx={{ color: "#1c140d", mb: 3 }}>
                 공지사항
             </Typography>
+
+            {/* 에러 표시 */}
+            {error && (
+                <Alert severity="error" sx={{ mb: 3 }}>
+                    {error}
+                    <Button
+                        size="small"
+                        onClick={fetchAnnouncements}
+                        sx={{ ml: 2 }}
+                    >
+                        다시 시도
+                    </Button>
+                </Alert>
+            )}
+
             {selectedAnnouncement ? (
                 // 공지사항 상세 보기
                 <AnnouncementDetail announcement={selectedAnnouncement} onBack={handleBackToList} />
@@ -132,6 +148,9 @@ const AnnouncementsTab: React.FC = () => {
                             <TextField
                                 fullWidth
                                 placeholder="공지사항 검색"
+                                value={searchTerm}
+                                onChange={handleSearchChange}
+                                onKeyPress={handleKeyPress}
                                 InputProps={{
                                     startAdornment: (
                                         <InputAdornment position="start">
@@ -169,9 +188,13 @@ const AnnouncementsTab: React.FC = () => {
                     <Box sx={{ display: "flex", gap: 1.5, mb: 3, flexWrap: "wrap" }}>
                         <Button
                             variant="contained"
+                            onClick={() => handleSortChange("latest")}
                             sx={{
-                                bgcolor: "#f38b24",
-                                "&:hover": { bgcolor: "#e07b1a" },
+                                bgcolor: sortBy === "latest" ? "#f38b24" : "#f4ede7",
+                                color: sortBy === "latest" ? "white" : "#1c140d",
+                                "&:hover": {
+                                    bgcolor: sortBy === "latest" ? "#e07b1a" : "#e8dbce"
+                                },
                                 height: 40,
                                 borderRadius: 2,
                                 px: 2,
@@ -182,10 +205,13 @@ const AnnouncementsTab: React.FC = () => {
                         </Button>
                         <Button
                             variant="contained"
+                            onClick={() => handleSortChange("oldest")}
                             sx={{
-                                bgcolor: "#f4ede7",
-                                color: "#1c140d",
-                                "&:hover": { bgcolor: "#e8dbce" },
+                                bgcolor: sortBy === "oldest" ? "#f38b24" : "#f4ede7",
+                                color: sortBy === "oldest" ? "white" : "#1c140d",
+                                "&:hover": {
+                                    bgcolor: sortBy === "oldest" ? "#e07b1a" : "#e8dbce"
+                                },
                                 height: 40,
                                 borderRadius: 2,
                                 px: 2,
@@ -196,10 +222,13 @@ const AnnouncementsTab: React.FC = () => {
                         </Button>
                         <Button
                             variant="contained"
+                            onClick={() => handleSortChange("views")}
                             sx={{
-                                bgcolor: "#f4ede7",
-                                color: "#1c140d",
-                                "&:hover": { bgcolor: "#e8dbce" },
+                                bgcolor: sortBy === "views" ? "#f38b24" : "#f4ede7",
+                                color: sortBy === "views" ? "white" : "#1c140d",
+                                "&:hover": {
+                                    bgcolor: sortBy === "views" ? "#e07b1a" : "#e8dbce"
+                                },
                                 height: 40,
                                 borderRadius: 2,
                                 px: 2,
@@ -210,15 +239,37 @@ const AnnouncementsTab: React.FC = () => {
                         </Button>
                     </Box>
 
-                    <Box sx={{ display: "flex", flexDirection: "column", gap: 2, pb: 6 }}>
-                        {announcements.map((announcement) => (
-                            <AnnouncementItem
-                                key={announcement.id}
-                                announcement={announcement}
-                                onClick={() => handleSelectAnnouncement(announcement)}
-                            />
-                        ))}
-                    </Box>
+                    {/* 로딩 상태 */}
+                    {loading ? (
+                        <Box sx={{ display: "flex", justifyContent: "center", py: 8 }}>
+                            <CircularProgress sx={{ color: "#f38b24" }} />
+                        </Box>
+                    ) : announcements.length === 0 ? (
+                        /* 데이터 없음 */
+                        <Box sx={{
+                            textAlign: "center",
+                            py: 8,
+                            color: "#9c7349"
+                        }}>
+                            <Typography variant="h6" sx={{ mb: 1 }}>
+                                공지사항이 없습니다
+                            </Typography>
+                            <Typography variant="body2">
+                                {searchTerm ? '검색 결과가 없습니다' : '등록된 공지사항이 없습니다'}
+                            </Typography>
+                        </Box>
+                    ) : (
+                        /* 공지사항 목록 */
+                        <Box sx={{ display: "flex", flexDirection: "column", gap: 2, pb: 6 }}>
+                            {announcements.map((announcement) => (
+                                <AnnouncementItem
+                                    key={announcement.id}
+                                    announcement={announcement}
+                                    onClick={() => fetchAnnouncementDetail(announcement)}
+                                />
+                            ))}
+                        </Box>
+                    )}
                 </>
             )}
         </Box>

@@ -42,6 +42,10 @@ export default defineConfig(({ mode }) => {
       include: ['@mui/material', '@mui/icons-material'],
     },
     server: {
+      allowedHosts: [
+        'www.catdogeats.shop',
+        'backend.catdogeats.shop',
+      ],
       proxy: proxyConfig,
     },
   };
