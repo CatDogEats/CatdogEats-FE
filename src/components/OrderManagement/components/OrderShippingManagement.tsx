@@ -239,6 +239,7 @@ const OrderShippingManagement: React.FC = () => {
     ordersLoading,
     ordersError,
     updateOrderStatus,
+    refreshOrders,
     registerTrackingNumber,
     syncShipmentStatus,
     actionLoading,
@@ -506,6 +507,10 @@ const OrderShippingManagement: React.FC = () => {
 
     try {
       await syncShipmentStatus(); // ▶️ API 호출
+
+      // 📍 추가: 딜레이를 추가하여 리렌더링 완료 대기
+      await new Promise((resolve) => setTimeout(resolve, 200));
+
       setAlertMessage("배송중 주문 정보를 최신 상태로 동기화했습니다.");
       setAlertSeverity("success");
     } catch (e) {
@@ -569,11 +574,15 @@ const OrderShippingManagement: React.FC = () => {
       setAlertMessage("주문 상태가 성공적으로 변경되었습니다.");
       setAlertSeverity("success");
       setShowAlert(true);
-      setStatusEditDialog(false);
 
-      // 📍 추가: 주문 목록 새로고침하여 최신 상태 반영
-      // 지연 정보가 포함된 최신 데이터를 가져오기 위함
-      window.location.reload(); // 또는 refetch() 함수 호출
+      // 📍 수정: 데이터 새로고침을 먼저 실행
+      await refreshOrders();
+
+      // 📍 추가: 딜레이를 추가하여 리렌더링 완료 대기
+      await new Promise((resolve) => setTimeout(resolve, 200));
+
+      // 📍 수정: 그 다음에 Dialog 닫기
+      setStatusEditDialog(false);
 
       // 폼 초기화
       setSelectedOrder(null);
@@ -920,7 +929,11 @@ const OrderShippingManagement: React.FC = () => {
               </Button>
               <Button
                 variant="outlined"
-                onClick={handleSyncShipmentStatus}
+                onClick={async (event) => {
+                  // ← async 이벤트 핸들러로 변경
+                  event.preventDefault(); // ← 기본 동작 방지
+                  await handleSyncShipmentStatus(); // ← await로 함수 호출
+                }}
                 disabled={actionLoading} // 로딩 중엔 비활성
                 sx={{ textTransform: "none", height: 40 }}
                 startIcon={
@@ -1059,15 +1072,20 @@ const OrderShippingManagement: React.FC = () => {
                           variant="contained"
                           size="small"
                           onClick={() => handleEditStatus(order)}
-                          disabled={order.shippingStatus === "delivered"} // 📍 추가: 배송완료시 비활성화
+                          disabled={
+                            order.shippingStatus === "delivered" ||
+                            order.shippingStatus === "order_cancelled"
+                          } // 📍 추가: 배송완료시 비활성화
                           sx={{
                             backgroundColor:
-                              order.shippingStatus === "delivered"
+                              order.shippingStatus === "delivered" ||
+                              order.shippingStatus === "order_cancelled"
                                 ? "#cccccc" // 📍 추가: 비활성화 색상
                                 : "#ef9942",
                             "&:hover": {
                               backgroundColor:
-                                order.shippingStatus === "delivered"
+                                order.shippingStatus === "delivered" ||
+                                order.shippingStatus === "order_cancelled"
                                   ? "#cccccc" // 📍 추가: 비활성화 호버 색상
                                   : "#d6853c",
                             },
@@ -1241,7 +1259,11 @@ const OrderShippingManagement: React.FC = () => {
               취소
             </Button>
             <Button
-              onClick={handleSaveStatusChange}
+              onClick={async (event) => {
+                // ← async 이벤트 핸들러로 변경
+                event.preventDefault(); // ← 기본 동작 방지
+                await handleSaveStatusChange(); // ← await로 함수 호출
+              }}
               variant="contained"
               disabled={(() => {
                 if (!selectedOrder) return true;
@@ -1344,7 +1366,60 @@ const OrderShippingManagement: React.FC = () => {
                       </Typography>
                     )}
                   </Grid>
-
+                  {/* ===== 반려동물 정보 섹션 (새로 추가) ===== */}
+                  {orderDetail?.petInfo && (
+                    <Grid size={{ xs: 12 }}>
+                      <Typography
+                        variant="subtitle1"
+                        sx={{ fontWeight: 600, mb: 1 }}
+                      >
+                        반려동물 정보
+                      </Typography>
+                      <Typography variant="body2" sx={{ mb: 1 }}>
+                        이름: {orderDetail.petInfo.name}
+                      </Typography>
+                      <Typography variant="body2" sx={{ mb: 1 }}>
+                        종류:{" "}
+                        {orderDetail.petInfo.category === "dogs"
+                          ? "강아지"
+                          : "고양이"}
+                      </Typography>
+                      {orderDetail.petInfo.breed && (
+                        <Typography variant="body2" sx={{ mb: 1 }}>
+                          품종: {orderDetail.petInfo.breed}
+                        </Typography>
+                      )}
+                      {orderDetail.petInfo.age && (
+                        <Typography variant="body2" sx={{ mb: 1 }}>
+                          나이: {orderDetail.petInfo.age}세
+                        </Typography>
+                      )}
+                      {orderDetail.petInfo.gender && (
+                        <Typography variant="body2" sx={{ mb: 1 }}>
+                          성별:{" "}
+                          {orderDetail.petInfo.gender === "male"
+                            ? "수컷"
+                            : "암컷"}
+                        </Typography>
+                      )}
+                      {orderDetail.petInfo.hasAllergies !== undefined && (
+                        <Typography variant="body2" sx={{ mb: 1 }}>
+                          알레르기:{" "}
+                          {orderDetail.petInfo.hasAllergies ? "있음" : "없음"}
+                        </Typography>
+                      )}
+                      {orderDetail.petInfo.healthCondition && (
+                        <Typography variant="body2" sx={{ mb: 1 }}>
+                          건강상태: {orderDetail.petInfo.healthCondition}
+                        </Typography>
+                      )}
+                      {orderDetail.petInfo.specialRequests && (
+                        <Typography variant="body2" sx={{ mb: 1 }}>
+                          특별요청: {orderDetail.petInfo.specialRequests}
+                        </Typography>
+                      )}
+                    </Grid>
+                  )}
                   <Grid size={{ xs: 12 }}>
                     <Typography
                       variant="subtitle1"
@@ -1389,7 +1464,9 @@ const OrderShippingManagement: React.FC = () => {
                     </Typography>
                     <Typography variant="body2" sx={{ mb: 1 }}>
                       배송비:{" "}
-                      {orderDetail.orderSummary.deliveryFee.toLocaleString()}원
+                      {orderDetail.orderSummary.deliveryFee === 0
+                        ? "무료배송"
+                        : `${orderDetail.orderSummary.deliveryFee.toLocaleString()}원`}
                     </Typography>
                     <Typography variant="body1" sx={{ fontWeight: 600 }}>
                       총 결제 금액:{" "}

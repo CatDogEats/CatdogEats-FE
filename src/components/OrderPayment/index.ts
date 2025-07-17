@@ -1,59 +1,56 @@
-export interface ShippingInfo {
-    fullName: string
-    address: string
-    city: string
-    postalCode: string
-    phoneNumber: string
-}
+// src/components/OrderPayment/index.ts
 
-export interface SavedAddress extends ShippingInfo {
-    id: string
-    label: string
-}
+// ==================== 메인 컴포넌트 ====================
+export { default as OrderPaymentManagement } from "./components/OrderPaymentManagement";
 
-export interface AddressModalProps {
-    open: boolean
-    onClose: () => void
-    onSelectAddress: (address: SavedAddress) => void
-    savedAddresses: SavedAddress[]
-}
+// ==================== 하위 컴포넌트들 ====================
+export { default as OrderSummary } from "./components/OrderSummary";
+export { default as PetInformationForm } from "./components/PetInformationForm";
+export { default as ShippingInformationForm } from "./components/ShippingInformationForm";
+export { default as PaymentMethodSelection } from "./components/PaymentMethodSelection";
+export { default as OrderTotal } from "./components/OrderTotal";
+export { default as PetModal } from "./components/PetModal";
+export { default as AddressModal } from "./components/AddressModal";
+export { default as AddressSearchDialog } from "./components/AddressSearchDialog";
+export { default as AddressSearchField } from "./components/AddressSearchField";
 
-export interface OrderItem {
-    id: string
-    name: string
-    quantity: number
-    price: number
-    image: string
-}
+// ==================== 타입 exports ====================
+export type {
+  // 기본 인터페이스들
+  OrderItem,
+  PetInfo,
+  SavedPet,
+  ShippingInfo,
+  SavedAddress,
+  Coupon,
 
-export interface PetInfo {
-    name: string
-    category: string
-    breed: string
-    age: string
-    gender: string
-    hasAllergies: boolean
-    healthCondition: string
-    specialRequests: string
-}
+  // 컴포넌트 Props 인터페이스들
+  OrderSummaryProps,
+  PetInformationFormProps,
+  ShippingInformationFormProps,
+  PaymentMethodSelectionProps,
+  OrderTotalProps,
+  PetModalProps,
+  AddressModalProps,
 
-export interface SavedPet extends PetInfo {
-    id: string
-    avatar?: string
-}
+  // API 관련 타입들
+  OrderCreateRequest,
+  OrderCreateResponse,
+} from "./types/orderPayment.types";
+export type { AddressSearchResult } from "./components/AddressSearchDialog";
 
-export interface PetModalProps {
-    open: boolean
-    onClose: () => void
-    onSelectPet: (pet: SavedPet) => void
-    savedPets: SavedPet[]
-}
+// ==================== API Service exports ====================
+export { buyerApi, handleApiError } from "@/service/api/buyerApi";
 
-export interface Coupon {
-    id: string
-    name: string
-    type: "percentage" | "fixed"
-    value: number
-    minAmount: number
-    description: string
-}
+// ==================== Hook exports ====================
+export { useBuyerOrderData } from "@/hooks/useBuyerData";
+
+// ==================== API 타입 exports ====================
+export type {
+  APIResponse,
+  PetResponse,
+  AddressResponse,
+  DefaultAddressResponse,
+  CouponResponse,
+  ApiError,
+} from "@/types/buyerApi.types";

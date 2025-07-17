@@ -1,134 +1,210 @@
-"use client"
+// src/components/Account/ShippingDetailView.tsx
+"use client";
 
-import type React from "react"
+import React from "react";
 import {
-    Box,
-    Typography,
-    Button,
-    Paper,
-    Avatar,
-    Grid,
-    Table,
-    TableBody,
-    TableCell,
-    TableContainer,
-    TableHead,
-    TableRow,
-} from "@mui/material"
-import { ChevronRight, LocalShipping } from "@mui/icons-material"
+  CircularProgress,
+  Alert,
+  Box,
+  Typography,
+  Paper,
+  Grid,
+  TableContainer,
+  Table,
+  TableHead,
+  TableBody,
+  TableRow,
+  TableCell,
+  Button,
+  Chip,
+} from "@mui/material";
+import { useBuyerShipmentDetail } from "@/hooks/useBuyerOrders";
 
 interface ShippingDetailViewProps {
-    setDetailView: (view: string | null) => void
+  setDetailView: (view: string | null) => void;
+  selectedOrder?: { orderNumber: string } | null; // selectedOrder 추가
 }
 
-const ShippingDetailView: React.FC<ShippingDetailViewProps> = ({ setDetailView }) => {
-    return (
+const ShippingDetailView: React.FC<ShippingDetailViewProps> = ({
+  setDetailView,
+  selectedOrder, // selectedOrder 추가
+}) => {
+  // selectedOrder에서 orderNumber 추출, 없으면 기본값 사용
+  const orderNumber = selectedOrder?.orderNumber || "20241225001";
+
+  // ✅ 모든 훅을 맨 처음에 호출
+  const { shipmentDetail, loading, error } =
+    useBuyerShipmentDetail(orderNumber);
+
+  // ✅ 단일 return문에서 조건부 렌더링
+  return (
+    <Box sx={{ p: 3 }}>
+      {loading ? (
+        <Box sx={{ display: "flex", justifyContent: "center", p: 4 }}>
+          <CircularProgress />
+        </Box>
+      ) : error ? (
+        <Box sx={{ p: 2 }}>
+          <Alert severity="error">{error}</Alert>
+          <Button onClick={() => setDetailView(null)} sx={{ mt: 2 }}>
+            돌아가기
+          </Button>
+        </Box>
+      ) : !shipmentDetail ? (
+        <Box sx={{ p: 2 }}>
+          <Alert severity="warning">배송 정보를 찾을 수 없습니다.</Alert>
+          <Button onClick={() => setDetailView(null)} sx={{ mt: 2 }}>
+            돌아가기
+          </Button>
+        </Box>
+      ) : (
         <Box>
-            <Button
-                startIcon={<ChevronRight sx={{ transform: "rotate(180deg)" }} />}
-                onClick={() => setDetailView(null)}
-                sx={{ mb: 3 }}
-            >
-                뒤로가기
-            </Button>
+          {/* 배송 상태 헤더 */}
+          <Typography variant="h5" sx={{ fontWeight: 600, mb: 3 }}>
+            배송 추적
+          </Typography>
 
-            <Typography variant="h4" sx={{ fontWeight: "bold", mb: 4 }}>
-                배송조회
+          {/* 배송 상태 정보 */}
+          <Paper sx={{ p: 3, mb: 3 }}>
+            <Typography variant="h6" sx={{ mb: 2 }}>
+              배송 상태: {shipmentDetail.deliveryStatus}
             </Typography>
+            {shipmentDetail.deliveredAt && (
+              <Typography variant="body1" sx={{ mb: 2 }}>
+                배송완료일: {shipmentDetail.deliveredAt.split("T")[0]}
+              </Typography>
+            )}
+            <Typography variant="body2" sx={{ mb: 1 }}>
+              <strong>운송장번호:</strong> {shipmentDetail.trackingNumber}
+            </Typography>
+            <Typography variant="body2">
+              <strong>택배사:</strong> {shipmentDetail.courier}
+            </Typography>
+          </Paper>
 
-            <Paper sx={{ p: 4, mb: 4, bgcolor: "#f5f5f5", textAlign: "center" }}>
-                <Typography variant="h5" sx={{ fontWeight: 600, mb: 2 }}>
-                    5/29(목) 도착 완료
+          {/* 배송 정보 Grid */}
+          <Grid container spacing={3} sx={{ mb: 4 }}>
+            {/* 운송 정보 */}
+            <Grid size={{ xs: 12, md: 6 }}>
+              <Box>
+                <Typography variant="h6" sx={{ mb: 2, fontWeight: 600 }}>
+                  운송 정보
                 </Typography>
-                <Typography variant="body1" color="text.secondary">
-                    고객님이 주문하신 상품이 배송완료 되었습니다.
-                </Typography>
-            </Paper>
-
-            <Grid container spacing={4}>
-                <Grid size={{ xs: 12, md: 6 }}>
-                    <Box sx={{ display: "flex", alignItems: "center", gap: 2, mb: 3 }}>
-                        <Avatar sx={{ bgcolor: "primary.main" }}>
-                            <LocalShipping />
-                        </Avatar>
-                        <Box>
-                            <Typography variant="h6" sx={{ fontWeight: 600 }}>
-                                배송
-                            </Typography>
-                            <Typography variant="body2" color="text.secondary">
-                                송장번호: 1029137188374
-                            </Typography>
-                            <Typography variant="body2" color="text.secondary">
-                                📞 배송업무 중 연락을 받을 수 없습니다.
-                            </Typography>
-                        </Box>
-                    </Box>
-                </Grid>
-
-                <Grid size={{ xs: 12, md: 6 }}>
-                    <Box>
-                        <Typography variant="body2" sx={{ mb: 1 }}>
-                            <strong>받는사람:</strong> 홍길동
-                        </Typography>
-                        <Typography variant="body2" sx={{ mb: 1 }}>
-                            <strong>받는주소:</strong> 서울특별시 서초구 반포대로 45 4층
-                        </Typography>
-                        <Typography variant="body2" sx={{ mb: 1 }}>
-                            <strong>배송요청사항:</strong> 세대: 기타 (택배함)
-                        </Typography>
-                        <Typography variant="body2" sx={{ color: "success.main", fontWeight: 600 }}>
-                            <strong>상품수령방법:</strong> 고객요청
-                        </Typography>
-                    </Box>
-                </Grid>
+                <Box sx={{ p: 2, bgcolor: "#f5f5f5", borderRadius: 1 }}>
+                  <Typography variant="body2" sx={{ mb: 1 }}>
+                    <strong>운송장번호:</strong> {shipmentDetail.trackingNumber}
+                  </Typography>
+                  <Typography variant="body2" sx={{ mb: 1 }}>
+                    <strong>택배사:</strong> {shipmentDetail.courier}
+                  </Typography>
+                  <Typography variant="body2" sx={{ mb: 1 }}>
+                    <strong>배송상태:</strong> {shipmentDetail.deliveryStatus}
+                  </Typography>
+                  {shipmentDetail.shippedAt && (
+                    <Typography variant="body2">
+                      <strong>발송일:</strong>{" "}
+                      {shipmentDetail.shippedAt.split("T")[0]}
+                    </Typography>
+                  )}
+                </Box>
+              </Box>
             </Grid>
 
-            <TableContainer component={Paper} sx={{ mt: 4 }}>
-                <Table>
-                    <TableHead>
-                        <TableRow>
-                            <TableCell>
-                                <strong>시간</strong>
-                            </TableCell>
-                            <TableCell>
-                                <strong>현재위치</strong>
-                            </TableCell>
-                            <TableCell>
-                                <strong>배송상태</strong>
-                            </TableCell>
-                        </TableRow>
-                    </TableHead>
-                    <TableBody>
-                        <TableRow>
-                            <TableCell>5월 29, 2025 03:45</TableCell>
-                            <TableCell>일산5</TableCell>
-                            <TableCell>배송완료</TableCell>
-                        </TableRow>
-                        <TableRow>
-                            <TableCell>5월 29, 2025 02:32</TableCell>
-                            <TableCell>일산5</TableCell>
-                            <TableCell>배송출발</TableCell>
-                        </TableRow>
-                        <TableRow>
-                            <TableCell>5월 29, 2025 02:04</TableCell>
-                            <TableCell>일산5</TableCell>
-                            <TableCell>캠프도착</TableCell>
-                        </TableRow>
-                        <TableRow>
-                            <TableCell>5월 29, 2025 00:04</TableCell>
-                            <TableCell>고양HUB</TableCell>
-                            <TableCell>캠프상차</TableCell>
-                        </TableRow>
-                        <TableRow>
-                            <TableCell>5월 28, 2025 23:58</TableCell>
-                            <TableCell>고양HUB</TableCell>
-                            <TableCell>집하</TableCell>
-                        </TableRow>
-                    </TableBody>
-                </Table>
-            </TableContainer>
-        </Box>
-    )
-}
+            {/* 수령인 정보 */}
+            <Grid size={{ xs: 12, md: 6 }}>
+              <Box>
+                <Typography variant="h6" sx={{ mb: 2, fontWeight: 600 }}>
+                  수령인 정보
+                </Typography>
+                <Box sx={{ p: 2, bgcolor: "#f5f5f5", borderRadius: 1 }}>
+                  <Typography variant="body2" sx={{ mb: 1 }}>
+                    <strong>받는사람:</strong>{" "}
+                    {shipmentDetail.recipientInfo.recipientName}
+                  </Typography>
+                  <Typography variant="body2" sx={{ mb: 1 }}>
+                    <strong>받는주소:</strong>{" "}
+                    {shipmentDetail.recipientInfo.shippingAddress}
+                  </Typography>
+                  <Typography variant="body2" sx={{ mb: 1 }}>
+                    <strong>연락처:</strong>{" "}
+                    {shipmentDetail.recipientInfo.recipientPhone}
+                  </Typography>
+                  <Typography variant="body2">
+                    <strong>배송요청사항:</strong>{" "}
+                    {shipmentDetail.recipientInfo.deliveryNote ||
+                      "요청사항 없음"}
+                  </Typography>
+                </Box>
+              </Box>
+            </Grid>
+          </Grid>
 
-export default ShippingDetailView
+          {/* 배송 추적 테이블 */}
+          <Typography variant="h6" sx={{ fontWeight: 600, mb: 2 }}>
+            배송 추적 내역
+          </Typography>
+          <TableContainer component={Paper}>
+            <Table>
+              <TableHead>
+                <TableRow sx={{ bgcolor: "#f5f5f5" }}>
+                  <TableCell sx={{ fontWeight: 600 }}>시간</TableCell>
+                  <TableCell sx={{ fontWeight: 600 }}>현재위치</TableCell>
+                  <TableCell sx={{ fontWeight: 600 }}>배송상태</TableCell>
+                  <TableCell sx={{ fontWeight: 600 }}>상세내용</TableCell>
+                </TableRow>
+              </TableHead>
+              <TableBody>
+                {shipmentDetail.trackingDetails &&
+                shipmentDetail.trackingDetails.length > 0 ? (
+                  shipmentDetail.trackingDetails.map(
+                    (detail: any, index: number) => (
+                      <TableRow key={index}>
+                        <TableCell>
+                          {new Date(detail.timestamp).toLocaleString("ko-KR")}
+                        </TableCell>
+                        <TableCell>{detail.location}</TableCell>
+                        <TableCell>
+                          <Chip
+                            label={detail.status}
+                            size="small"
+                            color={
+                              detail.status.includes("완료")
+                                ? "success"
+                                : "default"
+                            }
+                          />
+                        </TableCell>
+                        <TableCell>{detail.description}</TableCell>
+                      </TableRow>
+                    )
+                  )
+                ) : (
+                  <TableRow>
+                    <TableCell colSpan={4} sx={{ textAlign: "center", py: 4 }}>
+                      <Typography variant="body2" color="text.secondary">
+                        배송 추적 정보가 없습니다.
+                      </Typography>
+                    </TableCell>
+                  </TableRow>
+                )}
+              </TableBody>
+            </Table>
+          </TableContainer>
+
+          {/* 돌아가기 버튼 */}
+          <Box sx={{ mt: 4, display: "flex", justifyContent: "center" }}>
+            <Button
+              variant="outlined"
+              size="large"
+              onClick={() => setDetailView(null)}
+            >
+              주문목록 돌아가기
+            </Button>
+          </Box>
+        </Box>
+      )}
+    </Box>
+  );
+};
+
+export default ShippingDetailView;
