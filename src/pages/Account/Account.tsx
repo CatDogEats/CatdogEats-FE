@@ -245,13 +245,13 @@ export default function MyPage() {
       <Box sx={{ bgcolor: "background.default", minHeight: "100vh" }}>
         <Container maxWidth="xl" sx={{ py: 4 }}>
           <Grid container spacing={4}>
-            <Grid item xs={12} md={3}>
+            <Grid size={{ xs: 12, md: 3 }}>
               <UpdatedSidebar
                 activeMenu={activeMenu}
                 onMenuChange={handleMenuChange}
               />
             </Grid>
-            <Grid item xs={12} md={9}>
+            <Grid size={{ xs: 12, md: 9 }}>
               <Card>
                 <CardContent sx={{ p: 4 }}>{renderContent()}</CardContent>
               </Card>

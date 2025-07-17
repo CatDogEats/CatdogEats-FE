@@ -8,7 +8,6 @@ import {
   Button,
   Paper,
   TextField,
-  Chip,
   CircularProgress,
   Alert,
   Stepper,
@@ -38,11 +37,9 @@ const OrdersView: React.FC<OrdersViewProps> = ({
   mockOrders,
   handleOrderAction,
 }) => {
-  // 모든 훅을 맨 처음에 호출
   const { prototypeOrders, ordersLoading, ordersError, refreshOrders } =
     useBuyerOrderManagement();
 
-  // 주문 상태별 컬러 맵핑
   const getStatusColor = (status: string) => {
     const colorMap: Record<string, any> = {
       payment_completed: "info",
@@ -55,7 +52,6 @@ const OrdersView: React.FC<OrdersViewProps> = ({
     return colorMap[status] || "default";
   };
 
-  // API 데이터 및 모크 데이터 정규화
   const normalizeOrders = (apiOrders: any[], mockOrders: any[]) => {
     if (apiOrders.length > 0) {
       return apiOrders.map((order) => ({
@@ -73,11 +69,9 @@ const OrdersView: React.FC<OrdersViewProps> = ({
 
   const orders = normalizeOrders(prototypeOrders, mockOrders);
 
-  // 페이지네이션 상태
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 5;
 
-  // 배송 상태 Stepper 데이터
   const shippingSteps = [
     "결제 완료",
     "상품 준비중",
@@ -94,17 +88,6 @@ const OrdersView: React.FC<OrdersViewProps> = ({
     "상품이 주문자에게\n전달 완료되었습니다.",
   ];
 
-  // 주문 삭제 처리
-  const handleDelete = async (order: any) => {
-    try {
-      await handleOrderAction("delete", order);
-      await refreshOrders();
-    } catch (error) {
-      console.error("주문 삭제 실패:", error);
-    }
-  };
-
-  // 검색 및 기간 필터링
   const filteredOrders = (orders as any[]).filter((order: any) => {
     if (searchQuery) {
       const searchLower = searchQuery.toLowerCase();
@@ -232,7 +215,7 @@ const OrdersView: React.FC<OrdersViewProps> = ({
                 <Pagination
                   count={Math.ceil(filteredOrders.length / itemsPerPage)}
                   page={currentPage}
-                  onChange={(event, value) => setCurrentPage(value)}
+                  onChange={(_event, value) => setCurrentPage(value)}
                   color="primary"
                 />
               </Box>
