@@ -9,11 +9,16 @@ import {
     MenuItem,
     IconButton,
     Divider,
+    CircularProgress,
 } from "@mui/material";
 import { AddShoppingCart, FavoriteBorder, Favorite, LocalOffer } from "@mui/icons-material";
 import { Product } from "../Product";
 import ReportModal from "../../common/ReportModal.tsx";
 import CouponIssueModal from "./CouponIssueModal";
+import NotificationSnackbar from "@/components/common/NotificationSnackbar";
+import { useNotification } from "@/hooks/useNotification";
+import { useAuthCheck } from "@/hooks/useAuthCheck";
+import { useCart } from "@/hooks/useCart";
 
 interface ProductPurchaseOptionsProps {
     product: Product;
@@ -24,33 +29,112 @@ const ProductPurchaseOptions: React.FC<ProductPurchaseOptionsProps> = ({ product
     const [packaging, setPackaging] = useState(
         product.packaging?.[0]?.label || "기본 포장"
     );
-    const [isFavorite, setIsFavorite] = useState(product.isFavorite || false);
+    const [isFavorite, setIsFavorite] = useState(false); // 🔧 기본값으로 설정
     const [reportModalOpen, setReportModalOpen] = useState(false);
     const [couponModalOpen, setCouponModalOpen] = useState(false);
+    const [isAddingToCart, setIsAddingToCart] = useState(false);
 
-    const handleAddToCart = () => {
-        console.log("장바구니 추가:", {
-            productId: product.id,
-            productName: product.name,
-            price: product.price,
-            quantity,
-            packaging
+    // 커스텀 훅들
+    const {
+        showSuccess,
+        showError,
+        showWarning,
+        showInfo,
+        notification,
+        hideNotification
+    } = useNotification();
+
+    const {
+        requireAuth,
+        isBuyer
+    } = useAuthCheck();
+
+    const { addItem } = useCart();
+
+    // 장바구니 추가 핸들러
+    const handleAddToCart = async () => {
+        // 인증 확인
+        requireAuth(async () => {
+            // 구매자 권한 확인
+            if (!isBuyer) {
+                showWarning('구매자만 장바구니에 상품을 추가할 수 있습니다.');
+                return;
+            }
+
+            try {
+                setIsAddingToCart(true);
+
+                const success = await addItem({
+                    productId: product.id,
+                    quantity: quantity,
+                });
+
+                if (success) {
+                    showSuccess(`${product.name}이(가) 장바구니에 추가되었습니다.`);
+                    console.log('✅ 장바구니 추가 성공:', {
+                        productId: product.id,
+                        productName: product.name,
+                        quantity,
+                        packaging
+                    });
+                } else {
+                    showError('장바구니 추가에 실패했습니다. 다시 시도해주세요.');
+                }
+            } catch (error) {
+                console.error('❌ 장바구니 추가 실패:', error);
+
+                // 에러 메시지 처리
+                let errorMessage = '장바구니 추가에 실패했습니다.';
+                if (error instanceof Error) {
+                    if (error.message.includes('재고')) {
+                        errorMessage = '재고가 부족합니다.';
+                    } else if (error.message.includes('로그인')) {
+                        errorMessage = '로그인이 필요합니다.';
+                    } else if (error.message.includes('권한')) {
+                        errorMessage = '권한이 없습니다.';
+                    }
+                }
+
+                showError(errorMessage);
+            } finally {
+                setIsAddingToCart(false);
+            }
         });
     };
 
     const handleBuyNow = () => {
-        console.log("바로 구매:", {
-            productId: product.id,
-            productName: product.name,
-            price: product.price,
-            quantity,
-            packaging
+        requireAuth(() => {
+            if (!isBuyer) {
+                showWarning('구매자만 상품을 구매할 수 있습니다.');
+                return;
+            }
+
+            console.log("바로 구매:", {
+                productId: product.id,
+                productName: product.name,
+                price: product.price,
+                quantity,
+                packaging
+            });
+
+            // TODO: 바로 구매 로직 구현
+            showInfo('바로 구매 기능은 준비 중입니다.');
         });
     };
 
     const handleToggleFavorite = () => {
-        setIsFavorite(!isFavorite);
-        console.log("찜 상태 변경:", { productId: product.id, isFavorite: !isFavorite });
+        requireAuth(() => {
+            setIsFavorite(!isFavorite);
+            const message = isFavorite
+                ? '관심 상품에서 제거되었습니다.'
+                : '관심 상품으로 등록되었습니다.';
+            showSuccess(message);
+
+            console.log("찜 상태 변경:", {
+                productId: product.id,
+                isFavorite: !isFavorite
+            });
+        });
     };
 
     const handleReportProduct = () => {
@@ -70,7 +154,7 @@ const ProductPurchaseOptions: React.FC<ProductPurchaseOptionsProps> = ({ product
     };
 
     // 재고 상태 확인
-    const isOutOfStock = product.isOutOfStock;
+    const isOutOfStock = (product as any).isOutOfStock || false;
     const totalPrice = product.price * quantity;
 
     return (
@@ -88,7 +172,7 @@ const ProductPurchaseOptions: React.FC<ProductPurchaseOptionsProps> = ({ product
                 >
                     <Typography variant="body2" color="text.secondary">
                         현재 품절된 상품입니다
-                        {product.restockDate && ` (재입고 예정: ${product.restockDate})`}
+                        {(product as any).restockDate && ` (재입고 예정: ${(product as any).restockDate})`}
                     </Typography>
                 </Box>
             )}
@@ -147,7 +231,7 @@ const ProductPurchaseOptions: React.FC<ProductPurchaseOptionsProps> = ({ product
                         <Select
                             value={quantity}
                             onChange={(e) => setQuantity(Number(e.target.value))}
-                            disabled={isOutOfStock}
+                            disabled={isOutOfStock || isAddingToCart}
                             displayEmpty
                             sx={{
                                 height: 48,
@@ -162,7 +246,7 @@ const ProductPurchaseOptions: React.FC<ProductPurchaseOptionsProps> = ({ product
                                     borderColor: "grey.200",
                                 },
                                 "&:hover .MuiOutlinedInput-notchedOutline": {
-                                    borderColor: isOutOfStock ? "grey.200" : "primary.main",
+                                    borderColor: isOutOfStock || isAddingToCart ? "grey.200" : "primary.main",
                                 },
                                 "&.Mui-focused .MuiOutlinedInput-notchedOutline": {
                                     borderColor: "primary.main",
@@ -194,7 +278,7 @@ const ProductPurchaseOptions: React.FC<ProductPurchaseOptionsProps> = ({ product
                         <Select
                             value={packaging}
                             onChange={(e) => setPackaging(e.target.value)}
-                            disabled={isOutOfStock}
+                            disabled={isOutOfStock || isAddingToCart}
                             displayEmpty
                             sx={{
                                 height: 48,
@@ -209,7 +293,7 @@ const ProductPurchaseOptions: React.FC<ProductPurchaseOptionsProps> = ({ product
                                     borderColor: "grey.200",
                                 },
                                 "&:hover .MuiOutlinedInput-notchedOutline": {
-                                    borderColor: isOutOfStock ? "grey.200" : "primary.main",
+                                    borderColor: isOutOfStock || isAddingToCart ? "grey.200" : "primary.main",
                                 },
                                 "&.Mui-focused .MuiOutlinedInput-notchedOutline": {
                                     borderColor: "primary.main",
@@ -235,6 +319,7 @@ const ProductPurchaseOptions: React.FC<ProductPurchaseOptionsProps> = ({ product
             <Box sx={{ display: "flex", gap: 1.5, alignItems: "center", mb: 2 }}>
                 <IconButton
                     onClick={handleToggleFavorite}
+                    disabled={isAddingToCart}
                     sx={{
                         width: 48,
                         height: 48,
@@ -244,6 +329,10 @@ const ProductPurchaseOptions: React.FC<ProductPurchaseOptionsProps> = ({ product
                         "&:hover": {
                             borderColor: "primary.main",
                             backgroundColor: isFavorite ? "primary.light" : "grey.100",
+                        },
+                        "&:disabled": {
+                            borderColor: "grey.200",
+                            backgroundColor: "grey.100",
                         },
                     }}
                 >
@@ -256,9 +345,15 @@ const ProductPurchaseOptions: React.FC<ProductPurchaseOptionsProps> = ({ product
 
                 <Button
                     variant="outlined"
-                    startIcon={<AddShoppingCart />}
+                    startIcon={
+                        isAddingToCart ? (
+                            <CircularProgress size={16} color="inherit" />
+                        ) : (
+                            <AddShoppingCart />
+                        )
+                    }
                     onClick={handleAddToCart}
-                    disabled={isOutOfStock}
+                    disabled={isOutOfStock || isAddingToCart}
                     sx={{
                         flex: 1,
                         height: 48,
@@ -276,13 +371,13 @@ const ProductPurchaseOptions: React.FC<ProductPurchaseOptionsProps> = ({ product
                         },
                     }}
                 >
-                    장바구니
+                    {isAddingToCart ? "추가 중..." : "장바구니"}
                 </Button>
 
                 <Button
                     variant="contained"
                     onClick={handleBuyNow}
-                    disabled={isOutOfStock}
+                    disabled={isOutOfStock || isAddingToCart}
                     sx={{
                         flex: 1,
                         height: 48,
@@ -304,6 +399,7 @@ const ProductPurchaseOptions: React.FC<ProductPurchaseOptionsProps> = ({ product
                 variant="outlined"
                 fullWidth
                 onClick={handleReportProduct}
+                disabled={isAddingToCart}
                 sx={{
                     height: 48,
                     color: "text.secondary",
@@ -313,6 +409,10 @@ const ProductPurchaseOptions: React.FC<ProductPurchaseOptionsProps> = ({ product
                         borderColor: "primary.main",
                         backgroundColor: "grey.100",
                         color: "primary.main",
+                    },
+                    "&:disabled": {
+                        backgroundColor: "grey.100",
+                        color: "text.disabled",
                     },
                 }}
             >
@@ -334,6 +434,12 @@ const ProductPurchaseOptions: React.FC<ProductPurchaseOptionsProps> = ({ product
                 onClose={handleCouponModalClose}
                 productId={product.id}
                 productName={product.name}
+            />
+
+            {/* 알림 스낵바 */}
+            <NotificationSnackbar
+                notification={notification}
+                onClose={hideNotification}
             />
         </Box>
     );
