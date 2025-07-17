@@ -37,7 +37,7 @@ const OrdersView: React.FC<OrdersViewProps> = ({
   mockOrders,
   handleOrderAction,
 }) => {
-  const { prototypeOrders, ordersLoading, ordersError, refreshOrders } =
+  const { prototypeOrders, ordersLoading, ordersError } =
     useBuyerOrderManagement();
 
   const getStatusColor = (status: string) => {
@@ -181,7 +181,7 @@ const OrdersView: React.FC<OrdersViewProps> = ({
             </>
           )}
 
-          {/* 배송 상태 안내 Stepper - 새로운 위치 */}
+          {/* 배송 상태 안내 Stepper */}
           <Paper sx={{ p: 4, mt: 4 }}>
             <Typography variant="h6" sx={{ mb: 3, fontWeight: 600 }}>
               배송 상태 안내

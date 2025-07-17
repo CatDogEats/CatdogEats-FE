@@ -238,6 +238,12 @@ export interface Order {
     price: number;
   }>; // OrdersView에서 사용
   date: string; // OrdersView 필터링에서 사용
+
+  // 추가된 옵셔널 속성들
+  deliveredAt?: string; // 배송완료 일자 (ISO string)
+  arrivalDate?: string; // 도착일 (UI 표시용)
+  orderItemsInfo?: string; // 주문 상품 정보 ("상품명 외 N건" 형태)
+  totalAmount?: number; // 총 결제 금액 (API 호환성)
 }
 
 // ===== API 에러 타입 =====
@@ -331,20 +337,23 @@ export const convertAPIDataToPrototype = (
       date: orderSummary.orderDate,
       customerName: "",
       productName: orderSummary.orderItemsInfo,
+      orderItemsInfo: orderSummary.orderItemsInfo,
       quantity: itemCount,
       amount: orderSummary.totalAmount,
       total: orderSummary.totalAmount,
+      totalAmount: orderSummary.totalAmount,
       shippingStatus: mapAPIStatusToPrototype(orderSummary.orderStatus),
-
-      // [수정] shipmentInfo 객체 없이 바로 접근
+      deliveredAt: undefined,
+      arrivalDate: undefined,
       trackingNumber: orderSummary.trackingNumber,
       shippingCompany: orderSummary.courier,
-
       products: [],
       shippingAddress: "",
+      customerPhone: undefined,
     };
   });
 };
+
 /**
  * API 상태를 프로토타입 상태로 변환
  */
