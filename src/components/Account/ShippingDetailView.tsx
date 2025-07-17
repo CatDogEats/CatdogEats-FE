@@ -22,13 +22,16 @@ import { useBuyerShipmentDetail } from "@/hooks/useBuyerOrders";
 
 interface ShippingDetailViewProps {
   setDetailView: (view: string | null) => void;
-  orderNumber: string;
+  selectedOrder?: { orderNumber: string } | null; // selectedOrder 추가
 }
 
 const ShippingDetailView: React.FC<ShippingDetailViewProps> = ({
   setDetailView,
-  orderNumber,
+  selectedOrder, // selectedOrder 추가
 }) => {
+  // selectedOrder에서 orderNumber 추출, 없으면 기본값 사용
+  const orderNumber = selectedOrder?.orderNumber || "20241225001";
+
   // ✅ 모든 훅을 맨 처음에 호출
   const { shipmentDetail, loading, error } =
     useBuyerShipmentDetail(orderNumber);

@@ -21,9 +21,8 @@ import {
 import { useBuyerOrderDetail } from "@/hooks/useBuyerOrders";
 import { buyerOrderApi } from "@/service/api/buyerOrderApi";
 import { ORDER_STATUS_INFO_MAP } from "@/types/buyerOrder.types";
-
 interface OrderDetailProps {
-  selectedOrder: { orderNumber: string } | null;
+  selectedOrder: { orderNumber: string; [key: string]: any } | null; // 더 유연한 타입으로 수정
   setDetailView: (view: string | null) => void;
   handleOrderAction: (action: string, order: any) => void;
 }
@@ -40,9 +39,14 @@ const OrderDetail: React.FC<OrderDetailProps> = ({
 
   // ✅ 함수 정의 (훅 호출 후)
   const handleDeleteOrder = async () => {
+    if (!selectedOrder?.orderNumber) {
+      alert("주문번호가 없습니다.");
+      return;
+    }
+
     try {
       await buyerOrderApi.deleteBuyerOrder({
-        orderNumber: selectedOrder!.orderNumber,
+        orderNumber: selectedOrder.orderNumber,
       });
       setDetailView(null);
       await handleOrderAction("refresh", selectedOrder);

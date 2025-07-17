@@ -169,7 +169,7 @@ export default function MyPage() {
       return (
         <ShippingDetailView
           setDetailView={setDetailView}
-          orderNumber={selectedOrder.orderNumber}
+          selectedOrder={selectedOrder} // selectedOrder props 추가
         />
       );
     }

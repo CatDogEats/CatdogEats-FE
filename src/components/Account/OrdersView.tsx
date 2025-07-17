@@ -175,6 +175,27 @@ const OrdersView: React.FC<OrdersViewProps> = ({
                       <Chip label={order.status} color={order.statusColor} />
                     </TableCell>
                     <TableCell>
+                      {/* 주문 상세보기 버튼 추가 */}
+                      <Button
+                        onClick={() => handleOrderAction("view_detail", order)}
+                        color="primary"
+                        size="small"
+                        sx={{ mr: 1 }}
+                      >
+                        상세보기
+                      </Button>
+                      {/* 배송조회 버튼 추가 */}
+                      <Button
+                        onClick={() =>
+                          handleOrderAction("view_shipping", order)
+                        }
+                        color="info"
+                        size="small"
+                        sx={{ mr: 1 }}
+                      >
+                        배송조회
+                      </Button>
+                      {/* 기존 삭제 버튼 */}
                       <Button
                         onClick={() => handleDelete(order)}
                         color="error"
