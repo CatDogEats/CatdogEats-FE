@@ -13,3 +13,6 @@ services:
       - "3000:3000"
     env_file:
       - .env.production
+    environment:
+      - HOST=0.0.0.0
+      - PORT=3000
