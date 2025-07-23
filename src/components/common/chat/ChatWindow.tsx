@@ -77,11 +77,6 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
                         </IconButton>
                         <Box sx={{ flexGrow: 1 }}>
                             <Typography variant="h6">{selectedCustomer.name}</Typography>
-                            {/*{selectedCustomer.orderProduct && (*/}
-                            {/*    <Typography variant="body2" color="text.secondary">*/}
-                            {/*        주문 상품: {selectedCustomer.orderProduct}*/}
-                            {/*    </Typography>*/}
-                            {/*)}*/}
                         </Box>
                         <Button
                             variant="text"

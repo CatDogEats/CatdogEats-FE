@@ -1,25 +1,21 @@
 // src/components/common/ChatModal.tsx
 import React, { useState } from "react";
 import {
-    Dialog,
-    DialogContent,
     IconButton,
     Box,
     useTheme,
     useMediaQuery,
-
 } from "@mui/material";
 import type { CustomerChat } from "@/types/customer";
-import CustomerInquiryList from "@/components//common/chat/CustomerInquiryList";
+import CustomerInquiryList from "@/components/common/chat/CustomerInquiryList";
 import ChatWindow from "@/components/common/chat/ChatWindow";
 import { customerChat as initialCustomerInquiries } from "@/data/customerData";
 
 interface ChatModalProps {
-    open: boolean;
     onClose: () => void;
 }
 
-const ChatModal: React.FC<ChatModalProps> = ({ open, onClose }) => {
+const ChatModal: React.FC<ChatModalProps> = ({ onClose }) => {
     const theme = useTheme();
     const isMobile = useMediaQuery(theme.breakpoints.down("md"));
 
@@ -40,24 +36,17 @@ const ChatModal: React.FC<ChatModalProps> = ({ open, onClose }) => {
     };
 
     return (
-        <Dialog
-            open={open}
-            onClose={onClose}
-            maxWidth="lg"
-            fullWidth
-            fullScreen={isMobile}
+        <Box
             sx={{
-                '& .MuiDialog-paper': {
-                    height: isMobile ? '100%' : '85vh',
-                    maxHeight: isMobile ? '100%' : '85vh',
-                    borderRadius: isMobile ? 0 : 3,
-                    overflow: 'hidden',
-                    display: 'flex',
-                    flexDirection: 'column'
-                }
+                width: '100vw',
+                height: '100vh',
+                display: 'flex',
+                flexDirection: 'column',
+                backgroundColor: theme.palette.background.default,
+                overflow: 'hidden',
             }}
         >
-            {/* 모달 헤더 */}
+            {/* 헤더 */}
             <Box sx={{
                 display: 'flex',
                 alignItems: 'center',
@@ -65,9 +54,7 @@ const ChatModal: React.FC<ChatModalProps> = ({ open, onClose }) => {
                 p: 2,
                 borderBottom: `1px solid ${theme.palette.divider}`,
                 backgroundColor: theme.palette.background.paper,
-                zIndex: 1000
             }}>
-
                 <IconButton
                     onClick={onClose}
                     sx={{
@@ -81,14 +68,16 @@ const ChatModal: React.FC<ChatModalProps> = ({ open, onClose }) => {
                 </IconButton>
             </Box>
 
-            {/* 채팅 컨텐츠 */}
-            <DialogContent sx={{
-                p: 0,
-                flex: 1,
-                display: 'flex',
-                overflow: 'hidden'
-            }}>
-                {/* 모바일에서 채팅창이 열린 경우 */}
+            {/* 본문 */}
+            <Box
+                sx={{
+                    flex: 1,
+                    display: 'flex',
+                    height: '100%',
+                    overflow: 'hidden'
+                }}
+            >
+                {/* 모바일 단독 화면 */}
                 {selectedCustomer && isMobile ? (
                     <Box sx={{ width: '100%', height: '100%' }}>
                         <ChatWindow
@@ -99,8 +88,8 @@ const ChatModal: React.FC<ChatModalProps> = ({ open, onClose }) => {
                         />
                     </Box>
                 ) : (
-                    <Box sx={{ display: 'flex', width: '100%', height: '100%' }}>
-                        {/* 고객 목록 - 스크롤 가능 */}
+                    <Box sx={{ display: 'flex', width: '100%' }}>
+                        {/* 고객 목록 */}
                         <Box
                             sx={{
                                 width: selectedCustomer && !isMobile ? '40%' : '100%',
@@ -124,7 +113,7 @@ const ChatModal: React.FC<ChatModalProps> = ({ open, onClose }) => {
                             </Box>
                         </Box>
 
-                        {/* 채팅창 - 모달에 딱 맞게 */}
+                        {/* 채팅창 */}
                         {selectedCustomer && !isMobile && (
                             <Box sx={{
                                 flex: 1,
@@ -142,8 +131,8 @@ const ChatModal: React.FC<ChatModalProps> = ({ open, onClose }) => {
                         )}
                     </Box>
                 )}
-            </DialogContent>
-        </Dialog>
+            </Box>
+        </Box>
     );
 };
 
