@@ -1,5 +1,7 @@
 // src/api/ProductAPI.ts
-import { apiClient } from "@/service/auth/AuthAPI"
+import {apiClient} from "@/service/auth/AuthAPI"
+// 실제 프론트에서 사용할 Product 타입은 기존대로 import해서 사용
+import {Product} from "@/components/ProductDetail/Product";
 
 // 백엔드에서 내려오는 응답 타입 정의 (필요에 따라 확장)
 interface BackendProductResponse {
@@ -21,9 +23,6 @@ interface BackendProductResponse {
     };
     [key: string]: any;
 }
-
-// 실제 프론트에서 사용할 Product 타입은 기존대로 import해서 사용
-import { Product } from "@/components/ProductDetail/Product";
 
 function prefixUrlIfNeeded(url?: string): string | undefined {
     if (!url) return undefined;
@@ -52,7 +51,7 @@ export async function getProductDetail(productNumber: string): Promise<Product> 
     const firstImage = flatImages[0];
 
     // 프론트 Product 타입으로 매핑
-    const mappedProduct: Product = {
+    return {
         id: productNumber,
         name: data.title,
         brand: data.vendorName && data.vendorName.trim() ? data.vendorName : "브랜드 정보 없음",
@@ -68,6 +67,4 @@ export async function getProductDetail(productNumber: string): Promise<Product> 
         // 이런 아이에게 좋아요! 영역
         suitableFor: data.contents,
     };
-
-    return mappedProduct;
 }

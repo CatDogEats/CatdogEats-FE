@@ -6,23 +6,23 @@
  * 주문 상태 (백엔드와 동일)
  */
 export type OrderStatus =
-  | "PAYMENT_COMPLETED" // 결제완료
-  | "PREPARING" // 상품준비중
-  | "READY_FOR_SHIPMENT" // 배송준비완료
-  | "IN_DELIVERY" // 배송중
-  | "DELIVERED" // 배송완료
-  | "CANCELLED" // 주문취소
-  | "REFUNDED"; // 환불완료
+    | "PAYMENT_COMPLETED" // 결제완료
+    | "PREPARING" // 상품준비중
+    | "READY_FOR_SHIPMENT" // 배송준비완료
+    | "IN_DELIVERY" // 배송중
+    | "DELIVERED" // 배송완료
+    | "CANCELLED" // 주문취소
+    | "REFUNDED"; // 환불완료
 
 /**
  * 택배사 (백엔드와 동일)
  */
 export type CourierCompany =
-  | "POST_OFFICE" // 우체국택배
-  | "CJ_DAEHAN" // CJ대한통운
-  | "HANJIN" // 한진택배
-  | "LOGEN" // 로젠택배
-  | "LOTTE"; // 롯데택배
+    | "POST_OFFICE" // 우체국택배
+    | "CJ_DAEHAN" // CJ대한통운
+    | "HANJIN" // 한진택배
+    | "LOGEN" // 로젠택배
+    | "LOTTE"; // 롯데택배
 
 // ===== API 응답 래퍼 타입 =====
 
@@ -59,8 +59,13 @@ export interface BuyerOrderSummary {
   orderNumber: string;
   orderStatus: OrderStatus;
   orderDate: string;
-  orderItemsInfo: string;
-  totalAmount: number;
+  orderItemsInfo?: Array<{
+    orderItemId: string;
+    productName: string;
+    unitPrice: number;
+    quantity: number;
+    productImage?: string;
+  }>;  totalAmount: number;
   courier?: string; // [수정] shipmentInfo 객체 제거, 최상위로 이동
   trackingNumber?: string; // [수정] shipmentInfo 객체 제거, 최상위로 이동
 }
@@ -205,13 +210,13 @@ export interface OrderStatusInfo {
   status: OrderStatus;
   label: string;
   color:
-    | "default"
-    | "primary"
-    | "secondary"
-    | "error"
-    | "warning"
-    | "info"
-    | "success";
+      | "default"
+      | "primary"
+      | "secondary"
+      | "error"
+      | "warning"
+      | "info"
+      | "success";
   description: string;
 }
 
@@ -313,7 +318,7 @@ export const ORDER_STATUS_INFO_MAP: Record<OrderStatus, OrderStatusInfo> = {
  * API 데이터를 프로토타입 Order 형태로 변환
  */
 export const convertAPIDataToPrototype = (
-  apiResponse: BuyerOrderListResponse
+    apiResponse: BuyerOrderListResponse
 ): Order[] => {
   if (!apiResponse?.orders) return [];
 

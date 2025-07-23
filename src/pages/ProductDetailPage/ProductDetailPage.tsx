@@ -161,23 +161,41 @@ const ProductDetailPage: React.FC = () => {
 
   useEffect(() => {
     if (!productNumber) return;
+
     setLoading(true);
     setError(null);
     setReviewSummary(null);
+    setReviewSummaryError(null);
 
-    // 상품 정보 & 리뷰 요약을 병렬로 불러옴
-    Promise.all([
+    Promise.allSettled([
       getProductDetail(productNumber),
       getReviewSummary(productNumber),
-    ])
-        .then(([productData, summaryData]) => {
-          setProduct(productData);
-          setReviewSummary(summaryData);
-        })
-        .catch((e) => {
-          setError(e?.message || "상품 정보를 불러올 수 없습니다.");
-        })
-        .finally(() => setLoading(false));
+    ]).then(([prodResult, sumResult]) => {
+      // 상품 정보 처리
+      if (prodResult.status === "fulfilled") {
+        setProduct(prodResult.value);
+      } else {
+        setError(
+            prodResult.reason?.message || "상품 정보를 불러올 수 없습니다."
+        );
+      }
+
+      // 리뷰 요약 처리
+      if (sumResult.status === "fulfilled") {
+        setReviewSummary(sumResult.value);
+      } else {
+        const status = sumResult.reason?.response?.status;
+        if (status === 404) {
+          console.warn("Review summary not found, skipping.");
+        } else {
+          setReviewSummaryError(
+              sumResult.reason?.message || "리뷰 요약을 불러올 수 없습니다."
+          );
+        }
+      }
+    }).finally(() => {
+      setLoading(false);
+    });
   }, [productNumber]);
 
   // 리뷰 목록 fetch (페이지 변경될 때마다)
