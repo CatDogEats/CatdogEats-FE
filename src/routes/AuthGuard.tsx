@@ -7,7 +7,7 @@ import { Box, CircularProgress } from "@mui/material"
 import { useAuthStore } from "@/service/auth/AuthStore.ts"
 
 interface AuthGuardProps {
-    allowedRoles: string
+    allowedRoles: string | string[]
 }
 
 const AuthGuard = ({ allowedRoles }: AuthGuardProps) => {
@@ -43,26 +43,37 @@ const AuthGuard = ({ allowedRoles }: AuthGuardProps) => {
             </Box>
         )
     }
+    const roles = Array.isArray(allowedRoles) ? allowedRoles : [allowedRoles];
+    const userRole = isAuthenticated ? role ?? "" : "GUEST";
 
     // 인증되지 않았으면 로그인 페이지로
-    if (!isAuthenticated) {
+    if (!isAuthenticated && !roles.includes("GUEST")) {
         console.log("AuthGuard: 인증되지 않음, 로그인 페이지로 이동")
         return <Navigate to="/login" replace state={{ from: location }} />
     }
 
-    if (role === 'ROLE_TEMP') {
+    if (userRole === 'ROLE_TEMP') {
         console.log("권한 부여 페이지로 이동")
         return <Navigate to="/role-selection"></Navigate>
     }
 
     // 권한이 없으면 로그인 페이지로
-    if (allowedRoles !== role) {
-        if (role === "ROLE_BUYER") {
-            return <Navigate to="/" replace />
-        } else if(role === "ROLE_SELLER") {
-            return <Navigate to="/seller" replace />
+
+
+    if (!roles.includes(userRole)) {
+        switch (userRole) {
+            case "ROLE_BUYER":
+            case "GUEST":
+                return <Navigate to="/" replace />;
+            case "ROLE_SELLER":
+                return <Navigate to="/seller" replace />;
+            default:
+                return <Navigate to="/login" replace />;
         }
     }
+
+
+
 
 
     console.log("AuthGuard: 인증 및 권한 확인 완료")
