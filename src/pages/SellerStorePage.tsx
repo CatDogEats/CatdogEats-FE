@@ -27,6 +27,7 @@ import { sellerStoreApi, SellerStoreParams, convertCategoriesToParams } from '@/
 import ProductFilter from '@/components/SellerStore/ProductFilter.tsx';
 import CategoryFilter from '@/components/SellerStore/CategoryFilter.tsx';
 import ProductSkeleton from '@/components/SellerStore/ProductSkeleton.tsx';
+import {chatApiService} from "@/service/chatting/chatApi.ts";
 
 const SellerStorePage: React.FC = () => {
     const { sellerId } = useParams<{ sellerId: string }>();
@@ -150,9 +151,19 @@ const SellerStorePage: React.FC = () => {
     }, [currentPage]);
 
     // 이벤트 핸들러
-    const handleContactSeller = () => {
-        setSnackbarMessage('판매자 문의 기능은 준비 중입니다.');
+    const handleContactSeller = async () => {
+        if (!seller) return;
+        setSnackbarMessage('판매자 채팅방으로 이동합니다.');
         setSnackbarOpen(true);
+        await chatApiService.createChatRoom(seller.name)
+        const chatWindow = window.open(
+            "/chat", // 또는 채팅용 라우트
+            "ChatWindow",
+            "width=500,height=700,resizable=yes,scrollbars=yes"
+        )
+        if (chatWindow) {
+            chatWindow.focus()
+        }
     };
 
     const handleToggleSellerLike = () => {

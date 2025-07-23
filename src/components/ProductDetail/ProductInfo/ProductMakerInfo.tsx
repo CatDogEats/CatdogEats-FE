@@ -1,7 +1,5 @@
-// src/components/ProductDetail/ProductInfo/ProductMakerInfo.tsx
-import React, {useCallback, useState} from "react";
+import React, {useCallback} from "react";
 import { Card, CardContent, Box, Typography, Button } from "@mui/material";
-import ChatModal from "@/components/common/chat/ChatModal";
 import { Product } from "../Product";
 
 interface ProductMakerInfoProps {
@@ -65,12 +63,6 @@ const ProductMakerInfo: React.FC<ProductMakerInfoProps> = ({ product }) => {
                     </Box>
                 </CardContent>
             </Card>
-
-            {/*/!* 채팅 모달 *!/*/}
-            {/*<ChatModal*/}
-            {/*    open={chatModalOpen}*/}
-            {/*    onClose={handleChatModalClose}*/}
-            {/*/>*/}
         </>
     );
 };

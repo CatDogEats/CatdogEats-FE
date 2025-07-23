@@ -1,7 +1,7 @@
 "use client"
 
 import type React from "react"
-import { Box, Typography, TextField, InputAdornment, List, ListItem, ListItemText, Chip, Paper } from "@mui/material"
+import { Box, Typography, TextField, InputAdornment, List, ListItem, ListItemText, Chip, Paper, CircularProgress } from "@mui/material"
 import { Search, ChatBubbleOutline } from "@mui/icons-material"
 import type { CustomerInquiry } from "@/types/customer.ts"
 
@@ -9,18 +9,25 @@ interface CustomerInquiryListProps {
     customerInquiries: CustomerInquiry[]
     selectedCustomer: CustomerInquiry | null
     onCustomerClick: (customer: CustomerInquiry) => void
+    loading?: boolean
 }
 
 const CustomerInquiryList: React.FC<CustomerInquiryListProps> = ({
                                                                      customerInquiries,
                                                                      selectedCustomer,
                                                                      onCustomerClick,
+                                                                     loading = false,
                                                                  }) => {
     return (
-        <Box>
-            <Typography variant="h4" gutterBottom fontWeight="bold">
-                채팅방
-            </Typography>
+        <Box sx={{ p: 2 }}>
+            <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2 }}>
+                <Typography variant="h4" fontWeight="bold">
+                    채팅방
+                </Typography>
+                {loading && (
+                    <CircularProgress size={20} />
+                )}
+            </Box>
 
             {/* 검색창 */}
             <TextField
@@ -28,7 +35,7 @@ const CustomerInquiryList: React.FC<CustomerInquiryListProps> = ({
                 placeholder="채팅방 검색"
                 variant="outlined"
                 size="small"
-                sx={{ mt: 3, mb: 3 }}
+                sx={{ mb: 3 }}
                 InputProps={{
                     startAdornment: (
                         <InputAdornment position="start">
@@ -54,19 +61,15 @@ const CustomerInquiryList: React.FC<CustomerInquiryListProps> = ({
                                     backgroundColor: "#f5f5f5",
                                 },
                                 cursor: "pointer",
+                                transition: "all 0.2s ease-in-out",
                             }}
                         >
                             <ListItemText
                                 primary={
-                                    <Box>
+                                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                                         <Typography component="span" variant="body1" fontWeight="medium">
                                             {customer.name}
                                         </Typography>
-                                        {/*{customer.orderProduct && (*/}
-                                        {/*    <Typography component="span" variant="body2" sx={{ ml: 1, color: "text.secondary" }}>*/}
-                                        {/*        ({customer.orderProduct})*/}
-                                        {/*    </Typography>*/}
-                                        {/*)}*/}
                                     </Box>
                                 }
                                 secondary={customer.lastMessage}
@@ -75,9 +78,26 @@ const CustomerInquiryList: React.FC<CustomerInquiryListProps> = ({
                                     sx: { maxWidth: "200px" },
                                 }}
                             />
-                            {customer.unreadCount > 0 && (
-                                <Chip label={customer.unreadCount} color="primary" size="small" sx={{ minWidth: 24, height: 24 }} />
-                            )}
+                            <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 1 }}>
+                                {customer.unreadCount > 0 && (
+                                    <Chip
+                                        label={customer.unreadCount}
+                                        color="primary"
+                                        size="small"
+                                        sx={{ minWidth: 24, height: 24 }}
+                                    />
+                                )}
+                                {/* 마지막 메시지 시간 표시 (옵션) */}
+                                {customer.messages && customer.messages.length > 0 && (
+                                    <Typography
+                                        variant="caption"
+                                        color="text.secondary"
+                                        sx={{ fontSize: '0.7rem' }}
+                                    >
+                                        {customer.messages[customer.messages.length - 1].time}
+                                    </Typography>
+                                )}
+                            </Box>
                         </ListItem>
                     ))}
                 </List>

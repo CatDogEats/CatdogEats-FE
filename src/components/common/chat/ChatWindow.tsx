@@ -12,15 +12,18 @@ import {
     Dialog,
     DialogTitle,
     DialogContent,
-    DialogActions
+    DialogActions,
+    Chip
 } from "@mui/material"
-import { ArrowBack, Send, Close } from "@mui/icons-material"
+import { ArrowBack, Send, Close, WifiOff } from "@mui/icons-material"
 import type { CustomerInquiry } from "@/types/customer.ts"
 
 interface ChatWindowProps {
     selectedCustomer: CustomerInquiry
     onBackToList: () => void
-    onDeleteChatRoom: (customerId: number) => void // 새로 추가된 prop
+    onDeleteChatRoom: (customerId: string) => void
+    onSendMessage: (message: string) => Promise<void>
+    wsConnected: boolean
     isMobile: boolean
 }
 
@@ -28,16 +31,26 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
                                                    selectedCustomer,
                                                    onBackToList,
                                                    onDeleteChatRoom,
+                                                   onSendMessage,
+                                                   wsConnected,
                                                    isMobile
                                                }) => {
     const [newMessage, setNewMessage] = useState("")
-    const [deleteDialogOpen, setDeleteDialogOpen] = useState(false) // 삭제 확인 다이얼로그 상태
+    const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
+    const [sending, setSending] = useState(false)
 
-    const handleSendMessage = () => {
-        if (newMessage.trim()) {
-            // 메시지 전송 로직
-            console.log("메시지 전송:", newMessage)
+    const handleSendMessage = async () => {
+        if (!newMessage.trim() || sending || !wsConnected) return
+
+        setSending(true)
+        try {
+            await onSendMessage(newMessage.trim())
             setNewMessage("")
+        } catch (error) {
+            console.error("메시지 전송 실패:", error)
+            // TODO: 에러 토스트 표시
+        } finally {
+            setSending(false)
         }
     }
 
@@ -48,19 +61,16 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
         }
     }
 
-    // 채팅방 나가기 버튼 클릭 핸들러
     const handleLeaveChatRoom = () => {
         setDeleteDialogOpen(true)
     }
 
-    // 삭제 확인 핸들러
     const handleConfirmDelete = () => {
         onDeleteChatRoom(selectedCustomer.id)
         setDeleteDialogOpen(false)
-        onBackToList() // 고객 목록으로 돌아가기
+        onBackToList()
     }
 
-    // 삭제 취소 핸들러
     const handleCancelDelete = () => {
         setDeleteDialogOpen(false)
     }
@@ -75,9 +85,24 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
                         <IconButton onClick={onBackToList}>
                             {isMobile ? <ArrowBack /> : <Close />}
                         </IconButton>
+
                         <Box sx={{ flexGrow: 1 }}>
-                            <Typography variant="h6">{selectedCustomer.name}</Typography>
+                            <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                                <Typography variant="h6">{selectedCustomer.name}</Typography>
+                            </Box>
                         </Box>
+
+                        {/* WebSocket 연결 상태 표시 */}
+                        {!wsConnected && (
+                            <Chip
+                                icon={<WifiOff />}
+                                label="연결 끊김"
+                                size="small"
+                                color="error"
+                                variant="outlined"
+                            />
+                        )}
+
                         <Button
                             variant="text"
                             onClick={handleLeaveChatRoom}
@@ -116,7 +141,11 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
                                     borderBottomLeftRadius: message.sender === "admin" ? 16 : 4,
                                 }}
                             >
-                                <Typography variant="body2" sx={{ mb: 0.5 }}>
+                                <Typography variant="body2" sx={{
+                                    mb: 0.5,
+                                    whiteSpace: 'pre-wrap',    // 줄바꿈 유지, 공백 여러 개도 유지
+                                    wordBreak: 'break-word',   // 단어가 너무 길면 줄바꿈
+                                }}>
                                     {message.text}
                                 </Typography>
                                 <Typography
@@ -135,6 +164,15 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
 
                 {/* 메시지 입력창 */}
                 <Paper elevation={2} sx={{ p: 2, borderRadius: 0 }}>
+                    {!wsConnected && (
+                        <Box sx={{ mb: 1 }}>
+                            <Typography variant="caption" color="error" sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                <WifiOff fontSize="small" />
+                                연결이 끊어져 메시지를 전송할 수 없습니다.
+                            </Typography>
+                        </Box>
+                    )}
+
                     <Box sx={{ display: "flex", gap: 1, alignItems: "flex-end" }}>
                         <TextField
                             multiline
@@ -145,9 +183,14 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
                             placeholder="메시지를 입력하세요..."
                             variant="outlined"
                             size="small"
+                            disabled={!wsConnected || sending}
                             sx={{ flexGrow: 1 }}
                         />
-                        <IconButton onClick={handleSendMessage} disabled={!newMessage.trim()} color="primary">
+                        <IconButton
+                            onClick={handleSendMessage}
+                            disabled={!newMessage.trim() || !wsConnected || sending}
+                            color="primary"
+                        >
                             <Send />
                         </IconButton>
                     </Box>
