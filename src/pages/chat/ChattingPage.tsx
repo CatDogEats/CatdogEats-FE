@@ -3,8 +3,8 @@ import { Box, useTheme, useMediaQuery, CircularProgress, Alert } from "@mui/mate
 import type { CustomerInquiry, CustomerMessage } from "@/types/customer"
 import CustomerInquiryList from "@/components/chat/CustomerInquiryList"
 import ChatWindow from "@/components/chat/ChatWindow"
-import { useChatData } from "@/service/chatting/useChatData"
-import { chatApiService } from "@/service/chatting/chatApi"
+import { useChatData } from "@/service/chat/useChatData"
+import { chatApiService } from "@/service/chat/chatApi"
 
 const ChatPage: React.FC = () => {
     const theme = useTheme()
@@ -104,11 +104,14 @@ const ChatPage: React.FC = () => {
     }, [selectedCustomer, unsubscribeFromRoom])
 
     const handleDeleteChatRoom = useCallback(
-        (customerId: string) => {
-            console.log('채팅방 삭제:', customerId)
-            deleteChatRoom(customerId)
-            if (selectedCustomer?.id === customerId) {
-                setSelectedCustomer(null)
+        async (customerId: string) => {
+            try {
+                await deleteChatRoom(customerId)
+                if (selectedCustomer?.id === customerId) {
+                    setSelectedCustomer(null)
+                }
+            } catch (error) {
+                console.error("삭제 실패:", error)
             }
         },
         [selectedCustomer, deleteChatRoom]

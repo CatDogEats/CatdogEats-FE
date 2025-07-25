@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import type { CustomerInquiry, CustomerMessage } from '@/types/customer'
-import { chatApiService, type ChatRoomListResponse } from '@/service/chatting/chatApi'
-import { websocketService, type WebSocketMessage } from '@/service/chatting/websocketService'
+import { chatApiService, type ChatRoomListResponse } from '@/service/chat/chatApi'
+import { websocketService, type WebSocketMessage } from '@/service/chat/websocketService'
 
 export const useChatData = () => {
     const [customerInquiries, setCustomerInquiries] = useState<CustomerInquiry[]>([])
@@ -183,10 +183,11 @@ export const useChatData = () => {
     }, [wsConnected])
 
     // 채팅방 삭제
-    const deleteChatRoom = useCallback((customerId: string) => {
+    const deleteChatRoom = useCallback(async (customerId: string) => {
         console.log('채팅방 삭제:', customerId)
         setCustomerInquiries(prev => prev.filter(c => c.id !== customerId))
         unsubscribeFromRoom(customerId)
+        await chatApiService.deleteChatRoom(customerId)
     }, [unsubscribeFromRoom])
 
     // 더 많은 채팅방 로드

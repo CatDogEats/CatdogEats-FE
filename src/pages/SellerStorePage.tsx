@@ -27,7 +27,7 @@ import { sellerStoreApi, SellerStoreParams, convertCategoriesToParams } from '@/
 import ProductFilter from '@/components/SellerStore/ProductFilter.tsx';
 import CategoryFilter from '@/components/SellerStore/CategoryFilter.tsx';
 import ProductSkeleton from '@/components/SellerStore/ProductSkeleton.tsx';
-import {chatApiService} from "@/service/chatting/chatApi.ts";
+import {chatApiService} from "@/service/chat/chatApi.ts";
 
 const SellerStorePage: React.FC = () => {
     const { sellerId } = useParams<{ sellerId: string }>();

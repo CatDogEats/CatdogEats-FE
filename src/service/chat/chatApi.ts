@@ -1,4 +1,3 @@
-// services/chatApi.ts
 import { apiClient } from '@/service/auth/AuthAPI'
 import type { CustomerInquiry } from '@/types/customer'
 
@@ -28,6 +27,10 @@ export interface CreateChatRoomResponse {
     id: string
     createdAt: string
     updatedAt: string
+}
+
+export interface DeleteChatRoomResponse {
+    message: string
 }
 
 class ChatApiService {
@@ -98,7 +101,24 @@ class ChatApiService {
             return response.data.data || response.data
         } catch (error:any) {
             console.error('채팅방 생성 실패:', error)
-            console.error('에러 응답:', error.response?.data)
+            console.error('에러 응답:', error.response?.message)
+            throw error
+        }
+    }
+
+    async deleteChatRoom(roomId: string): Promise<DeleteChatRoomResponse> {
+        try {
+            console.log('채팅방 삭제 요청:', {roomId})
+            const response = await apiClient.delete(`/v1/users/chat/rooms`, {
+               data: { roomId }
+            })
+
+            return {
+                message: response.data.message
+            }
+        } catch (error:any) {
+            console.error('채팅방 삭제 실패:', error)
+            console.error('에러 응답:', error.response?.message)
             throw error
         }
     }

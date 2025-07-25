@@ -162,9 +162,29 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
                                     sx={{
                                         display: "flex",
                                         justifyContent: message.sender === "admin" ? "flex-end" : "flex-start",
+                                        alignItems: "flex-end",
                                         mb: 2,
+                                        gap: 0.5, // 말풍선과 시간 사이 간격
                                     }}
                                 >
+                                    {/* 내 메시지일 때 시간을 말풍선 왼쪽에 표시 */}
+                                    {message.sender === "admin" && (
+                                        <Typography
+                                            variant="caption"
+                                            sx={{
+                                                color: "text.secondary",
+                                                opacity: 0.7,
+                                                fontSize: "0.75rem",
+                                                userSelect: "none",
+                                                whiteSpace: "nowrap",
+                                                alignSelf: "flex-end",
+                                                mb: 0.2, // 말풍선 하단과 맞추기 위한 미세 조정
+                                            }}
+                                        >
+                                            {dayjs(message.sentAt).format("A h:mm")}
+                                        </Typography>
+                                    )}
+
                                     <Paper
                                         elevation={1}
                                         sx={{
@@ -175,30 +195,38 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
                                             borderRadius: 2,
                                             borderBottomRightRadius: message.sender === "admin" ? 4 : 16,
                                             borderBottomLeftRadius: message.sender === "admin" ? 16 : 4,
+                                            whiteSpace: "pre-wrap",
+                                            wordBreak: "break-word",
                                         }}
                                     >
                                         <Typography
                                             variant="body2"
                                             sx={{
-                                                mb: 0.5,
                                                 whiteSpace: "pre-wrap",
                                                 wordBreak: "break-word",
                                             }}
                                         >
                                             {message.text}
                                         </Typography>
+                                    </Paper>
+
+                                    {/* 상대방 메시지일 때 시간을 말풍선 오른쪽에 표시 */}
+                                    {message.sender !== "admin" && (
                                         <Typography
                                             variant="caption"
                                             sx={{
+                                                color: "text.secondary",
                                                 opacity: 0.7,
-                                                color: message.sender === "admin"
-                                                    ? "rgba(255,255,255,0.7)"
-                                                    : "text.secondary",
+                                                fontSize: "0.75rem",
+                                                userSelect: "none",
+                                                whiteSpace: "nowrap",
+                                                alignSelf: "flex-end",
+                                                mb: 0.2, // 말풍선 하단과 맞추기 위한 미세 조정
                                             }}
                                         >
                                             {dayjs(message.sentAt).format("A h:mm")}
                                         </Typography>
-                                    </Paper>
+                                    )}
                                 </Box>
                             ))}
                         </Box>
