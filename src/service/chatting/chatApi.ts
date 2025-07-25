@@ -24,10 +24,6 @@ export interface ChatMessage {
     isMe: boolean
 }
 
-export interface CreateChatRoomRequest {
-    vendorName: string
-}
-
 export interface CreateChatRoomResponse {
     id: string
     createdAt: string

@@ -1,8 +1,8 @@
 import React, { useState, useCallback, useEffect } from "react"
 import { Box, useTheme, useMediaQuery, CircularProgress, Alert } from "@mui/material"
 import type { CustomerInquiry, CustomerMessage } from "@/types/customer"
-import CustomerInquiryList from "@/components/common/chat/CustomerInquiryList"
-import ChatWindow from "@/components/common/chat/ChatWindow"
+import CustomerInquiryList from "@/components/chat/CustomerInquiryList"
+import ChatWindow from "@/components/chat/ChatWindow"
 import { useChatData } from "@/service/chatting/useChatData"
 import { chatApiService } from "@/service/chatting/chatApi"
 
@@ -59,23 +59,13 @@ const ChatPage: React.FC = () => {
                 console.log('첫 번째 메시지 키들:', Object.keys(messages[0]))
             }
 
-            const formattedMessages: CustomerMessage[] = messages.map((msg, index) => {
-                console.log(`메시지 ${index}:`, msg)
+            const formattedMessages: CustomerMessage[] = messages.map((msg, index) => ({
+                id: msg.senderId + '_' + msg.sentAt + '_' + index,
+                text: msg.message || '',
+                sender: msg.isMe ? 'admin' : 'customer',
+                sentAt: msg.sentAt,
+            }))
 
-                // 백엔드 ChatMessageListDTO 구조에 맞춰 매핑
-                const messageData = {
-                    id: msg.senderId + '_' + msg.sentAt + '_' + index, // 고유 ID 생성
-                    text: msg.message || '',
-                    sender: msg.isMe ? 'admin' : 'customer', // isMe 필드로 발신자 구분
-                    time: new Date(msg.sentAt).toLocaleTimeString('ko-KR', {
-                        hour: '2-digit',
-                        minute: '2-digit',
-                    }),
-                }
-
-                console.log(`포맷된 메시지 ${index}:`, messageData)
-                return messageData
-            })
 
             // 선택된 고객 정보에 메시지 추가
             const customerWithMessages = {
@@ -139,10 +129,7 @@ const ChatPage: React.FC = () => {
                 id: Date.now().toString(),
                 text: message,
                 sender: 'admin',
-                time: new Date().toLocaleTimeString('ko-KR', {
-                    hour: '2-digit',
-                    minute: '2-digit'
-                })
+                sentAt: new Date().toISOString(),
             }
 
             setSelectedCustomer(prev => prev ? {

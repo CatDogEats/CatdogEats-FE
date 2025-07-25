@@ -14,7 +14,6 @@ import {
 import {
     AccessTime as TimeIcon,
     LocalShipping as ShippingIcon,
-    MonetizationOn as FreeShippingIcon
 } from "@mui/icons-material";
 import { BRAND_COLORS } from "./constants";
 import { ProgressCircle } from "./BasicComponents";

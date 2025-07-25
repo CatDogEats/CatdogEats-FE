@@ -38,11 +38,11 @@ export {
 } from './mock-data';
 
 // 판매자 관련 데이터 (기존 유지)
-export {
-    customerInquiries,
-    customerChat,
-    productReviews
-} from './customerData';
+// export {
+//     customerInquiries,
+//     customerChat,
+//     productReviews
+// } from './customerData';
 
 export {
     sellerProductsData

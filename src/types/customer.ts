@@ -3,7 +3,7 @@ export interface CustomerMessage {
     id: string
     text: string
     sender: string
-    time: string
+    sentAt: string
 }
 
 export interface Message {

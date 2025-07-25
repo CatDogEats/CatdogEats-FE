@@ -17,6 +17,10 @@ import {
 } from "@mui/material"
 import { ArrowBack, Send, Close, WifiOff } from "@mui/icons-material"
 import type { CustomerInquiry } from "@/types/customer.ts"
+import dayjs from "dayjs"
+import "dayjs/locale/ko"
+import weekday from "dayjs/plugin/weekday"
+import localeData from "dayjs/plugin/localeData"
 
 interface ChatWindowProps {
     selectedCustomer: CustomerInquiry
@@ -26,6 +30,9 @@ interface ChatWindowProps {
     wsConnected: boolean
     isMobile: boolean
 }
+dayjs.extend(weekday)
+dayjs.extend(localeData)
+dayjs.locale("ko")
 
 const ChatWindow: React.FC<ChatWindowProps> = ({
                                                    selectedCustomer,
@@ -35,6 +42,7 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
                                                    wsConnected,
                                                    isMobile
                                                }) => {
+
     const [newMessage, setNewMessage] = useState("")
     const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
     const [sending, setSending] = useState(false)
@@ -74,6 +82,13 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
     const handleCancelDelete = () => {
         setDeleteDialogOpen(false)
     }
+
+    const groupedMessages = selectedCustomer.messages.reduce((acc, message) => {
+        const dateKey = dayjs(message.sentAt).format("YYYY년 M월 D일 dddd")
+        if (!acc[dateKey]) acc[dateKey] = []
+        acc[dateKey].push(message)
+        return acc
+    }, {} as Record<string, typeof selectedCustomer.messages>)
 
     return (
         <>
@@ -120,44 +135,72 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
 
                 {/* 메시지 영역 */}
                 <Box sx={{ flexGrow: 1, p: 2, overflowY: "auto" }}>
-                    {selectedCustomer.messages?.map((message) => (
-                        <Box
-                            key={message.id}
-                            sx={{
-                                display: "flex",
-                                justifyContent: message.sender === "admin" ? "flex-end" : "flex-start",
-                                mb: 2,
-                            }}
-                        >
-                            <Paper
-                                elevation={1}
-                                sx={{
-                                    p: 1.5,
-                                    maxWidth: "70%",
-                                    backgroundColor: message.sender === "admin" ? "primary.main" : "#f5f5f5",
-                                    color: message.sender === "admin" ? "white" : "inherit",
-                                    borderRadius: 2,
-                                    borderBottomRightRadius: message.sender === "admin" ? 4 : 16,
-                                    borderBottomLeftRadius: message.sender === "admin" ? 16 : 4,
-                                }}
-                            >
-                                <Typography variant="body2" sx={{
-                                    mb: 0.5,
-                                    whiteSpace: 'pre-wrap',    // 줄바꿈 유지, 공백 여러 개도 유지
-                                    wordBreak: 'break-word',   // 단어가 너무 길면 줄바꿈
-                                }}>
-                                    {message.text}
-                                </Typography>
+                    {Object.entries(groupedMessages).map(([date, messages]) => (
+                        <Box key={date}>
+                            {/* 날짜 구분선 */}
+                            <Box sx={{ display: "flex", justifyContent: "center", my: 2 }}>
                                 <Typography
                                     variant="caption"
                                     sx={{
-                                        opacity: 0.7,
-                                        color: message.sender === "admin" ? "rgba(255,255,255,0.7)" : "text.secondary",
+                                        backgroundColor: "#e0e0e0",
+                                        px: 2,
+                                        py: 0.5,
+                                        borderRadius: 1,
+                                        fontSize: "0.75rem",
+                                        fontWeight: 500,
+                                        color: "#555",
                                     }}
                                 >
-                                    {message.time}
+                                    {date}
                                 </Typography>
-                            </Paper>
+                            </Box>
+
+                            {/* 해당 날짜의 메시지들 */}
+                            {messages.map((message) => (
+                                <Box
+                                    key={message.id}
+                                    sx={{
+                                        display: "flex",
+                                        justifyContent: message.sender === "admin" ? "flex-end" : "flex-start",
+                                        mb: 2,
+                                    }}
+                                >
+                                    <Paper
+                                        elevation={1}
+                                        sx={{
+                                            p: 1.5,
+                                            maxWidth: "70%",
+                                            backgroundColor: message.sender === "admin" ? "primary.main" : "#f5f5f5",
+                                            color: message.sender === "admin" ? "white" : "inherit",
+                                            borderRadius: 2,
+                                            borderBottomRightRadius: message.sender === "admin" ? 4 : 16,
+                                            borderBottomLeftRadius: message.sender === "admin" ? 16 : 4,
+                                        }}
+                                    >
+                                        <Typography
+                                            variant="body2"
+                                            sx={{
+                                                mb: 0.5,
+                                                whiteSpace: "pre-wrap",
+                                                wordBreak: "break-word",
+                                            }}
+                                        >
+                                            {message.text}
+                                        </Typography>
+                                        <Typography
+                                            variant="caption"
+                                            sx={{
+                                                opacity: 0.7,
+                                                color: message.sender === "admin"
+                                                    ? "rgba(255,255,255,0.7)"
+                                                    : "text.secondary",
+                                            }}
+                                        >
+                                            {dayjs(message.sentAt).format("A h:mm")}
+                                        </Typography>
+                                    </Paper>
+                                </Box>
+                            ))}
                         </Box>
                     ))}
                 </Box>

@@ -92,10 +92,7 @@ export const useChatData = () => {
                         id: message.roomId + '_' + message.sentAt + '_' + Date.now(),
                         text: message.message,
                         sender: message.isMe ? 'admin' : 'customer' as 'admin' | 'customer',
-                        time: new Date(message.sentAt).toLocaleTimeString('ko-KR', {
-                            hour: '2-digit',
-                            minute: '2-digit'
-                        })
+                        sentAt: message.sentAt
                     }
 
                     return {
@@ -142,10 +139,7 @@ export const useChatData = () => {
                 id: Date.now().toString(),
                 text: message,
                 sender: 'admin' as const,
-                time: new Date().toLocaleTimeString('ko-KR', {
-                    hour: '2-digit',
-                    minute: '2-digit'
-                })
+                sentAt: new Date().toISOString()
             }
 
             setCustomerInquiries(prev =>

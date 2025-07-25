@@ -4,6 +4,9 @@ import type React from "react"
 import { Box, Typography, TextField, InputAdornment, List, ListItem, ListItemText, Chip, Paper, CircularProgress } from "@mui/material"
 import { Search, ChatBubbleOutline } from "@mui/icons-material"
 import type { CustomerInquiry } from "@/types/customer.ts"
+import dayjs from "dayjs"
+import "dayjs/locale/ko"
+dayjs.locale("ko")
 
 interface CustomerInquiryListProps {
     customerInquiries: CustomerInquiry[]
@@ -88,13 +91,15 @@ const CustomerInquiryList: React.FC<CustomerInquiryListProps> = ({
                                     />
                                 )}
                                 {/* 마지막 메시지 시간 표시 (옵션) */}
-                                {customer.messages && customer.messages.length > 0 && (
+                                {customer.lastMessageAt && (
                                     <Typography
                                         variant="caption"
                                         color="text.secondary"
                                         sx={{ fontSize: '0.7rem' }}
                                     >
-                                        {customer.messages[customer.messages.length - 1].time}
+                                        {dayjs(customer.lastMessageAt).isSame(dayjs(), 'day')
+                                            ? dayjs(customer.lastMessageAt).format("A h:mm")
+                                            : dayjs(customer.lastMessageAt).format("YYYY.MM.DD")}
                                     </Typography>
                                 )}
                             </Box>

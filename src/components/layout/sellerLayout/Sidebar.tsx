@@ -4,7 +4,7 @@ import { MenuItem } from '@/components/layout/sellerLayout/types/seller.types';
 interface SellerSidebarMenuProps {
     menuItems: MenuItem[];
     isActive: (path: string) => boolean;
-    onMenuClick: (path: string) => void;
+    onMenuClick: (path: string, newWindow?: boolean) => void;
 }
 
 export const SellerSidebarMenu = ({ menuItems, isActive, onMenuClick }: SellerSidebarMenuProps) => {
@@ -23,7 +23,7 @@ export const SellerSidebarMenu = ({ menuItems, isActive, onMenuClick }: SellerSi
                     return (
                         <ListItem
                             key={item.id}
-                            onClick={() => onMenuClick(item.path)}
+                            onClick={() => onMenuClick(item.path, item.newWindow)}
                             sx={{
                                 py: 2,
                                 px: 3,

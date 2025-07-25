@@ -78,6 +78,13 @@ const menuItems: MenuItem[] = [
         path: '/seller/customers'
     },
     {
+        id: 'chat',
+        label: '고객 문의',
+        icon: 'chat',
+        path: '/chat',
+        newWindow: true
+    },
+    {
         id: 'info',
         label: '판매자 정보',
         icon: 'store',
@@ -125,8 +132,8 @@ const SellerLayout = () => {
     const isActive = (path: string) => {
         if (location.pathname === path) return true;
         if (path !== '/seller' && location.pathname.startsWith(path + '/')) return true;
-        if (path === '/seller' && location.pathname === '/seller') return true;
-        return false;
+        return path === '/seller' && location.pathname === '/seller';
+
     };
 
     const getCurrentPageTitle = () => {
@@ -134,7 +141,16 @@ const SellerLayout = () => {
         return currentItem?.label || '판매자 대시보드';
     };
 
-    const handleMenuClick = (path: string) => {
+    const handleMenuClick = (path: string, newWindow=false) => {
+        if (newWindow) {
+            window.open(
+                "/chat",
+                "ChatWindow",
+                "width=500,height=700,resizable=yes,scrollbars=yes"
+            )
+            return;
+        }
+
         navigate(path);
         if (isMobile) {
             setMobileOpen(false);
@@ -226,7 +242,7 @@ const SellerLayout = () => {
                 <SellerSidebarMenu
                     menuItems={menuItems}
                     isActive={isActive}
-                    onMenuClick={handleMenuClick}
+                    onMenuClick={(path: string, newWindow?: boolean) => handleMenuClick(path, newWindow)}
                 />
             </Box>
 

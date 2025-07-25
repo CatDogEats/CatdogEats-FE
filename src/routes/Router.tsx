@@ -29,7 +29,7 @@ import ChattingPage from "@/pages/chat/ChattingPage.tsx";
 const router = createBrowserRouter([
   {
     path: "/chat",
-    element: <AuthGuard allowedRoles="ROLE_BUYER" ></AuthGuard>,
+    element: <AuthGuard allowedRoles={["ROLE_BUYER", "ROLE_SELLER"]} ></AuthGuard>,
     children: [
       {index: true, element: <ChattingPage></ChattingPage>}
     ]
