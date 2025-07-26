@@ -1,5 +1,5 @@
 // src/service/seller/SellerInfoAPI.ts
-import { apiClient } from '@/service/auth/AuthAPI';
+import {apiClient, retryIfUnauthorized} from '@/service/auth/AuthAPI';
 
 // ===== 백엔드 요청 타입 정의 =====
 export interface SellerInfoRequestDTO {
@@ -284,7 +284,7 @@ export const sellerInfoApi = {
 
             // 다른 에러인 경우
             console.error('❌ 판매자 정보 조회 실패:', error);
-            throw error;
+            return await retryIfUnauthorized(error, () => sellerInfoApi.getSellerInfo());
         }
     },
 
@@ -295,53 +295,40 @@ export const sellerInfoApi = {
         currentData: SellerInfoFormData,
         originalData: SellerInfoFormData | null = null
     ): Promise<SellerInfoResponseDTO> => {
-        const requestData = createPatchRequest(currentData, originalData);
-
-        const response = await apiClient.patch<APIResponse<SellerInfoResponseDTO>>(
-            '/v1/sellers/info',
-            requestData
-        );
-
-        console.log("📤 판매자 정보 저장 응답:", response.data.data);
-        console.log("🖼️ 응답에 포함된 프로필 이미지:", response.data.data.vendorProfileImage);
-
-        return response.data.data;
+        try {
+            const requestData = createPatchRequest(currentData, originalData);
+            const response = await apiClient.patch<APIResponse<SellerInfoResponseDTO>>(
+                '/v1/sellers/info',
+                requestData
+            );
+            return response.data.data;
+        } catch (error: any) {
+            return await retryIfUnauthorized(error, () => sellerInfoApi.upsertSellerInfo(currentData, originalData));
+        }
     },
 
-    /**
-     * 브랜드 이미지 업로드
-     */
     uploadBrandImage: async (imageFile: File): Promise<SellerBrandImageResponseDTO> => {
-        const formData = new FormData();
-        formData.append('image', imageFile);
-
-        console.log("📤 이미지 업로드 시작...");
-        const response = await apiClient.patch<APIResponse<SellerBrandImageResponseDTO>>(
-            '/v1/sellers/image',
-            formData,
-            {
-                headers: {
-                    'Content-Type': 'multipart/form-data',
-                }
-            }
-        );
-
-        console.log("✅ 이미지 업로드 성공:", response.data.data);
-        console.log("🖼️ 업로드된 이미지 URL:", response.data.data.vendorProfileImage);
-
-        return response.data.data;
+        try {
+            const formData = new FormData();
+            formData.append('image', imageFile);
+            const response = await apiClient.patch<APIResponse<SellerBrandImageResponseDTO>>(
+                '/v1/sellers/image',
+                formData,
+                { headers: { 'Content-Type': 'multipart/form-data' } }
+            );
+            return response.data.data;
+        } catch (error: any) {
+            return await retryIfUnauthorized(error, () => sellerInfoApi.uploadBrandImage(imageFile));
+        }
     },
 
-    /**
-     * 브랜드 이미지 삭제
-     */
     deleteBrandImage: async (): Promise<SellerBrandImageResponseDTO> => {
-        console.log("🗑️ 이미지 삭제 시작...");
-        const response = await apiClient.delete<APIResponse<SellerBrandImageResponseDTO>>('/v1/sellers/image');
-
-        console.log("✅ 이미지 삭제 성공:", response.data.data);
-
-        return response.data.data;
+        try {
+            const response = await apiClient.delete<APIResponse<SellerBrandImageResponseDTO>>('/v1/sellers/image');
+            return response.data.data;
+        } catch (error: any) {
+            return await retryIfUnauthorized(error, () => sellerInfoApi.deleteBrandImage());
+        }
     }
 };
 

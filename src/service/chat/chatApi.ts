@@ -1,4 +1,4 @@
-import { apiClient } from '@/service/auth/AuthAPI'
+import {apiClient,  retryIfUnauthorized} from '@/service/auth/AuthAPI'
 import type { CustomerInquiry } from '@/types/customer'
 
 export interface ChatRoomListResponse {
@@ -55,7 +55,7 @@ class ChatApiService {
         } catch (error:any) {
             console.error('채팅방 목록 조회 실패:', error)
             console.error('에러 응답:', error.response?.data)
-            throw error
+            return await retryIfUnauthorized(error, () => this.getChatRooms(cursor, size) )
         }
     }
 
@@ -85,7 +85,8 @@ class ChatApiService {
                     nextCursor: undefined
                 }
             }
-            throw error
+
+            return await retryIfUnauthorized(error, () => this.getChatMessages(roomId, cursor, size) )
         }
     }
 
@@ -100,9 +101,10 @@ class ChatApiService {
             console.log('채팅방 생성 응답:', response.data)
             return response.data.data || response.data
         } catch (error:any) {
+
             console.error('채팅방 생성 실패:', error)
             console.error('에러 응답:', error.response?.message)
-            throw error
+            return await retryIfUnauthorized(error, () => this.createChatRoom(vendorName) )
         }
     }
 
@@ -119,7 +121,7 @@ class ChatApiService {
         } catch (error:any) {
             console.error('채팅방 삭제 실패:', error)
             console.error('에러 응답:', error.response?.message)
-            throw error
+            return await retryIfUnauthorized(error, () => this.deleteChatRoom(roomId) )
         }
     }
 }

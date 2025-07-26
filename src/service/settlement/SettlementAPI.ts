@@ -1,5 +1,5 @@
 // src/service/SettlementAPI.ts
-import { apiClient } from '@/service/auth/AuthAPI.ts';
+import {apiClient, retryIfUnauthorized} from '@/service/auth/AuthAPI.ts';
 
 // ===== 백엔드 응답 타입 정의 =====
 
@@ -107,10 +107,14 @@ export const settlementApi = {
      * 1. 전체 정산 리스트 조회 (페이징)
      */
     getSettlementList: async (page: number = 0, size: number = 10): Promise<SettlementListResponse> => {
-        const response = await apiClient.get<APIResponse<SettlementListResponse>>(
-            `/v1/sellers/settlements?page=${page}&size=${size}`
-        );
-        return response.data.data;
+        try {
+            const response = await apiClient.get<APIResponse<SettlementListResponse>>(
+                `/v1/sellers/settlements?page=${page}&size=${size}`
+            );
+            return response.data.data;
+        } catch (error: any) {
+            return await retryIfUnauthorized(error, () => settlementApi.getSettlementList(page, size));
+        }
     },
 
     /**
@@ -121,21 +125,29 @@ export const settlementApi = {
         page: number = 0,
         size: number = 10
     ): Promise<SettlementListResponse> => {
-        const response = await apiClient.post<APIResponse<SettlementListResponse>>(
-            `/v1/sellers/settlements/period?page=${page}&size=${size}`,
-            periodRequest
-        );
-        return response.data.data;
+        try {
+            const response = await apiClient.post<APIResponse<SettlementListResponse>>(
+                `/v1/sellers/settlements/period?page=${page}&size=${size}`,
+                periodRequest
+            );
+            return response.data.data;
+        } catch (error: any) {
+            return await retryIfUnauthorized(error, () => settlementApi.getSettlementListByPeriod(periodRequest, page, size));
+        }
     },
 
     /**
      * 3. 이번달 정산현황 조회
      */
     getMonthlySettlementStatus: async (): Promise<MonthlySettlementStatusResponse> => {
-        const response = await apiClient.get<APIResponse<MonthlySettlementStatusResponse>>(
-            '/v1/sellers/settlements/monthly-status'
-        );
-        return response.data.data;
+        try {
+            const response = await apiClient.get<APIResponse<MonthlySettlementStatusResponse>>(
+                '/v1/sellers/settlements/monthly-status'
+            );
+            return response.data.data;
+        } catch (error: any) {
+            return await retryIfUnauthorized(error, () => settlementApi.getMonthlySettlementStatus());
+        }
     },
 
     /**
@@ -146,23 +158,31 @@ export const settlementApi = {
         page: number = 0,
         size: number = 50
     ): Promise<MonthlyReceiptResponse> => {
-        const response = await apiClient.get<APIResponse<MonthlyReceiptResponse>>(
-            `/v1/sellers/settlements/monthly-receipt/${targetMonth}?page=${page}&size=${size}`
-        );
-        return response.data.data;
+        try {
+            const response = await apiClient.get<APIResponse<MonthlyReceiptResponse>>(
+                `/v1/sellers/settlements/monthly-receipt/${targetMonth}?page=${page}&size=${size}`
+            );
+            return response.data.data;
+        } catch (error: any) {
+            return await retryIfUnauthorized(error, () => settlementApi.getMonthlySettlementReceipt(targetMonth, page, size));
+        }
     },
 
     /**
      * 5. 월별 정산내역 CSV 다운로드
      */
     downloadMonthlySettlementCsv: async (targetMonth: string): Promise<Blob> => {
-        const response = await apiClient.get(
-            `/v1/sellers/settlements/monthly-receipt/${targetMonth}/download`,
-            {
-                responseType: 'blob'
-            }
-        );
-        return response.data;
+        try {
+            const response = await apiClient.get(
+                `/v1/sellers/settlements/monthly-receipt/${targetMonth}/download`,
+                {
+                    responseType: 'blob'
+                }
+            );
+            return response.data;
+        } catch (error: any) {
+            return await retryIfUnauthorized(error, () => settlementApi.downloadMonthlySettlementCsv(targetMonth));
+        }
     }
 };
 

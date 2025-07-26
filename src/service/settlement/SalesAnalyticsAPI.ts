@@ -1,5 +1,5 @@
 // src/service/SalesAnalyticsAPI.ts
-import { apiClient } from '@/service/auth/AuthAPI.ts';
+import {apiClient, retryIfUnauthorized} from '@/service/auth/AuthAPI.ts';
 
 // ===== 백엔드 응답 타입 정의 =====
 
@@ -72,32 +72,40 @@ export const salesAnalyticsApi = {
      * 1. 기간별 매출 분석 조회 (년도별 월별 집계)
      */
     getPeriodSalesAnalytics: async (year: number): Promise<PeriodSalesAnalyticsResponse> => {
-        const response = await apiClient.get<APIResponse<PeriodSalesAnalyticsResponse>>(
-            `/v1/sellers/analytics/sales/period?year=${year}`
-        );
-        return response.data.data;
+        try {
+            const response = await apiClient.get<APIResponse<PeriodSalesAnalyticsResponse>>(
+                `/v1/sellers/analytics/sales/period?year=${year}`
+            );
+            return response.data.data;
+        } catch (error: any) {
+            return await retryIfUnauthorized(error, () => salesAnalyticsApi.getPeriodSalesAnalytics(year));
+        }
     },
 
     /**
      * 2. 상품별 매출 분석 조회 (연도별/월별 + 페이징)
      */
     getProductSalesAnalytics: async (params: ProductSalesParams): Promise<ProductSalesAnalyticsResponse> => {
-        const queryParams = new URLSearchParams();
+        try {
+            const queryParams = new URLSearchParams();
 
-        queryParams.append('type', params.type);
-        queryParams.append('year', params.year.toString());
+            queryParams.append('type', params.type);
+            queryParams.append('year', params.year.toString());
 
-        if (params.month !== undefined && params.type === 'MONTHLY') {
-            queryParams.append('month', params.month.toString());
+            if (params.month !== undefined && params.type === 'MONTHLY') {
+                queryParams.append('month', params.month.toString());
+            }
+
+            queryParams.append('page', (params.page || 0).toString());
+            queryParams.append('size', (params.size || 10).toString());
+
+            const response = await apiClient.get<APIResponse<ProductSalesAnalyticsResponse>>(
+                `/v1/sellers/analytics/sales/products?${queryParams.toString()}`
+            );
+            return response.data.data;
+        } catch (error: any) {
+            return await retryIfUnauthorized(error, () => salesAnalyticsApi.getProductSalesAnalytics(params));
         }
-
-        queryParams.append('page', (params.page || 0).toString());
-        queryParams.append('size', (params.size || 10).toString());
-
-        const response = await apiClient.get<APIResponse<ProductSalesAnalyticsResponse>>(
-            `/v1/sellers/analytics/sales/products?${queryParams.toString()}`
-        );
-        return response.data.data;
     }
 };
 

@@ -104,6 +104,20 @@ export const authApi = {
     },
 }
 
+export async function retryIfUnauthorized<T>(
+    error: any,
+    retryFn: () => Promise<T>
+): Promise<T> {
+    if (error.response?.status === 401) {
+        const response = await authApi.refreshToken()
+        if (response?.status === 200) {
+            return await retryFn()
+        }
+    }
+    throw error
+}
+
+
 export interface User {
     name?: string
     role?: string
