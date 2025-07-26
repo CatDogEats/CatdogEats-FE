@@ -30,7 +30,7 @@ class WebSocketService {
 
     private setupClient() {
         this.client = new Client({
-            brokerURL: 'ws://localhost:8080/v1/users/chat',
+            brokerURL: import.meta.env.VITE_WEBSOCKET_URL,
             debug: (str) => {
                 console.log('STOMP Debug:', str)
             },
