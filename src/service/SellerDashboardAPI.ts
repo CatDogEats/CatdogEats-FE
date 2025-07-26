@@ -1,5 +1,5 @@
 // src/services/SellerDashboardAPI.ts
-import { apiClient } from '@/service/auth/AuthAPI';
+import {apiClient, retryIfUnauthorized} from '@/service/auth/AuthAPI';
 
 // ===== 백엔드 응답 타입 정의 =====
 
@@ -85,10 +85,14 @@ export const sellerDashboardApi = {
      * 판매자 대시보드 데이터 조회
      */
     getDashboardData: async (): Promise<SellerDashboardResponse> => {
-        const response = await apiClient.get<APIResponse<SellerDashboardResponse>>(
-            '/v1/sellers/dashboard'
-        );
-        return response.data.data;
+        try {
+            const response = await apiClient.get<APIResponse<SellerDashboardResponse>>(
+                '/v1/sellers/dashboard'
+            );
+            return response.data.data;
+        } catch (error: any) {
+            return await retryIfUnauthorized(error, () => sellerDashboardApi.getDashboardData());
+        }
     }
 };
 

@@ -1,4 +1,4 @@
-import { apiClient } from '@/service/auth/AuthAPI';
+import {apiClient, retryIfUnauthorized} from '@/service/auth/AuthAPI';
 import {
     InquiryListResponseDTO,
     InquiryDetailResponseDTO,
@@ -33,30 +33,31 @@ export const inquiryApi = {
             direction = 'desc'
         } = params;
 
-        const response = await apiClient.get<APIResponse<PageResponse<InquiryListResponseDTO>>>(
-            INQUIRY_BASE_URL,
-            {
-                params: {
-                    page,
-                    size,
-                    sort,
-                    direction
+        try {
+            const response = await apiClient.get<APIResponse<PageResponse<InquiryListResponseDTO>>>(
+                INQUIRY_BASE_URL,
+                {
+                    params: { page, size, sort, direction }
                 }
-            }
-        );
-
-        return response.data.data;
+            );
+            return response.data.data;
+        } catch (error: any) {
+            return await retryIfUnauthorized(error, () => inquiryApi.getInquiries(params));
+        }
     },
 
     // ===========================
     // 2. 문의 상세 조회
     // ===========================
     async getInquiryDetail(inquiryId: string): Promise<InquiryDetailResponseDTO> {
-        const response = await apiClient.get<APIResponse<InquiryDetailResponseDTO>>(
-            `${INQUIRY_BASE_URL}/${inquiryId}`
-        );
-
-        return response.data.data;
+        try {
+            const response = await apiClient.get<APIResponse<InquiryDetailResponseDTO>>(
+                `${INQUIRY_BASE_URL}/${inquiryId}`
+            );
+            return response.data.data;
+        } catch (error: any) {
+            return await retryIfUnauthorized(error, () => inquiryApi.getInquiryDetail(inquiryId));
+        }
     },
 
     // ===========================
@@ -65,35 +66,31 @@ export const inquiryApi = {
     async createInquiry(inquiryData: InquiryCreateRequestDTO): Promise<InquiryResponseDTO> {
         const formData = new FormData();
 
-        // 텍스트 데이터 추가
         formData.append('title', inquiryData.title);
         formData.append('content', inquiryData.content);
         formData.append('inquiryType', inquiryData.inquiryType);
         formData.append('inquiryReceiveMethod', inquiryData.inquiryReceiveMethod);
 
-        // 주문 ID가 있는 경우에만 추가
         if (inquiryData.orderId && inquiryData.orderId.trim()) {
             formData.append('orderId', inquiryData.orderId.trim());
         }
 
-        // 이미지 파일들 추가
         if (inquiryData.imageFiles && inquiryData.imageFiles.length > 0) {
-            inquiryData.imageFiles.forEach((file) => {
+            inquiryData.imageFiles.forEach(file => {
                 formData.append('imageFiles', file);
             });
         }
 
-        const response = await apiClient.post<APIResponse<InquiryResponseDTO>>(
-            INQUIRY_BASE_URL,
-            formData,
-            {
-                headers: {
-                    'Content-Type': 'multipart/form-data',
-                },
-            }
-        );
-
-        return response.data.data;
+        try {
+            const response = await apiClient.post<APIResponse<InquiryResponseDTO>>(
+                INQUIRY_BASE_URL,
+                formData,
+                { headers: { 'Content-Type': 'multipart/form-data' } }
+            );
+            return response.data.data;
+        } catch (error: any) {
+            return await retryIfUnauthorized(error, () => inquiryApi.createInquiry(inquiryData));
+        }
     },
 
     // ===========================
@@ -102,28 +99,25 @@ export const inquiryApi = {
     async createFollowup(followupData: InquiryUserFollowupRequestDTO): Promise<InquiryResponseDTO> {
         const formData = new FormData();
 
-        // 텍스트 데이터 추가
         formData.append('inquiryId', followupData.inquiryId);
         formData.append('content', followupData.content);
 
-        // 이미지 파일들 추가
         if (followupData.imageFiles && followupData.imageFiles.length > 0) {
-            followupData.imageFiles.forEach((file) => {
+            followupData.imageFiles.forEach(file => {
                 formData.append('imageFiles', file);
             });
         }
 
-        const response = await apiClient.post<APIResponse<InquiryResponseDTO>>(
-            `${INQUIRY_BASE_URL}/followup`,
-            formData,
-            {
-                headers: {
-                    'Content-Type': 'multipart/form-data',
-                },
-            }
-        );
-
-        return response.data.data;
+        try {
+            const response = await apiClient.post<APIResponse<InquiryResponseDTO>>(
+                `${INQUIRY_BASE_URL}/followup`,
+                formData,
+                { headers: { 'Content-Type': 'multipart/form-data' } }
+            );
+            return response.data.data;
+        } catch (error: any) {
+            return await retryIfUnauthorized(error, () => inquiryApi.createFollowup(followupData));
+        }
     },
 
     // ===========================
@@ -131,28 +125,32 @@ export const inquiryApi = {
     // ===========================
     async closeInquiry(inquiryId: string): Promise<InquiryResponseDTO> {
         const closeData: InquiryUserCloseRequestDTO = { inquiryId };
-
-        const response = await apiClient.patch<APIResponse<InquiryResponseDTO>>(
-            `${INQUIRY_BASE_URL}/close`,
-            closeData
-        );
-
-        return response.data.data;
+        try {
+            const response = await apiClient.patch<APIResponse<InquiryResponseDTO>>(
+                `${INQUIRY_BASE_URL}/close`,
+                closeData
+            );
+            return response.data.data;
+        } catch (error: any) {
+            return await retryIfUnauthorized(error, () => inquiryApi.closeInquiry(inquiryId));
+        }
     },
 
     // ===========================
     // 6. 파일 다운로드
     // ===========================
     async downloadFile(inquiryId: string, fileId: string): Promise<Blob> {
-        const response = await apiClient.get(
-            `${INQUIRY_BASE_URL}/${inquiryId}/files/${fileId}`,
-            {
-                responseType: 'blob', // 파일 다운로드를 위한 blob 타입
-            }
-        );
-
-        return response.data;
+        try {
+            const response = await apiClient.get(
+                `${INQUIRY_BASE_URL}/${inquiryId}/files/${fileId}`,
+                { responseType: 'blob' }
+            );
+            return response.data;
+        } catch (error: any) {
+            return await retryIfUnauthorized(error, () => inquiryApi.downloadFile(inquiryId, fileId));
+        }
     },
+
 
     // ===========================
     // 7. 파일 다운로드 URL 생성 (브라우저에서 직접 다운로드)
