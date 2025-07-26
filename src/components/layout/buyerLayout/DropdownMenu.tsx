@@ -5,8 +5,8 @@ import {
     ListItem,
     ListItemText,
 } from "@mui/material";
-import { ChevronRight as ChevronRightIcon } from "@mui/icons-material";
-import { useNavigate } from "react-router-dom";
+import {ChevronRight as ChevronRightIcon} from "@mui/icons-material";
+import {useNavigate} from "react-router-dom";
 
 interface SubItem {
     label: string;
@@ -22,13 +22,14 @@ interface NavigationItem {
 }
 
 interface DropdownMenuProps {
-    navigationItems: NavigationItem[];
-    menuOpen: boolean;
-    hoveredCategory: string | null;
-    hoveredSubCategory: string | null;
-    setHoveredCategory: (category: string | null) => void;
-    setHoveredSubCategory: (subCategory: string | null) => void;
-    setMenuOpen: (open: boolean) => void;
+    navigationItems: NavigationItem[],
+    menuOpen: boolean,
+    hoveredCategory: string | null,
+    hoveredSubCategory: string | null,
+    setHoveredCategory: (category: string | null) => void,
+    setHoveredSubCategory: (subCategory: string | null) => void,
+    setMenuOpen: (open: boolean) => void,
+    onNavigationClick?: (item: any) => void
 }
 
 const DropdownMenu: React.FC<DropdownMenuProps> = ({
@@ -51,6 +52,7 @@ const DropdownMenu: React.FC<DropdownMenuProps> = ({
                 top: "100%",
                 left: 0,
                 minWidth: "180px",
+                height: "100vh",
                 backgroundColor: "white",
                 boxShadow: "0 4px 12px rgba(0,0,0,0.1)",
                 zIndex: 1000,
@@ -59,9 +61,9 @@ const DropdownMenu: React.FC<DropdownMenuProps> = ({
                 borderRadius: "0 0 8px 8px",
             }}
         >
-            <List sx={{ py: 0 }}>
+            <List sx={{py: 0}}>
                 {navigationItems.map((item, index) => (
-                    <Box key={item.label} sx={{ position: "relative" }}>
+                    <Box key={item.label} sx={{position: "relative"}}>
                         {/* 1차 메뉴 */}
                         <ListItem
                             onClick={() => {
@@ -88,7 +90,7 @@ const DropdownMenu: React.FC<DropdownMenuProps> = ({
                                 px: 3,
                                 borderBottom: index < navigationItems.length - 1 ? "1px solid" : "none",
                                 borderBottomColor: "grey.100",
-                                "&:hover": { backgroundColor: "grey.50" },
+                                "&:hover": {backgroundColor: "grey.50"},
                                 whiteSpace: "nowrap",
                                 display: "flex",
                                 justifyContent: "space-between",
@@ -104,7 +106,7 @@ const DropdownMenu: React.FC<DropdownMenuProps> = ({
                                 }}
                             />
                             {item.subItems && (
-                                <ChevronRightIcon sx={{ fontSize: "16px", color: "#999" }} />
+                                <ChevronRightIcon sx={{fontSize: "16px", color: "#999"}}/>
                             )}
                         </ListItem>
 
@@ -129,9 +131,9 @@ const DropdownMenu: React.FC<DropdownMenuProps> = ({
                                     setHoveredSubCategory(null);
                                 }}
                             >
-                                <List sx={{ py: 0 }}>
+                                <List sx={{py: 0}}>
                                     {(item.subItems || []).map((subItem, subIndex) => (
-                                        <Box key={subItem.label} sx={{ position: "relative" }}>
+                                        <Box key={subItem.label} sx={{position: "relative"}}>
                                             <ListItem
                                                 onClick={() => {
                                                     if (subItem.path) {
@@ -154,7 +156,7 @@ const DropdownMenu: React.FC<DropdownMenuProps> = ({
                                                     borderBottom: subIndex < (item.subItems || []).length - 1
                                                         ? "1px solid" : "none",
                                                     borderBottomColor: "grey.100",
-                                                    "&:hover": { backgroundColor: "grey.50" },
+                                                    "&:hover": {backgroundColor: "grey.50"},
                                                     whiteSpace: "nowrap",
                                                     display: "flex",
                                                     justifyContent: "space-between",
@@ -171,7 +173,7 @@ const DropdownMenu: React.FC<DropdownMenuProps> = ({
                                                 />
                                                 {subItem.subItems && (
                                                     <ChevronRightIcon
-                                                        sx={{ fontSize: "14px", color: "#999" }}
+                                                        sx={{fontSize: "14px", color: "#999"}}
                                                     />
                                                 )}
                                             </ListItem>
@@ -197,7 +199,7 @@ const DropdownMenu: React.FC<DropdownMenuProps> = ({
                                                         setHoveredSubCategory(null)
                                                     }
                                                 >
-                                                    <List sx={{ py: 0 }}>
+                                                    <List sx={{py: 0}}>
                                                         {(subItem.subItems || []).map(
                                                             (subSubItem, subSubIndex) => (
                                                                 <ListItem

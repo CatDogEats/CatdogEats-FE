@@ -1,7 +1,5 @@
-// src/components/ProductDetail/ProductInfo/ProductMakerInfo.tsx
-import React, { useState } from "react";
+import React, {useCallback} from "react";
 import { Card, CardContent, Box, Typography, Button } from "@mui/material";
-import ChatModal from "@/components/common/chat/ChatModal";
 import { Product } from "../Product";
 
 interface ProductMakerInfoProps {
@@ -9,15 +7,23 @@ interface ProductMakerInfoProps {
 }
 
 const ProductMakerInfo: React.FC<ProductMakerInfoProps> = ({ product }) => {
-    const [chatModalOpen, setChatModalOpen] = useState(false);
+
+    const handleChatModalOpen = useCallback(() => {
+        const chatWindow = window.open(
+            "/chat", // 또는 채팅용 라우트
+            "ChatWindow",
+            "width=500,height=700,resizable=yes,scrollbars=yes"
+        )
+        if (chatWindow) {
+            chatWindow.focus()
+        }
+    }, [])
 
     const handleChatClick = () => {
-        setChatModalOpen(true);
+        handleChatModalOpen()
     };
 
-    const handleChatModalClose = () => {
-        setChatModalOpen(false);
-    };
+
 
     return (
         <>
@@ -57,12 +63,6 @@ const ProductMakerInfo: React.FC<ProductMakerInfoProps> = ({ product }) => {
                     </Box>
                 </CardContent>
             </Card>
-
-            {/* 채팅 모달 */}
-            <ChatModal
-                open={chatModalOpen}
-                onClose={handleChatModalClose}
-            />
         </>
     );
 };

@@ -27,6 +27,7 @@ export interface MenuItem {
     label: string
     icon: string // Corresponds to Lucide icon name
     path: string
+    newWindow?: boolean;
 }
 
 

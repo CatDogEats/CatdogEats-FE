@@ -23,15 +23,25 @@ import WithdrawalSuccessPage from "@/pages/Account/WidrawSuccess.tsx";
 import AuthGuard from "@/routes/AuthGuard.tsx";
 import PaymentSuccessPage from "../pages/PaymentSuccessPage";
 import PaymentFailPage from "../pages/PaymentFailPage";
+import ChattingPage from "@/pages/chat/ChattingPage.tsx";
 
 // React Router 7 사용
 const router = createBrowserRouter([
   {
+    path: "/chat",
+    element: <AuthGuard allowedRoles={["ROLE_BUYER", "ROLE_SELLER"]} ></AuthGuard>,
+    children: [
+      {index: true, element: <ChattingPage></ChattingPage>}
+    ]
+  },
+  {
     path: "/",
-    element: <BuyerLayout />, // 구매자용 레이아웃 (BuyerHeader + Outlet + BuyerFooter)
+    element: <BuyerLayout />,
     children: [
       // 메인페이지
-      { index: true, element: <HomePage /> },
+      { element: <AuthGuard allowedRoles={["ROLE_BUYER", "GUEST"]}/>,
+        children: [{ index: true, element: <HomePage /> }]
+      },
 
       { path: "productsList", element: <ProductListPage /> }, // 상품 목록 페이지
 

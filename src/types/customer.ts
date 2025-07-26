@@ -1,31 +1,34 @@
 // 타입 정의
 export interface CustomerMessage {
-    id: number
+    id: string
     text: string
-    sender: "customer" | "admin"
+    sender: string
+    sentAt: string
+}
+
+export interface Message {
+    id: string
+    message: string
+    isMe: boolean
     time: string
+    sentAt?: string
 }
 
 export interface CustomerInquiry {
-    id: number
+    id: string
     name: string
-    avatar: string
     lastMessage: string
+    lastMessageAt: string
     unreadCount: number
-    isOnline: boolean
     messages: CustomerMessage[]
-    orderProduct?: string
 }
 
 export interface CustomerChat {
-    id: number
+    id: string
     name: string
-    avatar: string
     lastMessage: string
     unreadCount: number
-    isOnline: boolean
     messages: CustomerMessage[]
-    orderProduct?: string
 }
 
 export interface ProductReview {

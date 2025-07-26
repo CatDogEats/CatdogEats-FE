@@ -14,10 +14,8 @@ import {
 } from "@mui/material"
 import { ArrowBack } from "@mui/icons-material"
 import type { CustomerInquiry } from "@/types/customer.ts"
-import CustomerInquiryList from "@/components/common/chat/CustomerInquiryList.tsx"
-import ChatWindow from "@/components/common/chat/ChatWindow.tsx"
+
 import ProductReviewList from "../../components/customer/ProductReviewList"
-import { customerInquiries as initialCustomerInquiries} from "../../data/customerData"
 
 const CustomerManagementPage: React.FC = () => {
     const theme = useTheme()
@@ -28,7 +26,7 @@ const CustomerManagementPage: React.FC = () => {
     const [reviewSort, setReviewSort] = useState("latest")
 
     // 고객 문의 목록 상태 관리 (삭제 기능을 위해 state로 관리)
-    const [customerInquiries, setCustomerInquiries] = useState<CustomerInquiry[]>(initialCustomerInquiries)
+    // const [customerInquiries, setCustomerInquiries] = useState<CustomerInquiry[]>(initialCustomerInquiries)
 
     // 탭 변경 핸들러
     const switchToTab = (tabIndex: number) => {
@@ -36,21 +34,21 @@ const CustomerManagementPage: React.FC = () => {
         setSelectedCustomer(null)
     }
 
-    const handleCustomerClick = (customer: CustomerInquiry) => {
-        setSelectedCustomer(customer)
-    }
+    // const handleCustomerClick = (customer: CustomerInquiry) => {
+    //     setSelectedCustomer(customer)
+    // }
 
     const handleBackToList = () => {
         setSelectedCustomer(null)
     }
 
     // 채팅방 삭제 핸들러
-    const handleDeleteChatRoom = (customerId: number) => {
-        // 고객 문의 목록에서 해당 고객 제거
-        setCustomerInquiries(prev => prev.filter(customer => customer.id !== customerId))
-        // 선택된 고객 초기화
-        setSelectedCustomer(null)
-    }
+    // const handleDeleteChatRoom = (customerId: string) => {
+    //     // 고객 문의 목록에서 해당 고객 제거
+    //     setCustomerInquiries(prev => prev.filter(customer => customer.id !== customerId))
+    //     // 선택된 고객 초기화
+    //     setSelectedCustomer(null)
+    // }
 
     const handleFilterChange = (event: SelectChangeEvent) => {
         setReviewFilter(event.target.value)
@@ -79,21 +77,21 @@ const CustomerManagementPage: React.FC = () => {
                         <Box sx={{ borderBottom: 1, borderColor: "divider" }}>
                             {/* 커스텀 탭 UI */}
                             <Box sx={{ display: "flex", gap: 2 }}>
+                                {/*<Box*/}
+                                {/*    onClick={() => switchToTab(0)}*/}
+                                {/*    sx={{*/}
+                                {/*        py: 2,*/}
+                                {/*        px: 3,*/}
+                                {/*        cursor: "pointer",*/}
+                                {/*        borderBottom: activeTab === 0 ? `2px solid ${theme.palette.primary.main}` : "none",*/}
+                                {/*        color: activeTab === 0 ? theme.palette.primary.main : "inherit",*/}
+                                {/*        fontWeight: activeTab === 0 ? "bold" : "normal",*/}
+                                {/*    }}*/}
+                                {/*>*/}
+                                {/*    고객 문의*/}
+                                {/*</Box>*/}
                                 <Box
                                     onClick={() => switchToTab(0)}
-                                    sx={{
-                                        py: 2,
-                                        px: 3,
-                                        cursor: "pointer",
-                                        borderBottom: activeTab === 0 ? `2px solid ${theme.palette.primary.main}` : "none",
-                                        color: activeTab === 0 ? theme.palette.primary.main : "inherit",
-                                        fontWeight: activeTab === 0 ? "bold" : "normal",
-                                    }}
-                                >
-                                    고객 문의
-                                </Box>
-                                <Box
-                                    onClick={() => switchToTab(1)}
                                     sx={{
                                         py: 2,
                                         px: 3,
@@ -115,53 +113,53 @@ const CustomerManagementPage: React.FC = () => {
             <Container maxWidth="lg">
                 <Box sx={{ minHeight: "calc(100vh - 200px)" }}>
                     {/* 모바일에서 채팅창이 열린 경우 */}
-                    {selectedCustomer && isMobile && (
-                        <Box sx={{ height: "100%" }}>
-                            <ChatWindow
-                                selectedCustomer={selectedCustomer}
-                                onBackToList={handleBackToList}
-                                onDeleteChatRoom={handleDeleteChatRoom}
-                                isMobile={isMobile}
-                            />
-                        </Box>
-                    )}
+                    {/*{selectedCustomer && isMobile && (*/}
+                    {/*    <Box sx={{ height: "100%" }}>*/}
+                    {/*        <ChatWindow*/}
+                    {/*            selectedCustomer={selectedCustomer}*/}
+                    {/*            onBackToList={handleBackToList}*/}
+                    {/*            onDeleteChatRoom={handleDeleteChatRoom}*/}
+                    {/*            isMobile={isMobile}*/}
+                    {/*        />*/}
+                    {/*    </Box>*/}
+                    {/*)}*/}
 
                     {/* 데스크톱에서 고객 문의 탭 (분할 화면) */}
-                    {activeTab === 0 && (
-                        <Box sx={{ display: "flex", height: "100%" }}>
-                            {/* 고객 목록 */}
-                            <Box
-                                sx={{
-                                    width: selectedCustomer ? "33%" : "100%",
-                                    minWidth: 320,
-                                    p: 3,
-                                    overflowY: "auto",
-                                    borderRight: selectedCustomer ? "1px solid #e0e0e0" : "none",
-                                }}
-                            >
-                                <CustomerInquiryList
-                                    customerInquiries={customerInquiries}
-                                    selectedCustomer={selectedCustomer}
-                                    onCustomerClick={handleCustomerClick}
-                                />
-                            </Box>
+                    {/*{activeTab === 0 && (*/}
+                    {/*    <Box sx={{ display: "flex", height: "100%" }}>*/}
+                    {/*        /!* 고객 목록 *!/*/}
+                    {/*        <Box*/}
+                    {/*            sx={{*/}
+                    {/*                width: selectedCustomer ? "33%" : "100%",*/}
+                    {/*                minWidth: 320,*/}
+                    {/*                p: 3,*/}
+                    {/*                overflowY: "auto",*/}
+                    {/*                borderRight: selectedCustomer ? "1px solid #e0e0e0" : "none",*/}
+                    {/*            }}*/}
+                    {/*        >*/}
+                    {/*            <CustomerInquiryList*/}
+                    {/*                customerInquiries={customerInquiries}*/}
+                    {/*                selectedCustomer={selectedCustomer}*/}
+                    {/*                onCustomerClick={handleCustomerClick}*/}
+                    {/*            />*/}
+                    {/*        </Box>*/}
 
-                            {/* 채팅창 */}
-                            {selectedCustomer && !isMobile && (
-                                <Box sx={{ flexGrow: 1 }}>
-                                    <ChatWindow
-                                        selectedCustomer={selectedCustomer}
-                                        onBackToList={handleBackToList}
-                                        onDeleteChatRoom={handleDeleteChatRoom}
-                                        isMobile={isMobile}
-                                    />
-                                </Box>
-                            )}
-                        </Box>
-                    )}
+                    {/*        /!* 채팅창 *!/*/}
+                    {/*        {selectedCustomer && !isMobile && (*/}
+                    {/*            <Box sx={{ flexGrow: 1 }}>*/}
+                    {/*                <ChatWindow*/}
+                    {/*                    selectedCustomer={selectedCustomer}*/}
+                    {/*                    onBackToList={handleBackToList}*/}
+                    {/*                    onDeleteChatRoom={handleDeleteChatRoom}*/}
+                    {/*                    isMobile={isMobile}*/}
+                    {/*                />*/}
+                    {/*            </Box>*/}
+                    {/*        )}*/}
+                    {/*    </Box>*/}
+                    {/*)}*/}
 
                     {/* 상품 리뷰 탭 */}
-                    {activeTab === 1 && (
+                    {activeTab === 0 && (
                         <Box sx={{ p: 3, height: "100%", overflow: "auto" }}>
                             <ProductReviewList
                                 reviewFilter={reviewFilter}

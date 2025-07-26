@@ -12,13 +12,11 @@ import {
     useMediaQuery,
     useTheme,
     Badge, // 이 부분 추가
-    CircularProgress,
 } from "@mui/material"
 import { useNavigate } from "react-router-dom"
 import { Menu as MenuIcon, ShoppingCart as ShoppingCartIcon, MoreVert as MoreVertIcon } from "@mui/icons-material"
 import { useAuthStore } from "@/service/auth/AuthStore"
 import { authApi } from "@/service/auth/AuthAPI"
-import ChatModal from "@/components/common/chat/ChatModal"
 import DropdownMenu from "./DropdownMenu"
 import SearchBar from "./SearchBar"
 import MobileDrawer from "./MobileDrawer"
@@ -52,7 +50,6 @@ const BuyerHeader = () => {
     const [menuOpen, setMenuOpen] = useState(false)
     const [hoveredCategory, setHoveredCategory] = useState<string | null>(null)
     const [hoveredSubCategory, setHoveredSubCategory] = useState<string | null>(null)
-    const [chatModalOpen, setChatModalOpen] = useState(false)
     const [searchQuery, setSearchQuery] = useState("")
 
     // 임시 알림 데이터
@@ -112,17 +109,21 @@ const BuyerHeader = () => {
 
     // ChatModal 핸들러
     const handleChatModalOpen = useCallback(() => {
-        setChatModalOpen(true)
-        setMenuOpen(false)
-        setMobileOpen(false)
+        const chatWindow = window.open(
+            "/chat", // 또는 채팅용 라우트
+            "ChatWindow",
+            "width=500,height=700,resizable=yes,scrollbars=yes"
+        )
+        if (chatWindow) {
+            chatWindow.focus()
+        }
     }, [])
 
-    const handleChatModalClose = useCallback(() => {
-        setChatModalOpen(false)
-    }, [])
 
     // 네비게이션 아이템
     const navigationItems = [
+        {label: "베스트 상품", path: "/bestProducts"},
+        {label: "특가 상품", path: "/specialProducts"},
         {
             label: "카테고리",
             path: "/productsList",
@@ -250,16 +251,19 @@ const BuyerHeader = () => {
                     </Box>
 
                     {/* 드롭다운 메뉴 */}
-                    <DropdownMenu
-                        navigationItems={navigationItems}
-                        menuOpen={menuOpen}
-                        hoveredCategory={hoveredCategory}
-                        hoveredSubCategory={hoveredSubCategory}
-                        setHoveredCategory={setHoveredCategory}
-                        setHoveredSubCategory={setHoveredSubCategory}
-                        setMenuOpen={setMenuOpen}
-                        onNavigationClick={handleNavigationClick}
-                    />
+                    {!isMobile && (
+                        <DropdownMenu
+                            navigationItems={navigationItems}
+                            menuOpen={menuOpen}
+                            hoveredCategory={hoveredCategory}
+                            hoveredSubCategory={hoveredSubCategory}
+                            setHoveredCategory={setHoveredCategory}
+                            setHoveredSubCategory={setHoveredSubCategory}
+                            setMenuOpen={setMenuOpen}
+                            onNavigationClick={handleNavigationClick}
+                        />
+                    )}
+
 
                     {/* 우측 영역: 검색창 및 메뉴 */}
                     <Box sx={{ display: "flex", alignItems: "center", gap: { xs: 1, sm: 2 } }}>
@@ -297,32 +301,8 @@ const BuyerHeader = () => {
                                     onProfileEdit={handleProfileEdit}
                                     onLogout={handleLogout}
                                 />
-
-                                {/* 로그아웃 버튼 (데스크톱에서만) */}
-                                {!isMobile && (
-                                    <Button
-                                        variant="outlined"
-                                        onClick={handleLogout}
-                                        disabled={loading}
-                                        sx={{
-                                            fontSize: "0.875rem",
-                                            fontWeight: 400,
-                                            color: "text.secondary",
-                                            textTransform: "none",
-                                            minWidth: "auto",
-                                            px: 2,
-                                            borderColor: "grey.300",
-                                            "&:hover": {
-                                                color: "text.primary",
-                                                borderColor: "grey.400",
-                                                backgroundColor: "grey.50",
-                                            },
-                                        }}
-                                    >
-                                        {loading ? <CircularProgress size={16} /> : "로그아웃"}
-                                    </Button>
-                                )}
                             </>
+
                         ) : (
                             <>
                                 {/* 로그인하지 않은 경우: 로그인/회원가입 버튼 (데스크톱) */}
@@ -416,8 +396,6 @@ const BuyerHeader = () => {
                 onLogout={handleLogout}
             />
 
-            {/* ChatModal */}
-            <ChatModal open={chatModalOpen} onClose={handleChatModalClose} />
         </>
     )
 }

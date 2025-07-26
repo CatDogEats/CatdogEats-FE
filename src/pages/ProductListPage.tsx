@@ -25,6 +25,7 @@ function mapProduct(item: any): Product {
         imageUrl = "https://" + imageUrl;
     }
     return {
+        id: item.id,
         name: item.productName,
         brand: item.vendorName || "",
         price: item.discountedPrice,
