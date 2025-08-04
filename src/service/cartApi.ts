@@ -1,5 +1,5 @@
 import { APIResponse } from '@/types/api';
-import {apiClient} from "@/service/auth/AuthAPI.ts";
+import {apiClient, retryIfUnauthorized} from "@/service/auth/AuthAPI.ts";
 
 // 백엔드 응답 구조에 맞춘 타입 정의
 export interface BackendCartItem {
@@ -165,7 +165,7 @@ export class CartApiService {
             return frontendData;
         } catch (error) {
             console.error('❌ 장바구니 조회 실패:', error);
-            throw error;
+            return await retryIfUnauthorized(error, () => this.getCart())
         }
     }
 
@@ -180,7 +180,7 @@ export class CartApiService {
 
         } catch (error) {
             console.error('❌ 장바구니 상품 추가 실패:', error);
-            throw error;
+            return await retryIfUnauthorized(error, () => this.addCartItem(request))
         }
     }
 
@@ -202,7 +202,7 @@ export class CartApiService {
             return frontendData;
         } catch (error) {
             console.error('❌ 장바구니 상품 수량 수정 실패:', error);
-            throw error;
+            return await retryIfUnauthorized(error, () => this.updateCartItem(cartItemId, request))
         }
     }
 
@@ -216,7 +216,7 @@ export class CartApiService {
             await handleApiResponse<void>(response);
         } catch (error) {
             console.error('❌ 장바구니 상품 삭제 실패:', error);
-            throw error;
+            return await retryIfUnauthorized(error, () => this.removeCartItem(cartItemId))
         }
     }
 
@@ -230,7 +230,7 @@ export class CartApiService {
             await handleApiResponse<void>(response);
         } catch (error) {
             console.error('❌ 장바구니 비우기 실패:', error);
-            throw error;
+            return await retryIfUnauthorized(error, () => this.clearCart())
         }
     }
 
@@ -241,7 +241,7 @@ export class CartApiService {
             return await this.getCart();
         } catch (error) {
             console.error('❌ 장바구니 새로고침 실패:', error);
-            throw error;
+            return await retryIfUnauthorized(error, () => this.refreshCart())
         }
     }
 
