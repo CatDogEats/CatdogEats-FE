@@ -1,4 +1,5 @@
 import { APIResponse } from '@/types/api';
+import {apiClient} from "@/service/auth/AuthAPI.ts";
 
 // 백엔드 응답 구조에 맞춘 타입 정의
 export interface BackendCartItem {
@@ -6,7 +7,7 @@ export interface BackendCartItem {
     productId: string;
     productName: string;
     productImage: string;
-    productPrice: number; // 백엔드: productPrice
+    unitPrice: number; // 백엔드: productPrice
     quantity: number;
     totalPrice: number;
     addedAt: string;
@@ -18,10 +19,10 @@ export interface BackendCartItem {
 
 export interface BackendCartResponse {
     cartId: string;
-    userId: string;
     items: BackendCartItem[]; // 백엔드: items (cartItems 아님)
     totalAmount: number;
     totalItemCount: number;
+    totalShippingFee: number; // ✅ 백엔드는 totalShippingFee 사용
 }
 
 // 프론트엔드에서 사용할 통일된 타입
@@ -38,13 +39,16 @@ export interface CartItem {
 }
 
 export interface CartResponse {
+    cartId: string;
     totalItemCount: number;
     totalPrice: number;
+    totalDeliveryFee: number;
+    totalAmount: number;
     cartItems: CartItem[]; // 프론트엔드에서는 cartItems로 통일
 }
 
 export interface AddCartItemRequest {
-    productId: string;
+    productNumber: number;
     quantity: number;
 }
 
@@ -72,83 +76,27 @@ export interface RecommendationResponse {
     sellerName?: string;
 }
 
-// API 기본 설정 - 환경변수 우선, 없으면 localhost:8080 사용
-const API_BASE_URL = import.meta.env.VITE_API_PROXY_TARGET?.replace(/\/$/, '') || 'http://localhost:8080';
-
-console.log('🔗 Cart API Base URL:', API_BASE_URL);
-
-// 토큰 가져오기 함수 - localStorage와 쿠키 모두 확인
-const getAuthToken = (): string | null => {
-    // 1. localStorage에서 토큰 확인
-    const localToken = localStorage.getItem('accessToken') || sessionStorage.getItem('accessToken');
-    if (localToken) {
-        return localToken;
-    }
-
-    // 2. 쿠키에서 토큰 확인
-    const cookies = document.cookie.split(';');
-    for (const cookie of cookies) {
-        const [name, value] = cookie.trim().split('=');
-        if (name === 'token' && value) {
-            console.log('🍪 쿠키에서 토큰 발견, localStorage에 저장');
-            localStorage.setItem('accessToken', value);
-            return value;
-        }
-    }
-
-    return null;
-};
-
-// API 요청 헤더 생성
-const createHeaders = (): HeadersInit => {
-    const token = getAuthToken();
-
-    const headers: HeadersInit = {
-        'Content-Type': 'application/json',
-    };
-
-    if (token) {
-        headers['Authorization'] = `Bearer ${token}`;
-    }
-
-    return headers;
-};
-
-// fetch 요청 기본 옵션
-const createFetchOptions = (method: string, body?: any): RequestInit => {
-    const options: RequestInit = {
-        method,
-        headers: createHeaders(),
-        credentials: 'include', // 쿠키 포함
-    };
-
-    if (body) {
-        options.body = JSON.stringify(body);
-    }
-
-    return options;
-};
 
 // API 응답 처리 유틸리티 함수
 const handleApiResponse = async <T>(response: any): Promise<T> => {
-    if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
+    // axios 응답 객체일 경우를 감지
+    const isAxiosResponse = !!response && response.data !== undefined;
 
-        // 상세한 에러 로깅
+    if (!response.status || response.status >= 400) {
+        const errorData = isAxiosResponse ? response.data : await response.data?.().catch(() => ({}));
         console.error('❌ API 요청 실패:', {
             status: response.status,
             statusText: response.statusText,
-            url: response.url,
+            url: isAxiosResponse ? response.config?.url : response.url,
             errorData
         });
-
-        throw new Error(errorData.message || `HTTP error! status: ${response.status}`);
+        throw new Error(errorData?.message || `HTTP error! status: ${response.status}`);
     }
 
-    const result: APIResponse<T> = await response.json();
+    const result: APIResponse<T> = isAxiosResponse ? response.data : await response.json();
 
     console.log('✅ API 응답 성공:', {
-        url: response.url,
+        url: isAxiosResponse ? response.config?.url : response.url,
         success: result.success,
         message: result.message
     });
@@ -162,12 +110,13 @@ const handleApiResponse = async <T>(response: any): Promise<T> => {
 
 // 백엔드 응답을 프론트엔드 형식으로 변환하는 유틸리티 함수들
 const convertBackendCartToFrontend = (backendResponse: BackendCartResponse): CartResponse => {
+
     const cartItems = backendResponse.items.map(item => ({
         id: item.id,
         productId: item.productId,
         productName: item.productName,
         productImage: item.productImage || '/api/placeholder/100/100', // 기본 이미지
-        price: item.productPrice, // productPrice → price 변환
+        price: item.unitPrice, // productPrice → price 변환
         quantity: item.quantity,
         selected: true, // 기본값
         sellerId: '', // 현재 백엔드에서 제공하지 않음
@@ -175,10 +124,14 @@ const convertBackendCartToFrontend = (backendResponse: BackendCartResponse): Car
     }));
 
     return {
+        cartId: backendResponse.cartId,
         totalItemCount: backendResponse.totalItemCount,
-        totalPrice: backendResponse.totalAmount,
+        totalPrice: backendResponse.totalAmount, // ✅ 상품 총 금액
+        totalDeliveryFee: backendResponse.totalShippingFee, // ✅ totalShippingFee → totalDeliveryFee 변환
+        totalAmount: backendResponse.totalAmount + backendResponse.totalShippingFee, // ✅ 최종 총합 (상품 + 배송비)
         cartItems
     };
+
 };
 
 const convertBackendRecommendationToFrontend = (backendRec: BackendRecommendationResponse): RecommendationResponse => ({
@@ -198,9 +151,7 @@ export class CartApiService {
         try {
             console.log('📦 장바구니 조회 요청');
 
-            const response = await fetch(`${API_BASE_URL}/v1/buyers/carts`,
-                createFetchOptions('GET')
-            );
+            const response = await apiClient.get(`/v1/buyers/carts`);
 
             const backendData = await handleApiResponse<BackendCartResponse>(response);
 
@@ -219,33 +170,36 @@ export class CartApiService {
     }
 
     // 장바구니에 상품 추가
-    static async addCartItem(request: AddCartItemRequest): Promise<CartResponse> {
+    static async addCartItem(request: AddCartItemRequest): Promise<void> {
         try {
             console.log('➕ 장바구니 상품 추가 요청:', request);
 
-            const response = await fetch(`${API_BASE_URL}/v1/buyers/carts`,
-                createFetchOptions('POST', request)
-            );
+            const response = await apiClient.post(`/v1/buyers/carts`, request);
 
-            const backendData = await handleApiResponse<BackendCartResponse>(response);
-            return convertBackendCartToFrontend(backendData);
+            await handleApiResponse<void>(response);
+
         } catch (error) {
             console.error('❌ 장바구니 상품 추가 실패:', error);
             throw error;
         }
     }
 
-    // 장바구니 아이템 수량 수정
+    // ✅ 장바구니 아이템 수량 수정 - 전체 장바구니 데이터 반환하도록 수정
     static async updateCartItem(cartItemId: string, request: UpdateCartItemRequest): Promise<CartResponse> {
         try {
             console.log('✏️ 장바구니 상품 수량 수정 요청:', { cartItemId, ...request });
 
-            const response = await fetch(`${API_BASE_URL}/v1/buyers/carts/${cartItemId}`,
-                createFetchOptions('PATCH', request)
-            );
+            const response = await apiClient.patch(`/v1/buyers/carts/${cartItemId}`, request);
 
             const backendData = await handleApiResponse<BackendCartResponse>(response);
-            return convertBackendCartToFrontend(backendData);
+
+            console.log('✏️ 수량 수정 후 백엔드 응답:', backendData);
+
+            const frontendData = convertBackendCartToFrontend(backendData);
+
+            console.log('✏️ 수량 수정 후 변환된 데이터:', frontendData);
+
+            return frontendData;
         } catch (error) {
             console.error('❌ 장바구니 상품 수량 수정 실패:', error);
             throw error;
@@ -257,9 +211,7 @@ export class CartApiService {
         try {
             console.log('🗑️ 장바구니 상품 삭제 요청:', cartItemId);
 
-            const response = await fetch(`${API_BASE_URL}/v1/buyers/carts/${cartItemId}`,
-                createFetchOptions('DELETE')
-            );
+            const response = await apiClient.delete(`/v1/buyers/carts/${cartItemId}`);
 
             await handleApiResponse<void>(response);
         } catch (error) {
@@ -273,13 +225,22 @@ export class CartApiService {
         try {
             console.log('🧹 장바구니 비우기 요청');
 
-            const response = await fetch(`${API_BASE_URL}/v1/buyers/carts`,
-                createFetchOptions('DELETE')
-            );
+            const response = await apiClient.delete(`/v1/buyers/carts`);
 
             await handleApiResponse<void>(response);
         } catch (error) {
             console.error('❌ 장바구니 비우기 실패:', error);
+            throw error;
+        }
+    }
+
+    // ✅ 새로운 API: 장바구니 전체 정보 새로고침 (삭제 후 배송비 재계산 등을 위해)
+    static async refreshCart(): Promise<CartResponse> {
+        try {
+            console.log('🔄 장바구니 새로고침 요청');
+            return await this.getCart();
+        } catch (error) {
+            console.error('❌ 장바구니 새로고침 실패:', error);
             throw error;
         }
     }
@@ -289,15 +250,7 @@ export class CartApiService {
         try {
             console.log('🎯 추천 상품 조회 요청');
 
-            const response = await fetch(`${API_BASE_URL}/v1/buyers/carts/recommendation`,
-                createFetchOptions('GET')
-            );
-
-            // 추천 API가 500 에러를 반환하는 경우 빈 배열 반환
-            if (!response.ok) {
-                console.warn('⚠️ 추천 상품 API 에러:', response.status, response.statusText);
-                return [];
-            }
+            const response = await apiClient.get(`/v1/buyers/carts/recommendation`);
 
             const backendData = await handleApiResponse<BackendRecommendationResponse[]>(response);
 

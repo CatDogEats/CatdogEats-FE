@@ -1,9 +1,10 @@
-import { useState, useEffect, useCallback } from 'react';
-import { CartApiService, CartItem, RecommendationResponse, AddCartItemRequest } from '@/service/cartApi';
+import { useState, useCallback } from 'react';
+import { CartApiService, CartItem, CartResponse, RecommendationResponse, AddCartItemRequest } from '@/service/cartApi';
 
 export interface UseCartReturn {
     // 상태
     cartItems: CartItem[];
+    cartData: CartResponse | null; // ✅ 전체 장바구니 데이터 (배송비 포함)
     loading: boolean;
     error: string | null;
     recommendations: RecommendationResponse[];
@@ -26,6 +27,7 @@ export interface UseCartReturn {
 export const useCart = (): UseCartReturn => {
     // 상태 관리
     const [cartItems, setCartItems] = useState<CartItem[]>([]);
+    const [cartData, setCartData] = useState<CartResponse | null>(null); // ✅ 전체 장바구니 데이터
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [recommendations, setRecommendations] = useState<RecommendationResponse[]>([]);
@@ -45,6 +47,9 @@ export const useCart = (): UseCartReturn => {
             setError(null);
 
             const response = await CartApiService.getCart();
+
+            // ✅ 전체 장바구니 데이터 저장
+            setCartData(response);
 
             // 백엔드 응답에서 cartItems 배열 추출하고 selected 필드 초기화
             const itemsWithSelection = response.cartItems.map(item => ({
@@ -68,7 +73,6 @@ export const useCart = (): UseCartReturn => {
             setError(null);
 
             await CartApiService.addCartItem(request);
-            await fetchCart(); // 장바구니 새로고침
 
             return true;
         } catch (error) {
@@ -76,7 +80,7 @@ export const useCart = (): UseCartReturn => {
         } finally {
             setLoading(false);
         }
-    }, [fetchCart, handleError]);
+    }, [handleError]);
 
     // 수량 수정
     const updateQuantity = useCallback(async (cartItemId: string, quantity: number): Promise<boolean> => {
@@ -86,7 +90,10 @@ export const useCart = (): UseCartReturn => {
             setLoading(true);
             setError(null);
 
-            await CartApiService.updateCartItem(cartItemId, { quantity });
+            const response = await CartApiService.updateCartItem(cartItemId, { quantity });
+
+            // ✅ 수량 수정 후 전체 장바구니 데이터 업데이트
+            setCartData(response);
 
             // 로컬 상태 즉시 업데이트 (UX 개선)
             setCartItems(prev => prev.map(item =>
@@ -114,6 +121,17 @@ export const useCart = (): UseCartReturn => {
             // 로컬 상태에서 즉시 제거 (UX 개선)
             setCartItems(prev => prev.filter(item => item.id !== cartItemId));
 
+            // ✅ 삭제 후 장바구니 데이터 새로고침 (배송비 재계산을 위해)
+            const refreshedCart = await CartApiService.refreshCart();
+            setCartData(refreshedCart);
+
+            // 선택 상태 유지하면서 아이템 업데이트
+            const itemsWithSelection = refreshedCart.cartItems.map(item => ({
+                ...item,
+                selected: true
+            }));
+            setCartItems(itemsWithSelection);
+
             return true;
         } catch (error) {
             // 실패 시 서버에서 다시 가져와서 동기화
@@ -132,6 +150,7 @@ export const useCart = (): UseCartReturn => {
 
             await CartApiService.clearCart();
             setCartItems([]);
+            setCartData(null); // ✅ 장바구니 데이터도 초기화
 
             return true;
         } catch (error) {
@@ -177,14 +196,11 @@ export const useCart = (): UseCartReturn => {
         return cartItems.filter(item => item.selected);
     }, [cartItems]);
 
-    // 컴포넌트 마운트 시 장바구니 로드
-    useEffect(() => {
-        fetchCart();
-    }, [fetchCart]);
 
     return {
         // 상태
         cartItems,
+        cartData, // ✅ 배송비 등 전체 장바구니 정보
         loading,
         error,
         recommendations,

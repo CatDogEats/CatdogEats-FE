@@ -17,7 +17,6 @@ import ReportModal from "../../common/ReportModal.tsx";
 import CouponIssueModal from "./CouponIssueModal";
 import NotificationSnackbar from "@/components/common/NotificationSnackbar";
 import { useNotification } from "@/hooks/useNotification";
-import { useAuthCheck } from "@/hooks/useAuthCheck";
 import { useCart } from "@/hooks/useCart";
 
 interface ProductPurchaseOptionsProps {
@@ -38,76 +37,57 @@ const ProductPurchaseOptions: React.FC<ProductPurchaseOptionsProps> = ({ product
     const {
         showSuccess,
         showError,
-        showWarning,
         showInfo,
         notification,
         hideNotification
     } = useNotification();
 
-    const {
-        requireAuth,
-        isBuyer
-    } = useAuthCheck();
-
     const { addItem } = useCart();
 
     // 장바구니 추가 핸들러
     const handleAddToCart = async () => {
-        // 인증 확인
-        requireAuth(async () => {
-            // 구매자 권한 확인
-            if (!isBuyer) {
-                showWarning('구매자만 장바구니에 상품을 추가할 수 있습니다.');
-                return;
-            }
 
-            try {
-                setIsAddingToCart(true);
+        try {
+            setIsAddingToCart(true);
+            console.log(product, "아이디?")
+            const success = await addItem({
+                productNumber: Number(product.id),
+                quantity: quantity,
+            });
 
-                const success = await addItem({
+            if (success) {
+                showSuccess(`${product.name}이(가) 장바구니에 추가되었습니다.`);
+                console.log('✅ 장바구니 추가 성공:', {
                     productId: product.id,
-                    quantity: quantity,
+                    productName: product.name,
+                    quantity,
+                    packaging
                 });
-
-                if (success) {
-                    showSuccess(`${product.name}이(가) 장바구니에 추가되었습니다.`);
-                    console.log('✅ 장바구니 추가 성공:', {
-                        productId: product.id,
-                        productName: product.name,
-                        quantity,
-                        packaging
-                    });
-                } else {
-                    showError('장바구니 추가에 실패했습니다. 다시 시도해주세요.');
-                }
-            } catch (error) {
-                console.error('❌ 장바구니 추가 실패:', error);
-
-                // 에러 메시지 처리
-                let errorMessage = '장바구니 추가에 실패했습니다.';
-                if (error instanceof Error) {
-                    if (error.message.includes('재고')) {
-                        errorMessage = '재고가 부족합니다.';
-                    } else if (error.message.includes('로그인')) {
-                        errorMessage = '로그인이 필요합니다.';
-                    } else if (error.message.includes('권한')) {
-                        errorMessage = '권한이 없습니다.';
-                    }
-                }
-
-                showError(errorMessage);
-            } finally {
-                setIsAddingToCart(false);
+            } else {
+                showError('장바구니 추가에 실패했습니다. 다시 시도해주세요.');
             }
-        });
+        } catch (error) {
+            console.error('❌ 장바구니 추가 실패:', error);
+
+            // 에러 메시지 처리
+            let errorMessage = '장바구니 추가에 실패했습니다.';
+            if (error instanceof Error) {
+                if (error.message.includes('재고')) {
+                    errorMessage = '재고가 부족합니다.';
+                } else if (error.message.includes('로그인')) {
+                    errorMessage = '로그인이 필요합니다.';
+                } else if (error.message.includes('권한')) {
+                    errorMessage = '권한이 없습니다.';
+                }
+            }
+
+            showError(errorMessage);
+        } finally {
+            setIsAddingToCart(false);
+        }
     };
 
     const handleBuyNow = () => {
-        requireAuth(() => {
-            if (!isBuyer) {
-                showWarning('구매자만 상품을 구매할 수 있습니다.');
-                return;
-            }
 
             console.log("바로 구매:", {
                 productId: product.id,
@@ -119,11 +99,9 @@ const ProductPurchaseOptions: React.FC<ProductPurchaseOptionsProps> = ({ product
 
             // TODO: 바로 구매 로직 구현
             showInfo('바로 구매 기능은 준비 중입니다.');
-        });
     };
 
     const handleToggleFavorite = () => {
-        requireAuth(() => {
             setIsFavorite(!isFavorite);
             const message = isFavorite
                 ? '관심 상품에서 제거되었습니다.'
@@ -134,7 +112,6 @@ const ProductPurchaseOptions: React.FC<ProductPurchaseOptionsProps> = ({ product
                 productId: product.id,
                 isFavorite: !isFavorite
             });
-        });
     };
 
     const handleReportProduct = () => {
