@@ -20,7 +20,7 @@ import {
     ChartSalesData,
     ProductChartData,
     DemandForecastItem
-} from "@/service/SellerDashboardAPI";
+} from "@/service/sellerDashboard/SellerDashboardAPI.ts";
 
 const SellerDashboardDashboardPage: React.FC = () => {
     // 상태 관리

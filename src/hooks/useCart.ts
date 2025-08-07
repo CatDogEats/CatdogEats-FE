@@ -1,5 +1,5 @@
 import { useState, useCallback } from 'react';
-import { CartApiService, CartItem, CartResponse, RecommendationResponse, AddCartItemRequest } from '@/service/cartApi';
+import { CartApiService, CartItem, CartResponse, RecommendationResponse, AddCartItemRequest } from '@/service/cart/cartAPI.ts';
 
 export interface UseCartReturn {
     // 상태

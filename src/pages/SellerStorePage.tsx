@@ -23,11 +23,11 @@ import {
     transformProduct,
     FILTER_MAP
 } from '@/components/SellerStore/types';
-import { sellerStoreApi, SellerStoreParams, convertCategoriesToParams } from '@/service/SellerStoreAPI';
+import { sellerStoreApi, SellerStoreParams, convertCategoriesToParams } from '@/service/seller/SellerStoreAPI.ts';
 import ProductFilter from '@/components/SellerStore/ProductFilter.tsx';
 import CategoryFilter from '@/components/SellerStore/CategoryFilter.tsx';
 import ProductSkeleton from '@/components/SellerStore/ProductSkeleton.tsx';
-import {chatApiService} from "@/service/chat/chatApi.ts";
+import {chatApiService} from "@/service/chat/chatAPI.ts";
 
 const SellerStorePage: React.FC = () => {
     const { sellerId } = useParams<{ sellerId: string }>();

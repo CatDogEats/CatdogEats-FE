@@ -4,8 +4,8 @@ import {
   InputLabel, Button, Typography, IconButton, InputAdornment, CircularProgress
 } from "@mui/material";
 import { CloudUpload as CloudUploadIcon, Delete as DeleteIcon } from "@mui/icons-material";
-import { ProductFormData } from "@/service/product/ProductAPI";
-import { updateProduct, updateProductImage } from "@/service/product/ProductAPI";
+import { ProductFormData } from "@/service/product/ProductAPI.ts";
+import { updateProduct, updateProductImage } from "@/service/product/ProductAPI.ts";
 
 interface ProductEditDialogProps {
   open: boolean;
