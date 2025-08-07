@@ -1,5 +1,5 @@
 // src/components/SellerStore/types/seller.types.ts - 업데이트된 버전 (배송 정보 추가)
-import { ProductResponse, SellerInfoResponse } from '@/service/SellerStoreAPI';
+import { ProductResponse, SellerInfoResponse } from '@/service/seller/SellerStoreAPI.ts';
 
 // 프론트엔드용 판매자 프로필 타입 (백엔드 응답을 변환)
 export interface SellerProfile {

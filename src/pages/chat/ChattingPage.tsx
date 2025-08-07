@@ -4,7 +4,7 @@ import type { CustomerInquiry, CustomerMessage } from "@/types/customer"
 import CustomerInquiryList from "@/components/chat/CustomerInquiryList"
 import ChatWindow from "@/components/chat/ChatWindow"
 import { useChatData } from "@/service/chat/useChatData"
-import { chatApiService } from "@/service/chat/chatApi"
+import { chatApiService } from "@/service/chat/chatAPI.ts"
 
 const ChatPage: React.FC = () => {
     const theme = useTheme()

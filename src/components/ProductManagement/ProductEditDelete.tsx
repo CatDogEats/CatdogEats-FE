@@ -10,8 +10,8 @@ import {
 } from "@mui/icons-material";
 import {
   fetchSellerProducts, deleteProduct, mapApiProductToForm, ProductFormData
-} from "@/service/product/ProductAPI";
-import ProductEditDialog from "./ProductEditDialog";
+} from "@/service/product/ProductAPI.ts";
+import ProductEditDialog from "./ProductEditDialog.tsx";
 
 const ProductEditDelete: React.FC = () => {
   const [products, setProducts] = useState<ProductFormData[]>([]);

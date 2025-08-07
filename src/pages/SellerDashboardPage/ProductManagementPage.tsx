@@ -22,7 +22,7 @@ import {
   InventoryManagement,
   ProductFormData,
 } from "@/components/ProductManagement";
-import CouponManagement from "@/components/ProductManagement/components/CouponManagement";
+import CouponManagement from "@/components/ProductManagement/CouponManagement.tsx";
 
 interface TabPanelProps {
   children?: React.ReactNode;
