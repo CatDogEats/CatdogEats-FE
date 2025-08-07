@@ -66,7 +66,7 @@
     const [stockItems, setStockItems] = useState<StockItem[]>([]);
     const [stockMovements, setStockMovements] = useState<StockMovement[]>([]);
     const [totalElements, setTotalElements] = useState(0);
-    const [totalPages, setTotalPages] = useState(0);
+    const [, setTotalPages] = useState(0);
 
     // 상품 재고 목록 조회
     const fetchProductInventoryList = async () => {
