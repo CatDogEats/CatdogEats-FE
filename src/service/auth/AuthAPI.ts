@@ -108,9 +108,10 @@ export async function retryIfUnauthorized<T>(
     error: any,
     retryFn: () => Promise<T>
 ): Promise<T> {
-    if (error.response?.status === 401) {
+    console.log()
+    if (!error.response?.success) {
         const response = await authApi.refreshToken()
-        if (response?.code === 200) {
+        if (response?.success) {
             return await retryFn()
         }
     }

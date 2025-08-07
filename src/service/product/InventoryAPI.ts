@@ -90,7 +90,7 @@ export const inventoryApi = {
         dto: AdjustmentRequestDTO
     ): Promise<void> => {
         try {
-            apiClient.post(
+            await apiClient.post(
                 '/v1/sellers/products/inventory/record',
                 dto
             );
@@ -114,7 +114,12 @@ export const inventoryApi = {
 
             const response = await apiClient.get(
                 '/v1/sellers/products/inventory/List',
-                { params }
+                {
+                    params: { page, size },
+                    headers: {
+                        'Cache-Control': 'no-cache', // 캐시 제어 헤더 추가
+                    },
+                }
             );
             const raw = response.data.data;
             console.log(response.data.data);
