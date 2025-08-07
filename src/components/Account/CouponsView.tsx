@@ -1,7 +1,7 @@
 "use client"
 
 import type React from "react"
-import { useState, useMemo } from "react"
+import { useState, useMemo, useEffect } from "react"
 import {
     Box,
     Typography,
@@ -12,7 +12,9 @@ import {
     Button,
     Tabs,
     Tab,
-    Alert
+    Alert,
+    CircularProgress,
+    Snackbar
 } from "@mui/material"
 import {
     LocalOffer,
@@ -22,27 +24,122 @@ import {
 import CouponCard from "./CouponCard"
 import Pagination from "../common/Pagination"
 import type { CouponCategory } from "./index"
-import { mockCoupons } from "@/data/mock-data.ts"
-
+import {
+    buyerCouponApi,
+    couponUtils,
+    type Coupon,
+    type BuyerCouponListResponse,
+} from "@/service/coupons/couponApi"
 const CouponsView: React.FC = () => {
     const [activeCategory, setActiveCategory] = useState<CouponCategory>("all")
     const [couponCode, setCouponCode] = useState("")
     const [currentPage, setCurrentPage] = useState(1)
-    const [showAlert, setShowAlert] = useState(false)
+    const [coupons, setCoupons] = useState<Coupon[]>([])
+    const [couponCounts, setCouponCounts] = useState({
+        available: 0,
+        expiring: 0,
+        usedExpired: 0,
+        total: 0
+    })
+    const [loading, setLoading] = useState(true)
+    const [submitting, setSubmitting] = useState(false)
+    const [alert, setAlert] = useState<{
+        show: boolean
+        message: string
+        type: 'success' | 'error' | 'info'
+    }>({ show: false, message: '', type: 'info' })
+
     const itemsPerPage = 6
 
-    const filteredCoupons = useMemo(() => {
-        switch (activeCategory) {
-            case "available":
-                return mockCoupons.filter(c => c.status === "available" && !c.isExpiringSoon)
-            case "expiring":
-                return mockCoupons.filter(c => c.isExpiringSoon)
-            case "used-expired":
-                return mockCoupons.filter(c => c.status === "used" || c.status === "expired")
-            default:
-                return mockCoupons
+    // API에서 쿠폰 데이터 로드
+    const loadCoupons = async (category: CouponCategory = activeCategory, page: number = 0) => {
+        try {
+            setLoading(true)
+            const filter = couponUtils.getFilterFromCategory(category)
+            const response: BuyerCouponListResponse = await buyerCouponApi.getBuyerCoupons(filter, page)
+
+            // 응답 구조 확인 및 안전한 접근
+            if (response && response.selected && Array.isArray(response.selected)) {
+                // 쿠폰 데이터 변환
+                const transformedCoupons = response.selected.map(couponUtils.transformBuyerCoupon)
+                setCoupons(transformedCoupons)
+            } else {
+                console.warn('Invalid response structure:', response)
+                setCoupons([])
+            }
+
+            // 전체 카운트 정보가 필요한 경우 별도 API 호출
+            await loadCouponCounts()
+
+        } catch (error: any) {
+            console.error('쿠폰 로드 실패:', error)
+            setCoupons([]) // 에러 시 빈 배열로 설정
+            showAlert('쿠폰 정보를 불러오는데 실패했습니다.', 'error')
+        } finally {
+            setLoading(false)
+        }
+    }
+
+    // 각 카테고리별 쿠폰 개수 로드
+    const loadCouponCounts = async () => {
+        try {
+            // 전체 쿠폰과 상세 카운트 정보를 한 번에 가져오기
+            const [allResponse, detailResponse] = await Promise.all([
+                buyerCouponApi.getBuyerCoupons('ALL', 0),
+                buyerCouponApi.getBuyerCoupons('AVAILABLE', 0) // count 정보를 위해 하나만 호출
+            ])
+
+            // 백엔드에서 availableCount와 expiringSoonCount를 제공
+            const countInfo = detailResponse?.count || { availableCount: 0, expiringSoonCount: 0 }
+
+            // 전체 쿠폰에서 사용 완료/만료된 쿠폰 계산
+            const allCoupons = allResponse?.selected || []
+            const totalCount = allCoupons.length
+            const usedExpiredCount = totalCount - countInfo.availableCount - countInfo.expiringSoonCount
+
+            setCouponCounts({
+                total: totalCount,
+                available: countInfo.availableCount,
+                expiring: countInfo.expiringSoonCount,
+                usedExpired: Math.max(0, usedExpiredCount) // 음수 방지
+            })
+        } catch (error) {
+            console.error('쿠폰 카운트 로드 실패:', error)
+            // 에러 시 기본값 설정
+            setCouponCounts({
+                total: 0,
+                available: 0,
+                expiring: 0,
+                usedExpired: 0
+            })
+        }
+    }
+
+    // 컴포넌트 마운트 시 데이터 로드
+    useEffect(() => {
+        loadCoupons('all', 0)
+    }, [])
+
+    // 카테고리 변경 시 데이터 다시 로드
+    useEffect(() => {
+        if (!loading) {
+            loadCoupons(activeCategory, 0)
+            setCurrentPage(1)
         }
     }, [activeCategory])
+
+    const showAlert = (message: string, type: 'success' | 'error' | 'info') => {
+        setAlert({ show: true, message, type })
+    }
+
+    const handleCloseAlert = () => {
+        setAlert({ ...alert, show: false })
+    }
+
+    const filteredCoupons = useMemo(() => {
+        // API에서 이미 필터링된 데이터를 받으므로 그대로 사용
+        return coupons
+    }, [coupons])
 
     const paginatedCoupons = useMemo(() => {
         const startIndex = (currentPage - 1) * itemsPerPage
@@ -50,32 +147,56 @@ const CouponsView: React.FC = () => {
         return filteredCoupons.slice(startIndex, endIndex)
     }, [filteredCoupons, currentPage])
 
-    const couponCounts = useMemo(() => ({
-        available: mockCoupons.filter(c => c.status === "available" && !c.isExpiringSoon).length,
-        expiring: mockCoupons.filter(c => c.isExpiringSoon).length,
-        usedExpired: mockCoupons.filter(c => c.status === "used" || c.status === "expired").length,
-        total: mockCoupons.length
-    }), [])
-
     const handleCategoryChange = (_: React.SyntheticEvent, newValue: CouponCategory) => {
         setActiveCategory(newValue)
-        setCurrentPage(1)
     }
 
     const handlePageChange = (page: number) => {
         setCurrentPage(page)
     }
 
-    const handleCouponCodeSubmit = () => {
-        if (couponCode.trim()) {
-            setShowAlert(true)
+    const handleCouponCodeSubmit = async () => {
+        if (!couponCode.trim()) {
+            showAlert('쿠폰 코드를 입력해주세요.', 'error')
+            return
+        }
+
+        try {
+            setSubmitting(true)
+            await buyerCouponApi.createBuyerCoupon({ code: couponCode.trim() })
+
+            showAlert('쿠폰이 성공적으로 등록되었습니다.', 'success')
             setCouponCode("")
-            setTimeout(() => setShowAlert(false), 3000)
+
+            // 쿠폰 목록 새로고침
+            await loadCoupons(activeCategory, 0)
+
+        } catch (error: any) {
+            console.error('쿠폰 등록 실패:', error)
+
+            if (error.response?.status === 409) {
+                showAlert('이미 보유한 쿠폰입니다.', 'error')
+            } else if (error.response?.status === 400) {
+                showAlert('쿠폰 정보를 찾을 수 없습니다. 코드를 확인해주세요.', 'error')
+            } else {
+                showAlert('쿠폰 등록에 실패했습니다. 다시 시도해주세요.', 'error')
+            }
+        } finally {
+            setSubmitting(false)
         }
     }
 
     const handleUseCoupon = (couponId: string) => {
         console.log("쿠폰 사용:", couponId)
+        // 여기에 쿠폰 사용 로직 구현 (주문 페이지로 이동 등)
+    }
+
+    if (loading && coupons.length === 0) {
+        return (
+            <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: 400 }}>
+                <CircularProgress />
+            </Box>
+        )
     }
 
     return (
@@ -137,21 +258,34 @@ const CouponsView: React.FC = () => {
                             value={couponCode}
                             onChange={(e) => setCouponCode(e.target.value)}
                             onKeyPress={(e) => e.key === "Enter" && handleCouponCodeSubmit()}
+                            disabled={submitting}
                         />
                         <Button
                             variant="contained"
                             onClick={handleCouponCodeSubmit}
+                            disabled={submitting}
                             sx={{ minWidth: 100, backgroundColor: "#4CAF50" }}
                         >
-                            등록
+                            {submitting ? <CircularProgress size={20} /> : '등록'}
                         </Button>
                     </Box>
-                    {showAlert && (
-                        <Alert severity="info" sx={{ mt: 2 }}>
-                            쿠폰 코드가 등록되었습니다.
-                        </Alert>
-                    )}
                 </CardContent>
+
+                {/* 알림 스낵바 */}
+                <Snackbar
+                    open={alert.show}
+                    autoHideDuration={4000}
+                    onClose={handleCloseAlert}
+                    anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
+                >
+                    <Alert
+                        onClose={handleCloseAlert}
+                        severity={alert.type}
+                        sx={{ width: '100%' }}
+                    >
+                        {alert.message}
+                    </Alert>
+                </Snackbar>
             </Card>
 
             {/* 카테고리 탭 */}
@@ -197,7 +331,11 @@ const CouponsView: React.FC = () => {
             </Box>
 
             {/* 쿠폰 목록 */}
-            {paginatedCoupons.length > 0 ? (
+            {loading ? (
+                <Box sx={{ display: 'flex', justifyContent: 'center', py: 4 }}>
+                    <CircularProgress />
+                </Box>
+            ) : paginatedCoupons.length > 0 ? (
                 <>
                     <Grid container spacing={3}>
                         {paginatedCoupons.map((coupon) => (

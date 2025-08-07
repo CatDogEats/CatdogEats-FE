@@ -5,23 +5,20 @@ import {
     CardContent,
     CardMedia,
     Typography,
-    IconButton,
     Grid,
     Chip,
     Stack,
     Pagination,
 } from '@mui/material';
 import {
-    FavoriteBorder,
-    Favorite,
+
     Star,
 } from '@mui/icons-material';
 import { SellerProduct } from '@/components/SellerStore/types';
 
 interface SellerProductGridProps {
     products: SellerProduct[];
-    onProductClick: (productId: string) => void;
-    onToggleLike: (productId: string) => void;
+    onProductClick: (productNumber: string) => void;
     currentPage: number;
     totalPages: number;
     onPageChange: (event: unknown, page: number) => void;
@@ -30,7 +27,6 @@ interface SellerProductGridProps {
 const SellerProductGrid: React.FC<SellerProductGridProps> = ({
                                                                  products,
                                                                  onProductClick,
-                                                                 onToggleLike,
                                                                  currentPage,
                                                                  totalPages,
                                                                  onPageChange,
@@ -76,29 +72,6 @@ const SellerProductGrid: React.FC<SellerProductGridProps> = ({
                                     }}
                                 />
 
-                                {/* 좋아요 버튼 */}
-                                <IconButton
-                                    onClick={(e) => {
-                                        e.stopPropagation();
-                                        onToggleLike(product.id);
-                                    }}
-                                    sx={{
-                                        position: 'absolute',
-                                        top: 8,
-                                        right: 8,
-                                        bgcolor: 'rgba(255, 255, 255, 0.8)',
-                                        backdropFilter: 'blur(4px)',
-                                        '&:hover': { bgcolor: 'rgba(255, 255, 255, 0.9)' },
-                                        width: 32,
-                                        height: 32,
-                                    }}
-                                >
-                                    {product.isLiked ? (
-                                        <Favorite sx={{ color: 'error.main', fontSize: 18 }} />
-                                    ) : (
-                                        <FavoriteBorder sx={{ color: 'error.main', fontSize: 18 }} />
-                                    )}
-                                </IconButton>
 
                                 {/* 품절 표시 */}
                                 {product.isOutOfStock && (

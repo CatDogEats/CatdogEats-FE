@@ -32,7 +32,6 @@ export interface SellerProduct {
     image: string;
     rating: number;
     reviewCount: number;
-    isLiked: boolean;
     isOutOfStock: boolean;
     discountPercentage?: number;
 }
@@ -221,7 +220,6 @@ export const transformProduct = (product: ProductResponse, sellerId: string): Se
         image: productImage,
         rating: product.avgRating,
         reviewCount: product.reviewCount,
-        isLiked: false, //todo 나중에 좋아요(찜) 연동
         isOutOfStock: isOutOfStock,
         discountPercentage: discountPercentage
     };

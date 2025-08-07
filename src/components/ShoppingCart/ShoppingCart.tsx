@@ -153,7 +153,7 @@ const ShoppingCart: React.FC = () => {
             showSnackbar('결제할 상품을 선택해주세요.');
             return;
         }
-        navigate('/checkout', { state: { selectedItems } });
+        navigate('/orderPayment', { state: { selectedItems } });
     };
 
     // 쇼핑 계속하기
