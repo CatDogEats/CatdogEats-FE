@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
     Card,
     CardContent,
@@ -18,11 +18,11 @@ import {
     List,
     ListItem,
     ListItemButton,
-    ListItemText,
     ListItemIcon,
     Checkbox,
     Alert,
     Snackbar,
+    CircularProgress,
 } from '@mui/material';
 import {
     ChatBubbleOutline,
@@ -33,9 +33,9 @@ import {
     Close,
 } from '@mui/icons-material';
 
-// Import coupon data
-import { mockCoupons } from '@/data';
-import { type Coupon } from "@/components/Account";
+// Import API and types
+import { sellerCouponApi, buyerCouponApi, couponUtils, type Coupon } from '@/service/coupons/couponApi';
+import {useParams} from "react-router-dom";
 
 // SellerProfile 타입 정의
 export interface SellerProfile {
@@ -55,6 +55,7 @@ export interface SellerProfile {
     freeShippingInfo: string;
     isVerified: boolean;
     isSafetyChecked: boolean;
+    vendorName?: string; // API 연동을 위한 vendorName 추가
 }
 
 interface SellerProfileCardProps {
@@ -76,9 +77,59 @@ const SellerProfileCard: React.FC<SellerProfileCardProps> = ({
     const [selectedCoupons, setSelectedCoupons] = useState<string[]>([]);
     const [snackbarOpen, setSnackbarOpen] = useState(false);
     const [snackbarMessage, setSnackbarMessage] = useState('');
+    const [availableCoupons, setAvailableCoupons] = useState<Coupon[]>([]);
+    const [loading, setLoading] = useState(false);
+    const [issuingCoupons, setIssuingCoupons] = useState(false);
+    const { sellerId } = useParams<{ sellerId: string }>();
+    const decodedName = sellerId ? decodeURIComponent(sellerId) : "";
 
-    // 사용 가능한 쿠폰만 필터링
-    const availableCoupons = mockCoupons.filter(coupon => coupon.status === 'available');
+    // 쿠폰 목록 조회
+    const fetchCoupons = async () => {
+        if (!decodedName) {
+            console.warn('Vendor name is required to fetch coupons');
+            return;
+        }
+
+        setLoading(true);
+        try {
+            const coupons = await sellerCouponApi.getSellerCouponsByVendor(decodedName);
+
+            // 현재 사용 가능한 쿠폰만 필터링
+            const now = new Date();
+            const filteredCoupons = coupons
+                .filter(coupon => {
+                    const startDate = new Date(coupon.startDate);
+                    const endDate = new Date(coupon.endDate);
+                    return now >= startDate && now <= endDate;
+                })
+                .map(coupon => ({
+                    ...coupon,
+                    // SellerProfileCard에서 사용하는 형식으로 변환
+                    id: coupon.id,
+                    title: coupon.couponName,
+                    description: `${couponUtils.formatDiscount(coupon.discountType, coupon.discountValue)} 할인쿠폰`,
+                    expiryDate: coupon.endDate,
+                    minOrderAmount: 0, // 백엔드에서 제공하지 않는 경우 기본값
+                    status: 'available' as const,
+                    isExpiringSoon: false, // 실제로는 만료일 기준으로 계산해야 함
+                }));
+
+            setAvailableCoupons(filteredCoupons);
+        } catch (error) {
+            console.error('Failed to fetch coupons:', error);
+            setSnackbarMessage('쿠폰 목록을 불러오는데 실패했습니다.');
+            setSnackbarOpen(true);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    // 쿠폰 모달이 열릴 때 쿠폰 목록 조회
+    useEffect(() => {
+        if (couponModalOpen) {
+            fetchCoupons();
+        }
+    }, [couponModalOpen, seller.vendorName]);
 
     const handleCouponSelect = (couponId: string) => {
         setSelectedCoupons(prev =>
@@ -88,28 +139,46 @@ const SellerProfileCard: React.FC<SellerProfileCardProps> = ({
         );
     };
 
-    const handleIssueCoupons = () => {
+    const handleIssueCoupons = async () => {
         if (selectedCoupons.length === 0) {
             setSnackbarMessage('발급받을 쿠폰을 선택해주세요.');
             setSnackbarOpen(true);
             return;
         }
 
-        // 실제로는 여기서 API 호출을 통해 쿠폰을 발급받을 것
-        console.log('발급받은 쿠폰 IDs:', selectedCoupons);
+        setIssuingCoupons(true);
+        try {
+            // 선택된 쿠폰들을 순차적으로 발급
+            const selectedCouponObjects = availableCoupons.filter(coupon =>
+                selectedCoupons.includes(coupon.id)
+            );
 
-        setSnackbarMessage(`${selectedCoupons.length}개의 쿠폰이 발급되었습니다!`);
-        setSnackbarOpen(true);
-        setCouponModalOpen(false);
-        setSelectedCoupons([]);
+            const issuePromises = selectedCouponObjects.map(coupon =>
+                buyerCouponApi.createBuyerCoupon({ code: coupon.code })
+            );
+
+            await Promise.all(issuePromises);
+
+            setSnackbarMessage(`${selectedCoupons.length}개의 쿠폰이 발급되었습니다!`);
+            setSnackbarOpen(true);
+            setCouponModalOpen(false);
+            setSelectedCoupons([]);
+        } catch (error: any) {
+            console.error('Failed to issue coupons:', error);
+            if (error.response?.status === 409) {
+                setSnackbarMessage(`해당 쿠폰 이미 등록되어 있습니다.`);
+                setSnackbarOpen(true);
+                return;
+            }
+            setSnackbarMessage('쿠폰 발급에 실패했습니다. 다시 시도해주세요.');
+            setSnackbarOpen(true);
+        } finally {
+            setIssuingCoupons(false);
+        }
     };
 
     const formatDiscountValue = (coupon: Coupon) => {
-        if (coupon.discountType === 'percentage') {
-            return `${coupon.discountValue}% 할인`;
-        } else {
-            return `${coupon.discountValue.toLocaleString()}원 할인`;
-        }
+        return couponUtils.formatDiscount(coupon.discountType, coupon.discountValue);
     };
 
     const formatExpiryDate = (dateString: string) => {
@@ -236,7 +305,7 @@ const SellerProfileCard: React.FC<SellerProfileCardProps> = ({
 
                     <Divider sx={{ my: { xs: 2, sm: 3 } }} />
 
-                    {/* 상세 정보 - 배송 정보 추가 (6개 행으로 확장) */}
+                    {/* 상세 정보 */}
                     <Grid container spacing={{ xs: 2, sm: 3 }} sx={{ fontSize: '0.875rem' }}>
                         <Grid size={{ xs: 12, sm: 6 }}>
                             <Typography variant="body2" color="text.secondary">
@@ -271,7 +340,7 @@ const SellerProfileCard: React.FC<SellerProfileCardProps> = ({
                     </Grid>
                 </CardContent>
 
-                {/* 쿠폰 발급 버튼 - 우측하단으로 이동 */}
+                {/* 쿠폰 발급 버튼 */}
                 <Button
                     variant="outlined"
                     startIcon={<LocalOffer />}
@@ -328,7 +397,14 @@ const SellerProfileCard: React.FC<SellerProfileCardProps> = ({
                 </DialogTitle>
 
                 <DialogContent sx={{ pt: 1 }}>
-                    {availableCoupons.length === 0 ? (
+                    {loading ? (
+                        <Box display="flex" justifyContent="center" alignItems="center" py={4}>
+                            <CircularProgress size={40} sx={{ color: '#e37d11' }} />
+                            <Typography variant="body2" sx={{ ml: 2 }}>
+                                쿠폰 목록을 불러오는 중...
+                            </Typography>
+                        </Box>
+                    ) : availableCoupons.length === 0 ? (
                         <Alert severity="info" sx={{ mt: 2 }}>
                             현재 발급 가능한 쿠폰이 없습니다.
                         </Alert>
@@ -359,48 +435,49 @@ const SellerProfileCard: React.FC<SellerProfileCardProps> = ({
                                                 }}
                                             />
                                         </ListItemIcon>
-                                        <ListItemText
-                                            primary={
-                                                <Box display="flex" alignItems="center" gap={1} mb={0.5}>
-                                                    <Typography variant="subtitle1" fontWeight="bold">
-                                                        {coupon.title}
-                                                    </Typography>
+
+                                        {/* ListItemText 대신 직접 구조 만들기 */}
+                                        <Box sx={{ flex: 1 }}>
+                                            {/* Primary content */}
+                                            <Box display="flex" alignItems="center" gap={1} mb={0.5}>
+                                                <Typography variant="subtitle1" fontWeight="bold">
+                                                    {coupon.title || coupon.couponName}
+                                                </Typography>
+                                                <Chip
+                                                    label={formatDiscountValue(coupon)}
+                                                    size="small"
+                                                    sx={{
+                                                        bgcolor: '#e37d11',
+                                                        color: 'white',
+                                                        fontWeight: 'bold',
+                                                    }}
+                                                />
+                                                {coupon.isExpiringSoon && (
                                                     <Chip
-                                                        label={formatDiscountValue(coupon)}
+                                                        label="만료 임박"
                                                         size="small"
                                                         sx={{
-                                                            bgcolor: '#e37d11',
+                                                            bgcolor: 'error.main',
                                                             color: 'white',
-                                                            fontWeight: 'bold',
+                                                            fontSize: '0.7rem',
                                                         }}
                                                     />
-                                                    {coupon.isExpiringSoon && (
-                                                        <Chip
-                                                            label="만료 임박"
-                                                            size="small"
-                                                            sx={{
-                                                                bgcolor: 'error.main',
-                                                                color: 'white',
-                                                                fontSize: '0.7rem',
-                                                            }}
-                                                        />
+                                                )}
+                                            </Box>
+
+                                            {/* Secondary content */}
+                                            <Box>
+                                                <Typography variant="body2" color="text.secondary" mb={0.5}>
+                                                    {`${formatDiscountValue(coupon)} 할인쿠폰`}
+                                                </Typography>
+                                                <Typography variant="caption" color="text.secondary">
+                                                    만료일: {formatExpiryDate(coupon.expiryDate || coupon.endDate)}
+                                                    {coupon.minOrderAmount && coupon.minOrderAmount > 0 && (
+                                                        <> • 최소 주문 금액: {coupon.minOrderAmount.toLocaleString()}원</>
                                                     )}
-                                                </Box>
-                                            }
-                                            secondary={
-                                                <Box>
-                                                    <Typography variant="body2" color="text.secondary" mb={0.5}>
-                                                        {coupon.description}
-                                                    </Typography>
-                                                    <Typography variant="caption" color="text.secondary">
-                                                        만료일: {formatExpiryDate(coupon.expiryDate)}
-                                                        {coupon.minOrderAmount && coupon.minOrderAmount > 0 && (
-                                                            <> • 최소 주문 금액: {coupon.minOrderAmount.toLocaleString()}원</>
-                                                        )}
-                                                    </Typography>
-                                                </Box>
-                                            }
-                                        />
+                                                </Typography>
+                                            </Box>
+                                        </Box>
                                     </ListItemButton>
                                 </ListItem>
                             ))}
@@ -413,23 +490,30 @@ const SellerProfileCard: React.FC<SellerProfileCardProps> = ({
                         onClick={() => setCouponModalOpen(false)}
                         variant="outlined"
                         sx={{ color: 'grey.600', borderColor: 'grey.300' }}
+                        disabled={issuingCoupons}
                     >
                         취소
                     </Button>
                     <Button
                         onClick={handleIssueCoupons}
                         variant="contained"
-                        disabled={selectedCoupons.length === 0}
+                        disabled={selectedCoupons.length === 0 || issuingCoupons}
                         sx={{
                             bgcolor: '#e37d11',
                             '&:hover': { bgcolor: '#d16d01' },
                             '&:disabled': { bgcolor: 'grey.300' },
                         }}
                     >
-                        {selectedCoupons.length > 0
-                            ? `${selectedCoupons.length}개 쿠폰 발급받기`
-                            : '쿠폰 발급받기'
-                        }
+                        {issuingCoupons ? (
+                            <>
+                                <CircularProgress size={20} sx={{ mr: 1, color: 'white' }} />
+                                발급 중...
+                            </>
+                        ) : selectedCoupons.length > 0 ? (
+                            `${selectedCoupons.length}개 쿠폰 발급받기`
+                        ) : (
+                            '쿠폰 발급받기'
+                        )}
                     </Button>
                 </DialogActions>
             </Dialog>
@@ -443,7 +527,7 @@ const SellerProfileCard: React.FC<SellerProfileCardProps> = ({
             >
                 <Alert
                     onClose={() => setSnackbarOpen(false)}
-                    severity={snackbarMessage.includes('발급되었습니다') ? 'success' : 'warning'}
+                    severity={snackbarMessage.includes('발급되었습니다') ? 'success' : 'error'}
                     sx={{ width: '100%' }}
                 >
                     {snackbarMessage}

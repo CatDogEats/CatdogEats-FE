@@ -12,20 +12,6 @@ import { OrderPaymentManagement } from "@/components/OrderPayment";
 // 테마 import
 import { theme } from "@/theme";
 
-/**
- * 주문/결제 페이지 - 단순한 컨테이너
- *
- * 주요 역할:
- * - 페이지 레이아웃 제공 (Container, Breadcrumbs, Header)
- * - 테마 제공자 역할
- * - OrderPaymentManagement 컴포넌트에 모든 비즈니스 로직 위임
- *
- * 비즈니스 로직은 OrderPaymentManagement에서 처리:
- * - 상태 관리 (petInfo, shippingInfo, coupons 등)
- * - API 호출 (반려동물, 주소, 쿠폰, 주문 생성)
- * - 이벤트 핸들러 (폼 변경, 모달 관리 등)
- * - 주문 생성 및 결제 플로우
- */
 const OrderPaymentPage: React.FC = () => {
   return (
     <ThemeProvider theme={theme}>

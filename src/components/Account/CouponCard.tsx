@@ -2,7 +2,8 @@
 
 import type React from "react"
 import { Card, CardContent, Typography, Box, Chip, Button } from "@mui/material"
-import type { Coupon } from "./index"
+import type { Coupon } from "@/service/coupons/couponApi"
+import { couponUtils } from "@/service/coupons/couponApi"
 
 interface CouponCardProps {
     coupon: Coupon
@@ -41,10 +42,24 @@ const CouponCard: React.FC<CouponCardProps> = ({ coupon, onUse }) => {
 
     const formatDate = (dateString: string) => {
         const date = new Date(dateString)
-        return `${date.getFullYear()}년 ${String(date.getMonth() + 1).padStart(2, "0")}월 ${String(date.getDate()).padStart(2, "0")}일 ${String(date.getHours()).padStart(2, "0")}:${String(date.getMinutes()).padStart(2, "0")} 까지`
+        const year = date.getFullYear()
+        const month = String(date.getMonth() + 1).padStart(2, "0")
+        const day = String(date.getDate()).padStart(2, "0")
+        return `${year}년 ${month}월 ${day}일까지`
     }
 
     const isDisabled = coupon.status === "expired" || coupon.status === "used"
+
+    // 할인 정보 포맷팅
+    const discountText = couponUtils.formatDiscount(coupon.discountType, coupon.discountValue)
+
+    // 사용 조건 텍스트
+    const getUsageConditionText = () => {
+        if (coupon.minOrderAmount) {
+            return `${coupon.minOrderAmount.toLocaleString()}원 이상 구매시`
+        }
+        return "사용 조건 없음"
+    }
 
     return (
         <Card
@@ -60,13 +75,13 @@ const CouponCard: React.FC<CouponCardProps> = ({ coupon, onUse }) => {
             <CardContent sx={{ p: 3, height: "100%", display: "flex", flexDirection: "column" }}>
                 <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", mb: 2 }}>
                     <Typography variant="body2" color="text.secondary">
-                        {formatDate(coupon.expiryDate)}
+                        {formatDate(coupon.endDate)}
                     </Typography>
                     <Chip
-                        label={getStatusText(coupon.status)}
+                        label={getStatusText(coupon.status || 'available')}
                         size="small"
                         sx={{
-                            backgroundColor: getStatusColor(coupon.status),
+                            backgroundColor: getStatusColor(coupon.status || 'available'),
                             color: "white",
                             fontWeight: 500,
                         }}
@@ -74,24 +89,22 @@ const CouponCard: React.FC<CouponCardProps> = ({ coupon, onUse }) => {
                 </Box>
 
                 <Typography variant="h6" sx={{ fontWeight: 600, mb: 1 }}>
-                    {coupon.title}
+                    {coupon.couponName || coupon.title}
                 </Typography>
 
                 <Box sx={{ display: "flex", alignItems: "center", mb: 2 }}>
                     <Typography variant="body2" color="text.secondary" sx={{ mr: "auto" }}>
-                        {coupon.status === "available" ? "기간 만료" : "기간 만료"}
+                        {coupon.code}
                     </Typography>
                     <Typography
                         variant="h4"
                         sx={{
                             fontWeight: 700,
-                            color: getStatusColor(coupon.status),
+                            color: getStatusColor(coupon.status || 'available'),
                             mr: 1,
                         }}
                     >
-                        {coupon.discountType === "percentage"
-                            ? `${coupon.discountValue}%`
-                            : `${coupon.discountValue.toLocaleString()}원`}
+                        {discountText}
                     </Typography>
                     <Typography variant="body2" color="text.secondary">
                         할인
@@ -99,9 +112,20 @@ const CouponCard: React.FC<CouponCardProps> = ({ coupon, onUse }) => {
                 </Box>
 
                 <Box sx={{ mt: "auto" }}>
-                    {coupon.minOrderAmount && (
+                    <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
+                        {getUsageConditionText()}
+                    </Typography>
+
+                    {coupon.usageLimit > 0 && (
                         <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
-                            {coupon.minOrderAmount.toLocaleString()}원 이상 구매시
+                            사용 한도: {coupon.usageLimit}회
+                        </Typography>
+                    )}
+
+                    {/* 사용된 쿠폰인 경우 사용 일시 표시 */}
+                    {coupon.status === 'used' && coupon.usedAt && (
+                        <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
+                            사용일시: {new Date(coupon.usedAt).toLocaleDateString()}
                         </Typography>
                     )}
 
@@ -119,7 +143,9 @@ const CouponCard: React.FC<CouponCardProps> = ({ coupon, onUse }) => {
                             },
                         }}
                     >
-                        적용 가능한 판매자 보기
+                        {coupon.status === 'used' ? '사용 완료' :
+                            coupon.status === 'expired' ? '기간 만료' :
+                                '적용 가능한 판매자 보기'}
                     </Button>
                 </Box>
             </CardContent>
