@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react'
 import type { CustomerInquiry, CustomerMessage } from '@/types/customer'
-import { chatApiService, type ChatRoomListResponse } from '@/service/chat/chatApi'
+import { chatApiService, type ChatRoomListResponse } from '@/service/chat/chatAPI.ts'
 import { websocketService, type WebSocketMessage } from '@/service/chat/websocketService'
 
 export const useChatData = () => {

@@ -1,5 +1,5 @@
 // src/services/SellerStoreAPI.ts
-import { apiClient } from '@/service/auth/AuthAPI';
+import { apiClient } from '@/service/auth/AuthAPI.ts';
 
 // 주소 정보 타입 추가
 export interface StoreAddress {

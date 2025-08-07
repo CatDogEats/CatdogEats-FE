@@ -1,4 +1,4 @@
-import { APIResponse } from '@/types/api';
+import { APIResponse } from '@/types/api.ts';
 import {apiClient, retryIfUnauthorized} from "@/service/auth/AuthAPI.ts";
 
 // 백엔드 응답 구조에 맞춘 타입 정의

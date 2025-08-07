@@ -9,6 +9,9 @@ import {
   Tab,
   useTheme,
   useMediaQuery,
+  Alert,
+  Snackbar,
+  Portal,
 } from "@mui/material";
 import {
   AddCircleOutline as AddIcon,
@@ -22,7 +25,7 @@ import {
   InventoryManagement,
   ProductFormData,
 } from "@/components/ProductManagement";
-import CouponManagement from "@/components/ProductManagement/components/CouponManagement";
+import CouponManagement from "@/components/ProductManagement/CouponManagement.tsx";
 
 interface TabPanelProps {
   children?: React.ReactNode;
@@ -49,6 +52,15 @@ const ProductManagementPage: React.FC = () => {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("md"));
   const [tabValue, setTabValue] = useState(0);
+  const [alert, setAlert] = useState<{
+    show: boolean;
+    message: string;
+    type: 'success' | 'error' | 'info';
+  }>({ show: false, message: '', type: 'info' });
+
+  const showAlert = (message: string, type: 'success' | 'error' | 'info') => {
+    setAlert({ show: true, message, type });
+  };
 
   const handleTabChange = (_: React.SyntheticEvent, newValue: number) => {
     setTabValue(newValue);
@@ -74,7 +86,7 @@ const ProductManagementPage: React.FC = () => {
     {
       label: "재고 관리",
       icon: <InventoryIcon />,
-      component: <InventoryManagement />,
+      component: <InventoryManagement showAlert={showAlert} />,
     },
     {
       label: "쿠폰 등록/관리",
@@ -84,6 +96,7 @@ const ProductManagementPage: React.FC = () => {
   ];
 
   return (
+      <>
     <Box sx={{ p: { xs: 2, md: 4 } }}>
       {/* 페이지 제목 */}
       <Box sx={{ mb: 4 }}>
@@ -164,6 +177,24 @@ const ProductManagementPage: React.FC = () => {
         ))}
       </Paper>
     </Box>
+        <Portal>
+        <Snackbar
+
+            open={alert.show}
+            autoHideDuration={4000}
+            onClose={() => setAlert(prev => ({ ...prev, show: false }))}
+            anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+        >
+          <Alert
+              severity={alert.type}
+              onClose={() => setAlert(prev => ({ ...prev, show: false }))}
+              sx={{ width: '100%' }}
+          >
+            {alert.message}
+          </Alert>
+        </Snackbar>
+        </Portal>
+  </>
   );
 };
 

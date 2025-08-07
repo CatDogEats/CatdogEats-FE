@@ -17,7 +17,7 @@ import { SettlementPage } from "@/components/SellerDashboard/settlement";
 import SellerDashboardDashboardPage from "@/components/SellerDashboard/Dashboard";
 import CustomerManagementPage from "@/pages/SellerDashboardPage/CustomerManagementPage.tsx";
 import OrdersManagementPage from "@/pages/SellerDashboardPage/OrderManagementPage.tsx";
-import ShoppingCartPage from "@/pages/ShoppingCartPage";
+import ShoppingCartPage from "@/pages/cart/ShoppingCartPage.tsx";
 import CustomerServiceCenterPageServicePage from "@/pages/CusServiceCenterPage/CustomerServiceCenterPage.tsx";
 import WithdrawalSuccessPage from "@/pages/Account/WidrawSuccess.tsx";
 import AuthGuard from "@/routes/AuthGuard.tsx";
