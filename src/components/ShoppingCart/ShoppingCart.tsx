@@ -25,7 +25,6 @@ import {
 
 // API 연동 훅 import
 import { useCart } from '@/hooks/useCart';
-import { CartItem } from '@/service/cartApi';
 
 // AI Comparison Modal import
 // import AIComparisonModal from "./AIComparisonModal";
@@ -39,6 +38,8 @@ const ShoppingCart: React.FC = () => {
         loading,
         error,
         recommendations,
+        cartData, // ✅ 배송비 정보를 포함한 전체 장바구니 데이터
+        fetchCart,
         updateQuantity,
         removeItem,
         clearCart,
@@ -67,8 +68,9 @@ const ShoppingCart: React.FC = () => {
 
     // 추천 상품 로드
     useEffect(() => {
+        fetchCart();
         fetchRecommendations();
-    }, [fetchRecommendations]);
+    }, [fetchCart, fetchRecommendations]);
 
     // 전체 선택/해제
     const handleSelectAll = (checked: boolean) => {
@@ -168,6 +170,27 @@ const ShoppingCart: React.FC = () => {
     // 가격 포맷팅 함수
     const formatPrice = (price: number) => {
         return `${price.toLocaleString()}원`;
+    };
+
+    // ✅ 배송비 표시 함수
+    const getDeliveryFeeText = () => {
+        if (!cartData?.totalDeliveryFee || cartData.totalDeliveryFee === 0) {
+            return { text: '무료', color: 'success.main' };
+        }
+        return { text: formatPrice(cartData.totalDeliveryFee), color: 'text.primary' };
+    };
+
+    // ✅ 최종 결제 금액 계산 (선택된 상품 + 배송비)
+    const getFinalTotalPrice = () => {
+        const selectedItemsPrice = getTotalPrice();
+        const deliveryFee = cartData?.totalDeliveryFee || 0;
+
+        // 선택된 상품이 없으면 배송비도 0
+        if (selectedItemsPrice === 0) {
+            return 0;
+        }
+
+        return selectedItemsPrice + deliveryFee;
     };
 
     // 로딩 상태
@@ -272,7 +295,7 @@ const ShoppingCart: React.FC = () => {
                                         />
                                         <Box
                                             component="img"
-                                            src={item.productImage || "/api/placeholder/100/100"}
+                                            src={item.productImage}
                                             alt={item.productName}
                                             sx={{ width: 100, height: 100, objectFit: "cover", borderRadius: 1 }}
                                         />
@@ -319,14 +342,14 @@ const ShoppingCart: React.FC = () => {
 
                             {/*/!* AI 비교 버튼 *!/*/}
                             <Box sx={{ mt: 3, textAlign: "center" }}>
-                            {/*    <Button*/}
-                            {/*        variant="outlined"*/}
-                            {/*        onClick={handleCompareSelected}*/}
-                            {/*        disabled={loading}*/}
-                            {/*        sx={{ mr: 2 }}*/}
-                            {/*    >*/}
-                            {/*        AI 상품 비교*/}
-                            {/*    </Button>*/}
+                                {/*    <Button*/}
+                                {/*        variant="outlined"*/}
+                                {/*        onClick={handleCompareSelected}*/}
+                                {/*        disabled={loading}*/}
+                                {/*        sx={{ mr: 2 }}*/}
+                                {/*    >*/}
+                                {/*        AI 상품 비교*/}
+                                {/*    </Button>*/}
                                 <Button
                                     variant="text"
                                     onClick={handleContinueShopping}
@@ -374,8 +397,11 @@ const ShoppingCart: React.FC = () => {
                                 </Box>
                                 <Box sx={{ display: "flex", justifyContent: "space-between", mb: 1 }}>
                                     <Typography variant="body2">배송비</Typography>
-                                    <Typography variant="body2" color="success.main">
-                                        무료
+                                    <Typography
+                                        variant="body2"
+                                        color={getDeliveryFeeText().color}
+                                    >
+                                        {getDeliveryFeeText().text}
                                     </Typography>
                                 </Box>
                             </Box>
@@ -387,7 +413,7 @@ const ShoppingCart: React.FC = () => {
                                     총 결제 금액
                                 </Typography>
                                 <Typography variant="h6" sx={{ fontWeight: "bold", color: "primary.main" }}>
-                                    {formatPrice(getTotalPrice())}
+                                    {formatPrice(getFinalTotalPrice())}
                                 </Typography>
                             </Box>
 
